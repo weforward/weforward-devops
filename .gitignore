@@ -6,5 +6,6 @@ data
 .settings
 .classpath
 .project
+.svn
 
 weforward-dev.properties

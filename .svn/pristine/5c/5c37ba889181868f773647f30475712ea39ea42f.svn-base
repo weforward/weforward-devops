@@ -1,1 +1,0 @@
-window._WEFORWARD_CONFIG={"hosts":["http://localhost:15000"]}
