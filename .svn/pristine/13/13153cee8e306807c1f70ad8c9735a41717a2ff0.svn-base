@@ -1,0 +1,6 @@
+TZ=Asia/Shanghai
+PROJECT_NAME=weforward-devops
+OURLINC_SERVER_ID=10
+SERVER_ID=x000a
+RLOG_URL=http://127.0.0.1:1200/logs.j
+WF_JAVA_OPTIONS=-Xms128m -Xmx256m -XX:MaxDirectMemorySize=128m -Dweforward.apiUrl=http://172.16.10.62:5662/ -Dweforward.service.accessId=H-0989e9970100-0989e9970100 -Dweforward.service.accessKey=3fdd358ac1ab91d687a5033e3acc4d6399bb55a13ee8902ff0ffda130fb1807e -Dweforward.host=172.16.10.62 -Dweforward.port=15000

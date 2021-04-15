@@ -1,0 +1,10 @@
+bin
+target
+tmp
+site
+data
+.settings
+.classpath
+.project
+
+weforward-dev.properties

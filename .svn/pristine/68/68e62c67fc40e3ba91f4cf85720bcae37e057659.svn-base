@@ -1,0 +1,212 @@
+/**
+ * Copyright (c) 2019,2020 honintech
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * 
+ */
+package cn.weforward.devops.project;
+
+import java.util.List;
+
+import cn.weforward.common.NameItem;
+import cn.weforward.common.NameItems;
+import cn.weforward.common.ResultPage;
+import cn.weforward.framework.ApiException;
+
+/**
+ * 项目服务
+ * 
+ * @author daibo
+ *
+ */
+public interface ProjectService {
+	/** 权限-可读取 */
+	String RIGHT_READ = "READ";
+	/** 权限-可操作 */
+	String RIGHT_OPERATOR = "OPERATOR";
+	/** 权限-可更新 */
+	String RIGHT_UPDATE = "UPDATE";
+	/** 类型-java */
+	NameItem TYPE_JAVA = NameItem.valueOf("JAVA", 0);
+	/** 类型-html */
+	NameItem TYPE_HTML = NameItem.valueOf("HTML", 1);
+	/** 类型 */
+	NameItems TYPES = NameItems.valueOf(TYPE_JAVA, TYPE_HTML);
+
+	/**
+	 * 添加项目
+	 * 
+	 * @param name 名称
+	 * @param type 类型
+	 * @return
+	 */
+	Project addProject(String name, NameItem type);
+
+	/**
+	 * 获取项目
+	 * 
+	 * @param id 项目id
+	 * @return
+	 */
+	Project getProject(String id);
+
+	/**
+	 * 搜索项目
+	 * 
+	 * @param keywords 关键字
+	 * @param groupid  运维组id
+	 * @param type     类型
+	 * @return
+	 */
+	ResultPage<? extends Project> searchProjects(String keywords, String groupid, NameItem type);
+
+	/**
+	 * 添加docker机器
+	 * 
+	 * @param name
+	 * @param url
+	 * @return
+	 */
+	Machine addDockerMachine(String name, String url);
+
+	/**
+	 * 添加Nginx机器
+	 * 
+	 * @param name
+	 * @param url
+	 * @param root
+	 * @param password
+	 * @return
+	 */
+	Machine addProxyMachine(String name, String url, String root, String password);
+
+	/**
+	 * 获取机器
+	 * 
+	 * @param id
+	 * @return
+	 */
+	Machine getMachine(String id);
+
+	/**
+	 * 搜索机器
+	 * 
+	 * @param project
+	 * @param keywords
+	 * @return
+	 */
+	ResultPage<? extends Machine> searchMachines(Project project, String keywords);
+
+	/**
+	 * 添加运行项目
+	 * 
+	 * @param serverid 服务id
+	 * @param project  项目
+	 * @param machine  机器
+	 * @return
+	 */
+	Running addRunning(Project project, Machine machine);
+
+	/**
+	 * 获取运行项目
+	 * 
+	 * @param id
+	 * @return
+	 */
+	Running getRunning(String id);
+
+	/**
+	 * 搜索运行项目
+	 * 
+	 * @param keywords
+	 * @param groupid
+	 * @param type     类型
+	 * @return
+	 */
+	ResultPage<? extends Running> searchRunnings(String keywords, String groupid, NameItem type);
+
+	/**
+	 * 获取操作任务
+	 * 
+	 * @param id
+	 * @return
+	 */
+	OpTask getOpTask(String id);
+
+	/**
+	 * 创建组
+	 * 
+	 * @param name
+	 * @return
+	 */
+	Group addGroup(String name);
+
+	/**
+	 * 获取组
+	 * 
+	 * @param id
+	 * @return
+	 */
+	Group getGroup(String id);
+
+	/**
+	 * 搜索组
+	 * 
+	 * @param keywords
+	 * @return
+	 */
+	ResultPage<? extends Group> searchGroups(String keywords);
+
+	/**
+	 * 推荐端口
+	 * 
+	 * @return
+	 */
+	int recommendedServerPort();
+
+	/**
+	 * 加载服务配置
+	 * 
+	 * @param projectName
+	 * @param serverid
+	 * @param accessId
+	 * @return
+	 */
+	List<Prop> loadServiceProperties(String projectName, String serverid, String accessId);
+
+	/**
+	 * 查找机器
+	 * 
+	 * @param name
+	 * @return
+	 */
+	Machine findMachine(String name);
+
+	/**
+	 * 删除实例
+	 * 
+	 * @param p
+	 * @throws ApiException
+	 */
+	void delete(Running p) throws ApiException;
+
+	/**
+	 * 删除项目
+	 * 
+	 * @param p
+	 * @throws ApiException
+	 */
+	void delete(Project p) throws ApiException;
+
+	/**
+	 * 删除机器
+	 * 
+	 * @param m
+	 * @throws ApiException
+	 */
+	void delete(Machine m) throws ApiException;
+}

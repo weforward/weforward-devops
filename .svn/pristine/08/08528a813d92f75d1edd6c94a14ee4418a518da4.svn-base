@@ -1,0 +1,221 @@
+/**
+ * Copyright (c) 2019,2020 honintech
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * 
+ */
+package cn.weforward;
+
+import javax.annotation.Resource;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+
+import cn.weforward.common.util.StringUtil;
+import cn.weforward.common.util.TaskExecutor;
+import cn.weforward.data.array.LabelSetFactory;
+import cn.weforward.data.log.BusinessLoggerFactory;
+import cn.weforward.data.mongodb.array.MongodbLabelSetFactory;
+import cn.weforward.data.mongodb.log.MongodbBusinessLoggerFactory;
+import cn.weforward.data.mongodb.persister.MongodbPersisterFactory;
+import cn.weforward.data.mongodb.search.MongodbSearcherFactory;
+import cn.weforward.data.persister.PersisterFactory;
+import cn.weforward.data.persister.PersisterSet;
+import cn.weforward.data.search.SearcherFactory;
+import cn.weforward.data.util.Flusher;
+import cn.weforward.devops.ext.WeforwardGroupProvider;
+import cn.weforward.devops.ext.WeforwardUserProvider;
+import cn.weforward.devops.project.ProjectService;
+import cn.weforward.devops.project.impl.InnerUserProvider;
+import cn.weforward.devops.project.impl.MicroserviceUserProvider;
+import cn.weforward.devops.project.impl.MultipleUserProvider;
+import cn.weforward.devops.project.impl.ProjectServiceImpl;
+import cn.weforward.protocol.gateway.Keeper;
+import cn.weforward.protocol.gateway.http.HttpKeeper;
+import cn.weforward.protocol.ops.UserService;
+import cn.weforward.util.nexus.NexusRepositoryClear;
+
+/**
+ * devops配置
+ * 
+ * @author daibo
+ *
+ */
+public class DevopsConfig {
+	/** 服务器id */
+	@Value("${weforward.serverid}")
+	protected String m_ServerId;
+	/** mongodb地址 */
+	@Value("${mongodb.url}")
+	protected String m_MongodbUrl;
+	/** mongodb数据库名 */
+	@Value("${mongodb.dbname}")
+	protected String m_MongodbDbname;
+	/** dockerHub地址 */
+	@Value("${dockerHubUrl}")
+	protected String m_DockerHubUrl;
+	/** dockerHub https地址 */
+	@Value("${dockerHubHttpsUrl}")
+	protected String m_DockerHubHttpsUrl;
+	/** dockerHub用户名 */
+	@Value("${dockerHubUsername}")
+	protected String m_DockerHubUsername;
+	/** dockerHub密码 */
+	@Value("${dockerHubPassword}")
+	protected String m_DockerHubPassword;
+	/** dockerHub邮箱 */
+	@Value("${dockerHubEmail}")
+	protected String m_DockerHubEmail;
+	/** proxy机器svndist地址 */
+	@Value("${proxyDistUrl}")
+	protected String m_ProxyDistUrl;
+	/** docker机器svndist地址 */
+	@Value("${dockerDistUrl}")
+	protected String m_DockerDistUrl;
+	/** 日志url */
+	@Value("${rlog.url}")
+	protected String m_RlogUrl;
+	/** 监控url */
+	@Value("${metrics.url}")
+	protected String m_MetricsUrl;
+	/** 资源url */
+	@Value("${resource.url}")
+	protected String m_ResourceUrl;
+	/** 服务网关地址 */
+	@Value("${weforward.apiUrl:}")
+	protected String m_ApiUrl;
+	/** 服务访问id */
+	@Value("${weforward.service.accessId:}")
+	protected String m_ServiceAccessId;
+	/** 服务访问key */
+	@Value("${weforward.service.accessKey:}")
+	protected String m_ServiceAccessKey;
+	/** 访问凭证id */
+	@Value("${weforward.keeper.accessId:}")
+	protected String m_KeeperAccessId;
+	/** 访问凭证key */
+	@Value("${weforward.keeper.accessKey:}")
+	protected String m_KeeperAccessKey;
+	/** 任务执行器 */
+	@Resource
+	protected TaskExecutor taskExecutor;
+	/** 持久器集合 */
+	@Resource
+	protected PersisterSet persisters;
+	@Value("${dist.username}")
+	protected String m_DistUserName;
+	@Value("${dist.password}")
+	protected String m_DistPassword;
+
+	@Value("${nexus.url:}")
+	protected String m_NexusUrl;
+	@Value("${nexus.username:}")
+	protected String m_NexusUsername;
+	@Value("${nexus.password:}")
+	protected String m_NexusPassword;
+	@Value("${nexus.repository:}")
+	protected String m_NexusRepository;
+	@Value("${nexus.repository.keepnum:10}")
+	protected int m_NexusRepositoryKeepnum;
+
+	/** labetSet工厂 */
+	@Bean
+	LabelSetFactory labelSetFactory() {
+		MongodbLabelSetFactory f = new MongodbLabelSetFactory(m_MongodbUrl);
+		f.setServerId(m_ServerId);
+		f.setHashSize(0);
+		return f;
+	}
+
+	/** 持久类工厂 */
+	@Bean
+	PersisterFactory persisterFactroy(PersisterSet persister, Flusher flusher) {
+		MongodbPersisterFactory ps = new MongodbPersisterFactory(m_MongodbUrl, m_MongodbDbname, persister);
+		ps.setFlusher(flusher);
+		ps.setServerId(m_ServerId);
+		return ps;
+	}
+
+	/** 搜索器 */
+	@Bean
+	SearcherFactory searcherFactory() {
+		MongodbSearcherFactory sf = new MongodbSearcherFactory(m_MongodbUrl, m_MongodbDbname);
+		sf.setServerId(m_ServerId);
+		return sf;
+	}
+
+	/** 日志hub */
+	@Bean
+	BusinessLoggerFactory loggerHub(LabelSetFactory labelSetFactory) {
+		return new MongodbBusinessLoggerFactory(m_ServerId, m_MongodbUrl, m_MongodbDbname);
+	}
+
+	/** 项目服务 */
+	@Bean
+	ProjectService projectService(PersisterFactory persisterFactroy, SearcherFactory searcherFactory,
+			LabelSetFactory labelSetFactory, BusinessLoggerFactory loggerFactory, UserService userService) {
+		ProjectServiceImpl p = new ProjectServiceImpl(persisterFactroy, searcherFactory, labelSetFactory,
+				loggerFactory);
+		p.setDockerHubUrl(m_DockerHubUrl);
+		p.setDockerHubHttpsUrl(m_DockerHubHttpsUrl);
+		p.setDockerHubUsername(m_DockerHubUsername);
+		p.setDockerHubPassword(m_DockerHubPassword);
+		p.setDockerHubEmail(m_DockerHubEmail);
+		p.setProxyDistUrl(m_ProxyDistUrl);
+		p.setDockerDistUrl(m_DockerDistUrl);
+		p.setResourceUrl(m_ResourceUrl);
+		p.setRlogUrl(m_RlogUrl);
+		p.setDistUserName(m_DistUserName);
+		p.setDistPassword(m_DistPassword);
+		p.setApiUrl(m_ApiUrl);
+		p.setTaskExecutor(taskExecutor);
+		p.setUserService(userService);
+		return p;
+	}
+
+	@Bean
+	WeforwardGroupProvider groupProvider(@Value("${weforward.group.serviceName}") String serviceName,
+			@Value("${weforward.group.methodName}") String methodName) {
+		return new WeforwardGroupProvider(m_ApiUrl, m_ServiceAccessId, m_ServiceAccessKey, serviceName, methodName);
+	}
+
+	/*** 远端（平台）用户模块 */
+	@Bean(name = "userAuth")
+	WeforwardUserProvider userProvider(@Value("${weforward.user.serviceName}") String serviceName,
+			@Value("${weforward.user.methodGroup}") String methodGroup, @Value("${weforward.user.id}") String id,
+			@Value("${weforward.user.name}") String name, @Value("${weforward.user.password}") String password,
+			@Value("${weforward.user.secretKey}") String secretKey) {
+		if (StringUtil.isEmpty(serviceName)) {
+			return new InnerUserProvider(id, name, password, secretKey);
+		} else if (StringUtil.isEmpty(id)) {
+			return new MicroserviceUserProvider(m_ApiUrl, m_ServiceAccessId, m_ServiceAccessKey, serviceName,
+					methodGroup);
+		} else {
+			return new MultipleUserProvider(new InnerUserProvider(id, name, password, secretKey),
+					new MicroserviceUserProvider(m_ApiUrl, m_ServiceAccessId, m_ServiceAccessKey, serviceName,
+							methodGroup));
+		}
+	}
+
+	@Bean
+	Keeper keeper() {
+		return new HttpKeeper(m_ApiUrl, m_KeeperAccessId, m_KeeperAccessKey);
+	}
+
+	@Bean
+	NexusRepositoryClear repositoryClear(TaskExecutor taskExecutor) {
+		if (StringUtil.isEmpty(m_NexusUrl) || StringUtil.isEmpty(m_NexusRepository)) {
+			return null;
+		}
+		NexusRepositoryClear c = new NexusRepositoryClear(m_NexusUrl, m_NexusUsername, m_NexusPassword,
+				m_NexusRepository);
+		c.setKeepNum(m_NexusRepositoryKeepnum);
+		c.setTaskExecutor(taskExecutor);
+		return c;
+	}
+
+}

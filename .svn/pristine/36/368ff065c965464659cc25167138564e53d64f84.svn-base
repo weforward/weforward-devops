@@ -1,0 +1,16 @@
+project_name=weforward-devops
+
+# the prefix url of gateway api
+weforward.apiUrl=http://localhost/
+
+weforward.service.accessId=
+weforward.service.accessKey=
+
+weforward.host=*
+weforward.port=15000
+weforward.name=devopstest
+
+weforward.debugEnabled=true
+
+devops.defaultMachineRight=OPERATOR
+devops.defaultProjectRight=OPERATOR
