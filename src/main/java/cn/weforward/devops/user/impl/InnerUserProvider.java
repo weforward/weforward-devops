@@ -105,6 +105,9 @@ public class InnerUserProvider implements UserProvider, UserAuth, AccessLoader {
 	@Override
 	public User getUserByAccess(String accessId) {
 		SimpleUserAccess access = m_Access.get(accessId);
+		if (null == access) {
+			return null;
+		}
 		SimpleSession session = access.getSession();
 		if (null == session) {
 			return null;
