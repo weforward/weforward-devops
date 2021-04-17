@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.TimeZone;
 
 import javax.annotation.Resource;
@@ -877,59 +876,8 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 				}
 			}
 		}
-		Properties props = getBusinessDi().getGlobalProperties();
-		for (Map.Entry<Object, Object> prop : props.entrySet()) {
-			String value = StringUtil.toString(prop.getValue());
-			if (isPropVal(value)) {
-				value = getValByProp(runningprops, value);
-			}
-			if (isEnvVal(value)) {
-				value = getValByEnv(project.getEnvs(), value);
-				if (null == value) {
-					value = getValByEnv(getEnvs(), value);
-				}
-			}
-			if (StringUtil.isEmpty(value)) {
-				continue;
-			}
-			sb.append(" -D").append(prop.getKey()).append("=").append(value);
-		}
 		list.add(new Env("WF_JAVA_OPTIONS", sb.toString()));
 		return list;
-	}
-
-	private static boolean isPropVal(String value) {
-		if (null == value) {
-			return false;
-		}
-		return value.startsWith("${") && value.endsWith("}");
-	}
-
-	private static String getValByProp(List<RunningProp> runningprops, String value) {
-		String name = value.substring(2, value.length() - 1);
-		for (RunningProp prop : runningprops) {
-			if (StringUtil.eq(name, prop.getKey())) {
-				return prop.getValue();
-			}
-		}
-		return null;
-	}
-
-	private static boolean isEnvVal(String value) {
-		if (null == value || value.length() < 1) {
-			return false;
-		}
-		return value.charAt(0) == '$';
-	}
-
-	private static String getValByEnv(List<Env> envs, String value) {
-		String name = value.substring(1, value.length());
-		for (Env env : envs) {
-			if (StringUtil.eq(name, env.getKey())) {
-				return env.getValue();
-			}
-		}
-		return null;
 	}
 
 	private String getHost() {

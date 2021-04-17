@@ -11,7 +11,6 @@
 package cn.weforward.devops.project.di;
 
 import java.io.File;
-import java.util.Properties;
 
 import cn.weforward.common.ResultPage;
 import cn.weforward.common.util.TaskExecutor;
@@ -95,8 +94,6 @@ public interface ProjectDi extends BusinessDi {
 	 * @return
 	 */
 	String getResourceUrl();
-
-	Properties getGlobalProperties();
 
 	/**
 	 * 获取java项目

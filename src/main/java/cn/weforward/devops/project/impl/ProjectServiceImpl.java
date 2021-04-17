@@ -320,6 +320,9 @@ public class ProjectServiceImpl extends ProjectDiImpl implements ProjectService 
 			}
 			list.add(prop);
 		}
+		if (null != m_GlobalProperties) {
+			m_GlobalProperties.forEach((key, value) -> list.add(new Prop(String.valueOf(key), String.valueOf(value))));
+		}
 		if (matchAccess) {
 			return list;
 		} else {

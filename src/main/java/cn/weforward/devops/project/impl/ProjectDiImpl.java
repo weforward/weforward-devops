@@ -356,11 +356,6 @@ public abstract class ProjectDiImpl implements ProjectDi {
 	}
 
 	@Override
-	public Properties getGlobalProperties() {
-		return m_GlobalProperties;
-	}
-
-	@Override
 	public void writeLog(UniteId id, String action, String what, String note) {
 		String author;
 		UniteId user = OperatorUtils.getOperator();
