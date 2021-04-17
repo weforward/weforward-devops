@@ -12,8 +12,7 @@ package cn.weforward.devops.user.impl;
 
 import cn.weforward.common.ResultPage;
 import cn.weforward.common.crypto.Base64;
-import cn.weforward.common.util.StringUtil;
-import cn.weforward.devops.user.Organization;
+import cn.weforward.devops.user.OrganizationProvider;
 import cn.weforward.devops.user.UserProvider;
 import cn.weforward.framework.ApiException;
 import cn.weforward.framework.support.MicroserviceUserService;
@@ -57,9 +56,12 @@ public class MicroserviceUserProvider extends MicroserviceUserService implements
 		}
 	};
 
+	protected OrganizationProvider m_OrganizationProvider;
+
 	public MicroserviceUserProvider(String apiUrl, String accessId, String accessKey, String serviceName,
-			String methodGroup) {
+			String methodGroup, OrganizationProvider provider) {
 		super(apiUrl, accessId, accessKey, serviceName, methodGroup);
+		m_OrganizationProvider = provider;
 	}
 
 	@Override
@@ -134,12 +136,7 @@ public class MicroserviceUserProvider extends MicroserviceUserService implements
 		}
 		SimpleOrganizationUser user = new SimpleOrganizationUser(content.getString("id"), content.getString("name"),
 				getRight(content.getFriendlyList("right")));
-		String orgId = content.getString("organizationId");
-		if (StringUtil.isEmpty(orgId)) {
-			user.setOrganization(Organization.DEFAULT);
-		} else {
-			user.setOrganization(new Organization(orgId, content.getString("organizationName")));
-		}
+		user.setOrganizationProvider(m_OrganizationProvider);
 		return user;
 	}
 

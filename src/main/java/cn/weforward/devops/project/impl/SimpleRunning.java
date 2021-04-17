@@ -156,7 +156,7 @@ public class SimpleRunning extends AbstractPersistent<ProjectDi>
 	@Override
 	public List<RunningProp> getProps() {
 		List<RunningProp> result = new ArrayList<>();
-		String label = getProject().getName();
+		String label = genLabel(m_Organization, getProject().getName());
 		{
 			ServiceProperties ele = getBusinessDi().getServiceProperties(label, PROJECT_SERVICE_ID);
 			if (null != ele) {
@@ -178,6 +178,11 @@ public class SimpleRunning extends AbstractPersistent<ProjectDi>
 
 	}
 
+	public static String genLabel(String org, String name) {
+		org = org.replace(UniteId.TYPE_SPEARATOR, '_');
+		return org + "." + name;
+	}
+
 	@Override
 	public void setProps(List<RunningProp> props) {
 		checkRight(RIGHT_EDIT);
@@ -190,7 +195,7 @@ public class SimpleRunning extends AbstractPersistent<ProjectDi>
 				pprop.add(new Prop(p.getKey(), p.getValue()));
 			}
 		}
-		String label = getProject().getName();
+		String label = genLabel(m_Organization, getProject().getName());
 		getBusinessDi().saveServiceProperties(label, new ServiceProperties(getServerid(), rprop));
 		getBusinessDi().saveServiceProperties(label, new ServiceProperties(PROJECT_SERVICE_ID, pprop));
 	}

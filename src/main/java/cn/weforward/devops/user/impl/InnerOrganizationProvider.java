@@ -8,9 +8,13 @@
  * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * 
  */
-package cn.weforward.devops.user;
+package cn.weforward.devops.user.impl;
 
 import cn.weforward.common.ResultPage;
+import cn.weforward.common.util.ResultPageHelper;
+import cn.weforward.common.util.StringUtil;
+import cn.weforward.devops.user.Organization;
+import cn.weforward.devops.user.OrganizationProvider;
 import cn.weforward.protocol.ops.User;
 
 /**
@@ -19,37 +23,43 @@ import cn.weforward.protocol.ops.User;
  * @author daibo
  *
  */
-public interface OrganizationProvider {
-	/**
-	 * 搜索组织
-	 * 
-	 * @param keywords
-	 * @return
-	 */
-	ResultPage<Organization> search(String keywords);
+public class InnerOrganizationProvider implements OrganizationProvider {
 
-	/**
-	 * 获取组织
-	 * 
-	 * @param id
-	 * @return
-	 */
-	Organization get(String id);
+	protected Organization m_Org;
 
-	/**
-	 * 获取组织
-	 * 
-	 * @param id
-	 * @return
-	 */
-	Organization get(User user);
+	public InnerOrganizationProvider(String id, String name) {
+		m_Org = new Organization(id, name);
+	}
 
-	/**
-	 * 获取组织
-	 * 
-	 * @param accessId
-	 * @return
-	 */
-	Organization getByAccessId(String accessId);
+	@Override
+	public ResultPage<Organization> search(String keywords) {
+		Organization org = m_Org;
+		if (StringUtil.isEmpty(keywords) || org.getName().contains(keywords)) {
+			return ResultPageHelper.singleton(org);
+		}
+		return ResultPageHelper.empty();
+	}
 
+	@Override
+	public Organization get(String id) {
+		if (StringUtil.eq(id, m_Org.getId())) {
+			return m_Org;
+		}
+		return null;
+	}
+
+	@Override
+	public Organization get(User user) {
+		if (user instanceof SimpleOrganizationUser) {
+			if (((SimpleOrganizationUser) user).isInner()) {
+				return m_Org;
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public Organization getByAccessId(String accessId) {
+		return null;
+	}
 }

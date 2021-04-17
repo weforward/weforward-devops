@@ -35,6 +35,7 @@ import cn.weforward.devops.user.GroupProvider;
 import cn.weforward.devops.user.OrganizationProvider;
 import cn.weforward.devops.user.UserProvider;
 import cn.weforward.devops.user.impl.InnerGroupProvider;
+import cn.weforward.devops.user.impl.InnerOrganizationProvider;
 import cn.weforward.devops.user.impl.InnerUserProvider;
 import cn.weforward.devops.user.impl.MicroserviceOrganizationProvider;
 import cn.weforward.devops.user.impl.MicroserviceUserProvider;
@@ -211,7 +212,11 @@ public class DevopsConfig {
 	}
 
 	@Bean
-	OrganizationProvider organizationProvider() {
+	OrganizationProvider organizationProvider(@Value("${weforward.organization.id:default}") String id,
+			@Value("${weforward.organization.name:默认}") String name) {
+		if (StringUtil.isEmpty(m_OrganizationServiceName)) {
+			return new InnerOrganizationProvider(id, name);
+		}
 		return new MicroserviceOrganizationProvider(m_ApiUrl, m_ServiceAccessId, m_ServiceAccessKey,
 				m_OrganizationServiceName, m_OrganizationMethodName);
 	}
@@ -221,21 +226,19 @@ public class DevopsConfig {
 		return new InnerGroupProvider(persisterFactroy, userProvider);
 	}
 
-	/*** 远端（平台）用户模块 */
 	@Bean(name = "userAuth")
 	UserProvider userProvider(@Value("${weforward.user.id}") String id, @Value("${weforward.user.name}") String name,
 			@Value("${weforward.user.password}") String password,
-			@Value("${weforward.user.organization:}") String organization,
-			@Value("${weforward.user.secretKey}") String secretKey) {
+			@Value("${weforward.user.secretKey}") String secretKey, OrganizationProvider organizationProvider) {
 		if (StringUtil.isEmpty(m_UserServiceName)) {
-			return new InnerUserProvider(id, name, password, organization, secretKey);
+			return new InnerUserProvider(id, name, password, secretKey, organizationProvider);
 		} else if (StringUtil.isEmpty(id)) {
 			return new MicroserviceUserProvider(m_ApiUrl, m_ServiceAccessId, m_ServiceAccessKey, m_UserServiceName,
-					m_UserMethodGroup);
+					m_UserMethodGroup, organizationProvider);
 		} else {
-			return new MultipleUserProvider(new InnerUserProvider(id, name, password, organization, secretKey),
+			return new MultipleUserProvider(new InnerUserProvider(id, name, password, secretKey, organizationProvider),
 					new MicroserviceUserProvider(m_ApiUrl, m_ServiceAccessId, m_ServiceAccessKey, m_UserServiceName,
-							m_UserMethodGroup));
+							m_UserMethodGroup, organizationProvider));
 		}
 	}
 

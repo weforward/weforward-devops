@@ -174,9 +174,10 @@ public interface ProjectService {
 	/**
 	 * 加载服务配置
 	 * 
-	 * @param projectName
-	 * @param serverid
-	 * @param accessId
+	 * 
+	 * @param projectName 项目名
+	 * @param serverid    服务id
+	 * @param accessId    访问id
 	 * @return
 	 */
 	List<Prop> loadServiceProperties(String projectName, String serverid, String accessId);

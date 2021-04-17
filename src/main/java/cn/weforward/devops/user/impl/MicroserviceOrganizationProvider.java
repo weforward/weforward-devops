@@ -21,6 +21,7 @@ import cn.weforward.protocol.client.ServiceInvoker;
 import cn.weforward.protocol.client.ServiceInvokerFactory;
 import cn.weforward.protocol.client.ext.RemoteResultPage;
 import cn.weforward.protocol.client.ext.RequestInvokeParam;
+import cn.weforward.protocol.ops.User;
 
 /**
  * 基于微服务实现组织提供者
@@ -43,7 +44,7 @@ public class MicroserviceOrganizationProvider implements OrganizationProvider {
 	/** 服务调用器 */
 	protected ServiceInvoker m_Invoker;
 
-	protected LruCache<String, Organization> m_Groups;
+	protected LruCache<String, Organization> m_Organizations;
 
 	public MicroserviceOrganizationProvider(String apiUrl, String accessId, String accessKey, String serviceName,
 			String methodName) {
@@ -52,8 +53,8 @@ public class MicroserviceOrganizationProvider implements OrganizationProvider {
 		m_AccessKey = accessKey;
 		m_ServiceName = serviceName;
 		m_MethodName = methodName;
-		m_Groups = new LruCache<String, Organization>("weforward-organization");
-		GcCleaner.register(m_Groups);
+		m_Organizations = new LruCache<String, Organization>("weforward-organization");
+		GcCleaner.register(m_Organizations);
 	}
 
 	public ServiceInvoker getInvoker() {
@@ -70,7 +71,7 @@ public class MicroserviceOrganizationProvider implements OrganizationProvider {
 		if (StringUtil.isEmpty(id)) {
 			return null;
 		}
-		Organization g = m_Groups.get(id);
+		Organization g = m_Organizations.get(id);
 		if (null != g) {
 			return g;
 		}
@@ -78,7 +79,7 @@ public class MicroserviceOrganizationProvider implements OrganizationProvider {
 		if (null == g) {
 			return null;
 		}
-		Organization old = m_Groups.putIfAbsent(id, g);
+		Organization old = m_Organizations.putIfAbsent(id, g);
 		if (null != old) {
 			return old;
 		} else {
@@ -112,6 +113,18 @@ public class MicroserviceOrganizationProvider implements OrganizationProvider {
 				RequestInvokeParam.valueOf("keywords", keywords)) {
 		};
 
+	}
+
+	@Override
+	public Organization get(User user) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Organization getByAccessId(String accessId) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

@@ -112,11 +112,11 @@ public interface ProjectDi extends BusinessDi {
 	/**
 	 * 获取服务配置
 	 * 
-	 * @param name
+	 * @param label
 	 * @param sid
 	 * @return
 	 */
-	ServiceProperties getServiceProperties(String name, String sid);
+	ServiceProperties getServiceProperties(String label, String sid);
 
 	/**
 	 * 保存服务配置

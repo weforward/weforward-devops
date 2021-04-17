@@ -241,8 +241,8 @@ public abstract class ProjectDiImpl implements ProjectDi {
 	}
 
 	@Override
-	public ServiceProperties getServiceProperties(String name, String sid) {
-		ServiceProperties s = m_PropLabel.get(name, sid);
+	public ServiceProperties getServiceProperties(String label, String sid) {
+		ServiceProperties s = m_PropLabel.get(label, sid);
 		return null == s ? ServiceProperties.EMPTY : s;
 	}
 

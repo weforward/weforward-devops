@@ -296,7 +296,13 @@ public class ProjectServiceImpl extends ProjectDiImpl implements ProjectService 
 	@Override
 	public List<Prop> loadServiceProperties(String projectName, String serverId, String accessId) {
 		List<Prop> list = new ArrayList<>();
-		ServiceProperties runningProps = getServiceProperties(projectName, serverId);
+		Organization org = m_OrganizationProvider.getByAccessId(accessId);
+		if (null == org) {
+			_Logger.warn(projectName + "," + serverId + "," + accessId + "未找到对应组织返回空集!");
+			return Collections.emptyList();
+		}
+		String label = SimpleRunning.genLabel(org.getId(), projectName);
+		ServiceProperties runningProps = getServiceProperties(label, serverId);
 		boolean matchAccess = false;
 		for (Prop p : runningProps.getProps()) {
 			if (StringUtil.eq(p.getKey(), RunningProp.WEFORWARD_SERVICE_ACCESS_ID)
@@ -307,7 +313,8 @@ public class ProjectServiceImpl extends ProjectDiImpl implements ProjectService 
 			}
 			list.add(p);
 		}
-		ServiceProperties projectProps = getServiceProperties(projectName, SimpleRunning.PROJECT_SERVICE_ID);
+
+		ServiceProperties projectProps = getServiceProperties(label, SimpleRunning.PROJECT_SERVICE_ID);
 		for (Prop prop : projectProps.getProps()) {
 			if (StringUtil.eq(prop.getKey(), RunningProp.WEFORWARD_SERVICE_ACCESS_ID)
 					&& StringUtil.eq(accessId, prop.getValue())) {

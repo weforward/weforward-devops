@@ -15,6 +15,7 @@ import java.util.List;
 
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.devops.user.Organization;
+import cn.weforward.devops.user.OrganizationProvider;
 import cn.weforward.devops.user.OrganizationUser;
 import cn.weforward.framework.ApiException;
 import cn.weforward.protocol.ops.Right;
@@ -38,10 +39,22 @@ public class SimpleOrganizationUser implements OrganizationUser {
 
 	protected Organization m_Organization;
 
+	protected OrganizationProvider m_OrganizationProvier;
+
+	protected boolean m_Inner;
+
 	public SimpleOrganizationUser(String id, String name, List<Right> right) {
 		m_Id = id;
 		m_Name = name;
 		m_Right = right;
+	}
+
+	void setInner(boolean inner) {
+		m_Inner = inner;
+	}
+
+	boolean isInner() {
+		return m_Inner;
 	}
 
 	/**
@@ -92,12 +105,15 @@ public class SimpleOrganizationUser implements OrganizationUser {
 		return Collections.emptyList();
 	}
 
-	public void setOrganization(Organization org) {
-		m_Organization = org;
+	public Organization getOrganization() {
+		if (null == m_Organization) {
+			m_Organization = m_OrganizationProvier.get(this);
+		}
+		return m_Organization;
 	}
 
-	public Organization getOrganization() {
-		return m_Organization;
+	public void setOrganizationProvider(OrganizationProvider organizationProvider) {
+		m_OrganizationProvier = organizationProvider;
 	}
 
 }

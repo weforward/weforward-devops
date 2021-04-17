@@ -17,9 +17,9 @@ import javax.annotation.Resource;
 
 import org.slf4j.LoggerFactory;
 
-import cn.weforward.common.crypto.Hex;
 import cn.weforward.devops.project.ProjectService;
 import cn.weforward.devops.project.Prop;
+import cn.weforward.devops.user.impl.InnerOrganizationProvider;
 import cn.weforward.framework.ApiException;
 import cn.weforward.framework.WeforwardMethod;
 import cn.weforward.framework.WeforwardMethods;
@@ -40,23 +40,8 @@ public class ConfigMethods {
 
 	@Resource
 	protected ProjectService m_ProjectService;
-
-	@WeforwardMethod
-	@Deprecated
-	public List<Prop> projectprops(FriendlyObject params) throws ApiException {
-		// 兼容旧的实现
-		String projectName = params.getString("projectName");
-		int serverid = params.getInt("serverid");
-		WeforwardSession session = WeforwardSession.TLS.getSession();
-		if (null == session) {
-			return Collections.emptyList();
-		}
-		return m_ProjectService.loadServiceProperties(projectName, genId(serverid), session.getAccessId());
-	}
-
-	public static String genId(int sid) {
-		return "x00" + Hex.toHex(sid);
-	}
+	@Resource
+	protected InnerOrganizationProvider m_OrganizationProvider;
 
 	@WeforwardMethod
 	public List<Prop> serviceprops(FriendlyObject params) throws ApiException {
