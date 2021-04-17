@@ -18,7 +18,6 @@ import javax.annotation.Resource;
 
 import cn.weforward.common.util.FreezedList;
 import cn.weforward.common.util.StringUtil;
-import cn.weforward.data.UniteId;
 import cn.weforward.data.annotation.Index;
 import cn.weforward.data.annotation.ResourceExt;
 import cn.weforward.data.persister.Persister;
@@ -62,8 +61,9 @@ public class SimpleGroup extends AbstractPersistent<GroupDi> implements Group, R
 		markPersistenceUpdate();
 	}
 
-	public UniteId getId() {
-		return getPersistenceId();
+	@Override
+	public String getId() {
+		return getPersistenceId().getId();
 	}
 
 	public void setName(String name) {

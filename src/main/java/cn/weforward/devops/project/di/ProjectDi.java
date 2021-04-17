@@ -22,6 +22,7 @@ import cn.weforward.data.search.Searcher;
 import cn.weforward.devops.project.Group;
 import cn.weforward.devops.project.Machine;
 import cn.weforward.devops.project.Project;
+import cn.weforward.devops.project.ext.AbstractProject;
 import cn.weforward.devops.project.impl.JavaProject;
 import cn.weforward.devops.project.impl.ServiceProperties;
 import cn.weforward.devops.project.impl.SimpleRunning;
@@ -102,7 +103,7 @@ public interface ProjectDi extends BusinessDi {
 	 * 
 	 * @return
 	 */
-	ResultPage<JavaProject> getJavaProjects();
+	ResultPage<JavaProject> getJavaProjects(Organization org);
 
 	/**
 	 * 网关链接
@@ -214,5 +215,7 @@ public interface ProjectDi extends BusinessDi {
 	 * @return
 	 */
 	Organization getOrganization(String id);
+
+	void onGroupsChange(AbstractProject project);
 
 }

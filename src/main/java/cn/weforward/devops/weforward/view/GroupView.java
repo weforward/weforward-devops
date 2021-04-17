@@ -72,7 +72,7 @@ public class GroupView {
 	 */
 	@DocAttribute(description = "群组id", example = "SimpleGroup$12345")
 	public String getId() {
-		return m_Group.getPersistenceId().getId();
+		return m_Group.getId();
 	}
 
 	/**

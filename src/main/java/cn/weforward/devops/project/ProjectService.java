@@ -39,36 +39,6 @@ public interface ProjectService {
 	NameItems TYPES = NameItems.valueOf(TYPE_JAVA, TYPE_HTML);
 
 	/**
-	 * 添加项目
-	 * 
-	 * @param org  组织
-	 * @param name 名称
-	 * @param type 类型
-	 * @return
-	 */
-	Project addProject(Organization org, String name, NameItem type);
-
-	/**
-	 * 获取项目
-	 * 
-	 * @param org 组织
-	 * @param id  项目id
-	 * @return
-	 */
-	Project getProject(Organization org, String id);
-
-	/**
-	 * 搜索项目
-	 * 
-	 * @param org      组织
-	 * @param keywords 关键字
-	 * @param groupid  运维组id
-	 * @param type     类型
-	 * @return
-	 */
-	ResultPage<? extends Project> searchProjects(Organization org, String keywords, String groupid, NameItem type);
-
-	/**
 	 * 添加docker机器
 	 * 
 	 * @param name
@@ -97,6 +67,14 @@ public interface ProjectService {
 	Machine getMachine(Organization org, String id);
 
 	/**
+	 * 删除机器
+	 * 
+	 * @param m
+	 * @throws ApiException
+	 */
+	void delete(Machine m) throws ApiException;
+
+	/**
 	 * 搜索机器
 	 * 
 	 * @param project
@@ -104,6 +82,43 @@ public interface ProjectService {
 	 * @return
 	 */
 	ResultPage<? extends Machine> searchMachines(Organization org, Project project, String keywords);
+
+	/**
+	 * 添加项目
+	 * 
+	 * @param org  组织
+	 * @param name 名称
+	 * @param type 类型
+	 * @return
+	 */
+	Project addProject(Organization org, String name, NameItem type);
+
+	/**
+	 * 获取项目
+	 * 
+	 * @param org 组织
+	 * @param id  项目id
+	 * @return
+	 */
+	Project getProject(Organization org, String id);
+
+	/**
+	 * 删除项目
+	 * 
+	 * @param p
+	 * @throws ApiException
+	 */
+	void delete(Project p) throws ApiException;
+
+	/**
+	 * 搜索项目
+	 * 
+	 * @param org      组织
+	 * @param keywords 关键字
+	 * @param type     类型
+	 * @return
+	 */
+	ResultPage<? extends Project> searchProjects(Organization org, Group group, String keywords, NameItem type);
 
 	/**
 	 * 添加运行项目
@@ -123,14 +138,23 @@ public interface ProjectService {
 	Running getRunning(Organization org, String id);
 
 	/**
+	 * 删除实例
+	 * 
+	 * @param p
+	 * @throws ApiException
+	 */
+	void delete(Running p) throws ApiException;
+
+	/**
 	 * 搜索运行项目
 	 * 
-	 * @param keywords
-	 * @param groupid
+	 * @param org      组织
+	 * @param group    组
+	 * @param keywords 关键字
 	 * @param type     类型
 	 * @return
 	 */
-	ResultPage<? extends Running> searchRunnings(Organization org, String keywords, String groupid, NameItem type);
+	ResultPage<? extends Running> searchRunnings(Organization org, Group group, String keywords, NameItem type);
 
 	/**
 	 * 获取操作任务
@@ -145,7 +169,7 @@ public interface ProjectService {
 	 * 
 	 * @return
 	 */
-	int recommendedServerPort();
+	int recommendedServerPort(Organization org);
 
 	/**
 	 * 加载服务配置
@@ -165,27 +189,4 @@ public interface ProjectService {
 	 */
 	Machine findMachine(String name);
 
-	/**
-	 * 删除实例
-	 * 
-	 * @param p
-	 * @throws ApiException
-	 */
-	void delete(Running p) throws ApiException;
-
-	/**
-	 * 删除项目
-	 * 
-	 * @param p
-	 * @throws ApiException
-	 */
-	void delete(Project p) throws ApiException;
-
-	/**
-	 * 删除机器
-	 * 
-	 * @param m
-	 * @throws ApiException
-	 */
-	void delete(Machine m) throws ApiException;
 }

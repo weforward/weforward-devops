@@ -34,6 +34,8 @@ import cn.weforward.data.search.SearchableExt;
 import cn.weforward.data.search.util.IndexElementHelper;
 import cn.weforward.data.search.util.IndexKeywordHelper;
 import cn.weforward.devops.project.Env;
+import cn.weforward.devops.project.Group;
+import cn.weforward.devops.project.GroupRight;
 import cn.weforward.devops.project.Machine;
 import cn.weforward.devops.project.OpTask;
 import cn.weforward.devops.project.Project;
@@ -44,6 +46,7 @@ import cn.weforward.devops.project.RunningProp;
 import cn.weforward.devops.project.VersionInfo;
 import cn.weforward.devops.project.di.ProjectDi;
 import cn.weforward.devops.project.ext.AbstractMachine;
+import cn.weforward.devops.user.Organization;
 
 /**
  * 运行的项目
@@ -62,9 +65,12 @@ public class SimpleRunning extends AbstractPersistent<ProjectDi>
 	/** 状态 */
 	@Resource
 	private int m_State;
+	@Resource
+	private String m_Organization;
 	/** 最后查询状态的时间戳 */
 	private long m_LastQueryState;
-	/** 版本排序 */
+
+	/** 排序 */
 	final static Comparator<Running> _BY_SERVERID = new Comparator<Running>() {
 
 		@Override
@@ -102,11 +108,12 @@ public class SimpleRunning extends AbstractPersistent<ProjectDi>
 		super(di);
 	}
 
-	public SimpleRunning(ProjectDi di, Project project, Machine machine) {
+	public SimpleRunning(ProjectDi di, Organization org, Project project, Machine machine) {
 		super(di);
 		genPersistenceId();
 		m_Project = project.getPersistenceId();
 		m_Machine = machine.getPersistenceId();
+		m_Organization = org.getId();
 		persistenceUpdateNow();
 		reindex();
 	}
@@ -373,6 +380,10 @@ public class SimpleRunning extends AbstractPersistent<ProjectDi>
 		return r == (r & getRight());
 	}
 
+	public boolean isMyOrganization(Organization org) {
+		return StringUtil.eq(m_Organization, org.getId());
+	}
+
 	@Override
 	public void reindex() {
 		getBusinessDi().getRunningSearcher().updateElement(IndexElementHelper.newElement(getId().getId()),
@@ -381,9 +392,21 @@ public class SimpleRunning extends AbstractPersistent<ProjectDi>
 
 	@Override
 	public List<IndexKeyword> getIndexKeywords() {
-		List<IndexKeyword> ks = new ArrayList<>(2);
+		List<IndexKeyword> ks = new ArrayList<>();
 		ks = IndexKeywordHelper.addKeywordIfNotNull(ks, m_Machine.getId(), 0);
 		ks = IndexKeywordHelper.addKeywordIfNotNull(ks, m_Project.getId(), 0);
+		ks = IndexKeywordHelper.addKeywordIfNotNull(ks, m_Organization, 0);
+		Project project = getProject();
+		for (GroupRight gr : project.getGroups()) {
+			if (null == gr) {
+				continue;
+			}
+			Group g = gr.getGroup();
+			if (null == g) {
+				continue;
+			}
+			ks = IndexKeywordHelper.addKeywordIfNotNull(ks, g.getId(), 0);
+		}
 		return ks;
 	}
 

@@ -347,12 +347,16 @@ public class HomeMethods implements ResourceHandler {
 		String k = param.getKeywords();
 		String groupid = param.getGroupid();
 		String type = param.getType();
+		Group group = null;
+		if (!StringUtil.isEmpty(groupid)) {
+			group = m_GroupProvider.getGroup(getMyOrganization(), groupid);
+		}
 		NameItem typeNi = null;
 		if (!StringUtil.isEmpty(type)) {
 			typeNi = NameItem.findByName(type, ProjectService.TYPES);
 		}
 		@SuppressWarnings("unchecked")
-		ResultPage<Project> rp = (ResultPage<Project>) m_ProjectService.searchProjects(getMyOrganization(), k, groupid,
+		ResultPage<Project> rp = (ResultPage<Project>) m_ProjectService.searchProjects(getMyOrganization(), group, k,
 				typeNi);
 		return new TransResultPage<ProjectView, Project>(rp) {
 
@@ -392,6 +396,9 @@ public class HomeMethods implements ResourceHandler {
 			}
 		}
 		Running p = m_ProjectService.getRunning(getMyOrganization(), params.getString("id"));
+		if (null == p) {
+			return null;
+		}
 		ForwardException.forwardToIfNeed(p);
 		if ("add".equals(op)) {
 			Machine machine = m_ProjectService.getMachine(getMyOrganization(), params.getString("m"));
@@ -465,20 +472,23 @@ public class HomeMethods implements ResourceHandler {
 		String k = params.getString("keywords");
 		String groupid = params.getString("groupid");
 		String type = params.getString("type");
+		Group group = null;
+		if (!StringUtil.isEmpty(groupid)) {
+			group = m_GroupProvider.getGroup(getMyOrganization(), groupid);
+		}
 		NameItem typeNi = null;
 		if (!StringUtil.isEmpty(type)) {
 			typeNi = NameItem.findByName(type, ProjectService.TYPES);
 		}
-		ResultPage<Running> rp;
+		ResultPage<Running> rp = null;
 		if (!StringUtil.isEmpty(UniteId.getType(k))) {
 			Running r = m_ProjectService.getRunning(getMyOrganization(), k);
 			if (null != r) {
 				rp = ResultPageHelper.singleton(r);
-			} else {
-				rp = (ResultPage<Running>) m_ProjectService.searchRunnings(getMyOrganization(), k, groupid, typeNi);
 			}
-		} else {
-			rp = (ResultPage<Running>) m_ProjectService.searchRunnings(getMyOrganization(), k, groupid, typeNi);
+		}
+		if (null == rp) {
+			rp = (ResultPage<Running>) m_ProjectService.searchRunnings(getMyOrganization(), group, k, typeNi);
 		}
 		return new TransResultPage<RunningView, Running>(rp) {
 
@@ -681,7 +691,7 @@ public class HomeMethods implements ResourceHandler {
 	@DocMethod(description = "推荐端口", index = 19)
 	@DocReturn(description = "端口号")
 	public DtBase recommendedServerPort() {
-		return SimpleDtNumber.valueOf(m_ProjectService.recommendedServerPort());
+		return SimpleDtNumber.valueOf(m_ProjectService.recommendedServerPort(getMyOrganization()));
 	}
 
 	@WeforwardMethod

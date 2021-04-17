@@ -12,6 +12,7 @@ package cn.weforward.devops.project.impl;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -26,6 +27,7 @@ import cn.weforward.common.util.ResultPageHelper;
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.common.util.TaskExecutor;
 import cn.weforward.common.util.TimeUtil;
+import cn.weforward.common.util.TransResultPage;
 import cn.weforward.data.UniteId;
 import cn.weforward.data.array.LabelSet;
 import cn.weforward.data.array.LabelSetFactory;
@@ -35,8 +37,11 @@ import cn.weforward.data.log.BusinessLoggerFactory;
 import cn.weforward.data.persister.Persistent;
 import cn.weforward.data.persister.Persister;
 import cn.weforward.data.persister.PersisterFactory;
+import cn.weforward.data.search.IndexKeyword;
+import cn.weforward.data.search.IndexResults;
 import cn.weforward.data.search.Searcher;
 import cn.weforward.data.search.SearcherFactory;
+import cn.weforward.data.search.util.IndexKeywordHelper;
 import cn.weforward.data.util.FieldMapper;
 import cn.weforward.devops.project.Group;
 import cn.weforward.devops.project.Machine;
@@ -133,7 +138,11 @@ public abstract class ProjectDiImpl implements ProjectDi {
 	@Value("${devops.maxHistory}")
 	protected int m_MaxHistory;
 
-	TaskExecutor.Task m_ClearTask;
+	protected int m_DefaultMachineRight;
+
+	protected int m_DefaultProjectRight;
+
+	protected TaskExecutor.Task m_ClearTask;
 
 	public ProjectDiImpl(PersisterFactory psFactroy, SearcherFactory searcherFactory, LabelSetFactory lsFactory,
 			BusinessLoggerFactory loggerFactory) {
@@ -153,26 +162,26 @@ public abstract class ProjectDiImpl implements ProjectDi {
 	}
 
 	@Override
-	public Project getProject(String id) {
+	public AbstractProject getProject(String id) {
 		if (StringUtil.isEmpty(id)) {
 			return null;
 		}
 		Object v = m_PsFactroy.get(id);
 		if (v instanceof Project) {
-			Project p = ((Project) v);
+			AbstractProject p = ((AbstractProject) v);
 			return p;
 		}
 		return null;
 	}
 
 	@Override
-	public Machine getMachine(String id) {
+	public AbstractMachine getMachine(String id) {
 		if (StringUtil.isEmpty(id)) {
 			return null;
 		}
 		Object v = m_PsFactroy.get(id);
 		if (v instanceof Machine) {
-			Machine m = ((Machine) v);
+			AbstractMachine m = ((AbstractMachine) v);
 			return m;
 		}
 		return null;
@@ -389,8 +398,11 @@ public abstract class ProjectDiImpl implements ProjectDi {
 	}
 
 	@Override
-	public ResultPage<JavaProject> getJavaProjects() {
-		return m_PsJavaProject.startsWith(null);
+	public ResultPage<JavaProject> getJavaProjects(Organization org) {
+		List<IndexKeyword> ks = Arrays.asList(IndexKeywordHelper.prefixKeyword(UniteId.getType(JavaProject.class)),
+				IndexKeywordHelper.newKeyword(org.getId()));
+		IndexResults irs = getProjectSearcher().search(ks, null);
+		return TransResultPage.valueOf(irs, (id) -> m_PsJavaProject.get(id.getKey()));
 	}
 
 	public void setDistUserName(String name) {
@@ -436,6 +448,16 @@ public abstract class ProjectDiImpl implements ProjectDi {
 				}
 			}
 		}
+	}
+
+	@Override
+	public int getDefaultMachineRight() {
+		return m_DefaultMachineRight;
+	}
+
+	@Override
+	public int getDefaultProjectRight() {
+		return m_DefaultProjectRight;
 	}
 
 }

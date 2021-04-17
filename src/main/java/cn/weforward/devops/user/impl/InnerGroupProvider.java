@@ -1,3 +1,13 @@
+/**
+ * Copyright (c) 2019,2020 honintech
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * 
+ */
 package cn.weforward.devops.user.impl;
 
 import java.util.ArrayList;
@@ -9,7 +19,7 @@ import cn.weforward.common.util.StringUtil;
 import cn.weforward.data.persister.Persistent;
 import cn.weforward.data.persister.Persister;
 import cn.weforward.data.persister.PersisterFactory;
-import cn.weforward.data.search.Searcher;
+import cn.weforward.data.persister.ext.ConditionUtil;
 import cn.weforward.devops.project.Group;
 import cn.weforward.devops.user.GroupProvider;
 import cn.weforward.devops.user.Organization;
@@ -26,8 +36,6 @@ import cn.weforward.protocol.ops.User;
 public class InnerGroupProvider implements GroupProvider, GroupDi {
 	/** 持久工厂 */
 	protected PersisterFactory m_PsFactroy;
-	/** 搜索器 */
-	protected Searcher m_Searcher;
 	/** 组持久类 */
 	protected final Persister<SimpleGroup> m_PsSimpleGroup;
 
@@ -55,9 +63,8 @@ public class InnerGroupProvider implements GroupProvider, GroupDi {
 
 	@Override
 	public ResultPage<? extends Group> searchGroups(Organization org, String keywords) {
-//		ResultPage<? extends Group> rp = m_PsSimpleGroup
-//				.search(ConditionUtil.eq(ConditionUtil.field("m_Organization"), org.getId()));
-		ResultPage<? extends Group> rp = m_PsSimpleGroup.search(null);
+		ResultPage<? extends Group> rp = m_PsSimpleGroup
+				.search(ConditionUtil.eq(ConditionUtil.field("m_Organization"), org.getId()));
 		if (StringUtil.isEmpty(keywords)) {
 			return rp;
 		}

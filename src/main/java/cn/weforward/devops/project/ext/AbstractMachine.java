@@ -26,6 +26,7 @@ import cn.weforward.common.util.FreezedList;
 import cn.weforward.common.util.NumberUtil;
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.data.UniteId;
+import cn.weforward.data.annotation.Index;
 import cn.weforward.data.annotation.ResourceExt;
 import cn.weforward.data.persister.support.AbstractPersistent;
 import cn.weforward.devops.project.Bind;
@@ -74,6 +75,7 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 	@ResourceExt(component = IdAndRight.class)
 	protected List<IdAndRight> m_GroupRights;
 	/** 所在组织 */
+	@Index
 	@Resource
 	protected String m_Organization;
 	/** 机器信息 */
@@ -178,7 +180,7 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 		checkRight(RIGHT_UPDATE);
 		List<IdAndRight> list = new ArrayList<>();
 		for (GroupRight g : groups) {
-			list.add(new IdAndRight(g.getGroup().getPersistenceId().getId(), toRight(g.getRights())));
+			list.add(new IdAndRight(g.getGroup().getId(), toRight(g.getRights())));
 		}
 		m_GroupRights = list;
 		markPersistenceUpdate();
@@ -346,6 +348,10 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 
 	private static boolean isRight(int r, int right) {
 		return r == (r & right);
+	}
+
+	public boolean isMyOrganization(Organization org) {
+		return StringUtil.eq(m_Organization, org.getId());
 	}
 
 	@Override

@@ -15,10 +15,10 @@ import java.util.List;
 
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.devops.user.Organization;
+import cn.weforward.devops.user.OrganizationUser;
 import cn.weforward.framework.ApiException;
 import cn.weforward.protocol.ops.Right;
 import cn.weforward.protocol.ops.Role;
-import cn.weforward.protocol.ops.User;
 
 /**
  * 简单的组织用户实现
@@ -26,7 +26,7 @@ import cn.weforward.protocol.ops.User;
  * @author daibo
  *
  */
-public class SimpleOrganizationUser implements User {
+public class SimpleOrganizationUser implements OrganizationUser {
 
 	protected String m_Id;
 

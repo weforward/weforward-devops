@@ -153,11 +153,13 @@ public abstract class AbstractProject extends AbstractPersistent<ProjectDi> impl
 		checkRight(RIGHT_UPDATE);
 		List<IdAndRight> list = new ArrayList<>();
 		for (GroupRight g : groups) {
-			list.add(new IdAndRight(g.getGroup().getPersistenceId().getId(), toRight(g.getRights())));
+			list.add(new IdAndRight(g.getGroup().getId(), toRight(g.getRights())));
 		}
 		m_GroupRights = list;
 		markPersistenceUpdate();
+		getBusinessDi().onGroupsChange(this);
 		reindex();
+
 	}
 
 	private static int toRight(List<String> rights) {
@@ -262,6 +264,15 @@ public abstract class AbstractProject extends AbstractPersistent<ProjectDi> impl
 		return r == (r & right);
 	}
 
+	public boolean isMyOrganization(Organization org) {
+		return StringUtil.eq(m_Organization, org.getId());
+	}
+
+	@Override
+	public NameItem getType() {
+		return TYPES.get(0);
+	}
+
 	@Override
 	public String toString() {
 		return getId() + "," + getName();
@@ -276,11 +287,6 @@ public abstract class AbstractProject extends AbstractPersistent<ProjectDi> impl
 	}
 
 	@Override
-	public NameItem getType() {
-		return TYPES.get(0);
-	}
-
-	@Override
 	public void reindex() {
 		getBusinessDi().getProjectSearcher().updateElement(IndexElementHelper.newElement(getId().getId()),
 				getIndexKeywords());
@@ -289,8 +295,11 @@ public abstract class AbstractProject extends AbstractPersistent<ProjectDi> impl
 	@Override
 	public List<IndexKeyword> getIndexKeywords() {
 		List<IndexKeyword> ks = new ArrayList<>();
-		for (GroupRight g : getGroups()) {
-			ks = IndexKeywordHelper.addKeywordIfNotNull(ks, g.getGroup().getPersistenceId().getId(), 0);
+		ks = IndexKeywordHelper.addKeywordIfNotNull(ks, m_Organization, 0);
+		if (null != m_GroupRights) {
+			for (IdAndRight id : m_GroupRights) {
+				ks = IndexKeywordHelper.addKeywordIfNotNull(ks, id.getId(), 0);
+			}
 		}
 		return ks;
 	}

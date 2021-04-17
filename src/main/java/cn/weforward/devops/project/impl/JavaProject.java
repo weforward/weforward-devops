@@ -49,7 +49,7 @@ public class JavaProject extends AbstractProject {
 			ports = Collections.emptyList();
 		}
 		checkDouble(ports);
-		ResultPage<JavaProject> rp = getBusinessDi().getJavaProjects();
+		ResultPage<JavaProject> rp = getBusinessDi().getJavaProjects(getOrganization());
 		for (JavaProject project : ResultPageHelper.toForeach(rp)) {
 			if (project.equals(this)) {
 				continue;
