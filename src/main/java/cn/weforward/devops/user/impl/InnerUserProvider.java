@@ -20,6 +20,7 @@ import cn.weforward.common.crypto.Hex;
 import cn.weforward.common.util.ResultPageHelper;
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.devops.user.OrganizationProvider;
+import cn.weforward.devops.user.OrganizationUser;
 import cn.weforward.devops.user.UserAccess;
 import cn.weforward.devops.user.UserProvider;
 import cn.weforward.framework.ApiException;
@@ -121,11 +122,11 @@ public class InnerUserProvider implements UserProvider, UserAuth, AccessLoader {
 	}
 
 	@Override
-	public boolean check(String userName, String password) {
+	public OrganizationUser check(String userName, String password) {
 		if (StringUtil.eq(m_Sa.getName(), userName) && m_Sa.checkPassword(password)) {
-			return true;
+			return m_Sa;
 		}
-		return false;
+		return null;
 	}
 
 	/* 开始凭证对象 */

@@ -16,6 +16,7 @@ import cn.weforward.common.crypto.Base64;
 import cn.weforward.common.restful.RestfulRequest;
 import cn.weforward.common.restful.RestfulResponse;
 import cn.weforward.common.util.StringUtil;
+import cn.weforward.protocol.ops.User;
 
 /**
  * http验证器
@@ -37,9 +38,9 @@ public class HttpAuth {
 		m_AuthorizationType = type;
 	}
 
-	public boolean auth(RestfulRequest request, RestfulResponse response) throws IOException {
+	public User auth(RestfulRequest request, RestfulResponse response) throws IOException {
 		if (null == m_UserAuth) {
-			return true;
+			return null;
 		}
 		String authorization = request.getHeaders().get("Authorization");
 		if (StringUtil.eq(m_AuthorizationType, "Basic")) {
@@ -51,13 +52,14 @@ public class HttpAuth {
 					int index = code.indexOf(":");
 					String username = code.substring(0, index);
 					String password = code.substring(index + 1);
-					if (m_UserAuth.check(username, password)) {
-						return true;
+					User user = m_UserAuth.check(username, password);
+					if (null != user) {
+						return user;
 					}
 				}
 			}
 			response.setHeader("WWW-Authenticate", m_AuthorizationType);
-			return false;
+			return null;
 		}
 //		else if (Misc.eq(m_AuthorizationType, "Digest")) {
 //			String realmName = "ourlinc";

@@ -151,7 +151,7 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 	@Override
 	public void precheck(RestfulRequest request, RestfulResponse response) throws IOException {
 		HttpAuth auth = getAuth();
-		if (null != auth && !auth.auth(request, response)) {
+		if (null != auth && null == auth.auth(request, response)) {
 			response.setStatus(RestfulResponse.STATUS_UNAUTHORIZED);
 			response.openOutput().close();
 			return;

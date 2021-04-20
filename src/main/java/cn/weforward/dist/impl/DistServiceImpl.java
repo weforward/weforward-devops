@@ -40,9 +40,11 @@ import cn.weforward.common.util.SimpleKvPair;
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.common.util.TimeUtil;
 import cn.weforward.common.util.UrlUtil;
+import cn.weforward.devops.user.OrganizationUser;
 import cn.weforward.dist.DistService;
 import cn.weforward.framework.web.upload.WebFileUpload;
 import cn.weforward.framework.web.upload.WebForm;
+import cn.weforward.protocol.ops.User;
 import cn.weforward.util.CaUtil;
 import cn.weforward.util.HttpAuth;
 
@@ -109,10 +111,23 @@ public class DistServiceImpl implements RestfulService, DistService {
 			return;// 只验证dist
 		}
 		HttpAuth auth = getAuth();
-		if (null != auth && !auth.auth(request, response)) {
-			response.setStatus(RestfulResponse.STATUS_UNAUTHORIZED);
-			response.openOutput().close();
-			return;
+		if (null != auth) {
+			User user = auth.auth(request, response);
+			if (null == user) {
+				response.setStatus(RestfulResponse.STATUS_UNAUTHORIZED);
+				response.openOutput().close();
+				return;
+			}
+			if (user instanceof OrganizationUser) {
+				// 检查组织用户的权限
+				String org = ((OrganizationUser) user).getOrganization().getId();
+				if (!path.startsWith("/dist/" + org + "/")) {
+					response.setStatus(RestfulResponse.STATUS_FORBIDDEN);
+					response.openOutput().close();
+					return;
+				}
+			}
+
 		}
 	}
 
@@ -449,7 +464,7 @@ public class DistServiceImpl implements RestfulService, DistService {
 
 	private List<File> listFile(String dir) {
 		File file = getFile(dir);
-		if (file.exists()) {
+		if (null != file && file.exists()) {
 			return Arrays.asList(file.listFiles());
 		}
 		return Collections.emptyList();

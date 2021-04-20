@@ -113,15 +113,16 @@ public class MultipleUserProvider implements UserProvider, UserAuth, AccessLoade
 	}
 
 	@Override
-	public boolean check(String userName, String password) {
+	public User check(String userName, String password) {
 		for (UserProvider p : m_Providers) {
 			if (p instanceof UserAuth) {
-				if (((UserAuth) p).check(userName, password)) {
-					return true;
+				User user = ((UserAuth) p).check(userName, password);
+				if (null != user) {
+					return user;
 				}
 			}
 		}
-		return false;
+		return null ;
 	}
 
 	@Override

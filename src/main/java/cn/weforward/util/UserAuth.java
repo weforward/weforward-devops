@@ -10,6 +10,8 @@
  */
 package cn.weforward.util;
 
+import cn.weforward.protocol.ops.User;
+
 /**
  * 用户验证
  * 
@@ -24,5 +26,5 @@ public interface UserAuth {
 	 * @param password
 	 * @return
 	 */
-	boolean check(String userName, String password);
+	User check(String userName, String password);
 }

@@ -13,6 +13,7 @@ package cn.weforward.devops.user.impl;
 import cn.weforward.common.ResultPage;
 import cn.weforward.common.crypto.Base64;
 import cn.weforward.devops.user.OrganizationProvider;
+import cn.weforward.devops.user.OrganizationUser;
 import cn.weforward.devops.user.UserProvider;
 import cn.weforward.framework.ApiException;
 import cn.weforward.framework.support.MicroserviceUserService;
@@ -113,7 +114,7 @@ public class MicroserviceUserProvider extends MicroserviceUserService implements
 	}
 
 	@Override
-	public boolean check(String userName, String password) {
+	public OrganizationUser check(String userName, String password) {
 		ServiceInvoker invoker = getInvoker();
 		SimpleDtObject params = new SimpleDtObject();
 		params.put("user_name", SimpleDtString.valueOf(userName));
@@ -124,9 +125,9 @@ public class MicroserviceUserProvider extends MicroserviceUserService implements
 		}
 		FriendlyObject result = FriendlyObject.valueOf(response.getServiceResult());
 		if (0 != result.getInt("code", -1)) {
-			return false;
+			return (OrganizationUser) getUserByAccess(result.getString("access_id"));
 		}
-		return true;
+		return null;
 	}
 
 	/* 获取用户 */
