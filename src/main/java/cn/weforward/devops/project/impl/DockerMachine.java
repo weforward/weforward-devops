@@ -151,9 +151,13 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	/* 客户端 */
 	private DockerClient getClient() throws IOException {
 		if (null == m_Client) {
+			String url = m_Url;
+			if (StringUtil.isEmpty(url)) {
+				return null;
+			}
 			m_Client = new DockerClient(3, 1000, CaUtil.getDockerCertPath(), CaUtil.getDockerKeyPath(),
 					CaUtil.getDockerCaPath());
-			m_Client.setUrl(m_Url);
+			m_Client.setUrl(url);
 		}
 		return m_Client;
 	}
@@ -970,6 +974,9 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			client = getClient();
 		} catch (IOException e) {
 			throw new RuntimeException("获取客户端异常", e);
+		}
+		if (null == client) {
+			return;
 		}
 		String cname = project.getName();
 		String huburl;

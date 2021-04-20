@@ -179,71 +179,41 @@ public class DistServiceImpl implements RestfulService, DistService {
 	private void dist(String path, RestfulRequest request, RestfulResponse response) throws IOException {
 		path = path.substring("/dist/".length());
 		String arr[] = path.split("/");
-		if (arr.length == 2) {
-			String group = arr[0];
-			String project = arr[1];
-			if (StringUtil.eq(project, "__upload")) {
-				upload(path, group, request, response);
-				return;
-			}
+		PathView view = new PathView(arr);
+		String org = view.org;
+		String group = view.group;
+		String project = view.project;
+		if (StringUtil.eq(project, "__upload")) {
+			upload(path, org + File.separator + group + File.separator, request, response);
+			return;
+		}
+		String tag = view.tag;
+		String name = view.name;
+		String projectPath = org + File.separator + group + File.separator + project + File.separator;
+		if (StringUtil.isEmpty(tag)) {
 			JSONArray array = new JSONArray();
-			List<File> list = listFile(group + File.separator + project);
-			if (!list.isEmpty()) {
+			List<File> list = listFile(projectPath);
+			for (int i = 0; i < list.size(); i++) {
+				File f = list.get(i);
 				JSONObject o = new JSONObject();
-				File f = list.get(0);
 				o.put("name", f.getName());
-				long m = f.lastModified();
-				if (f.isDirectory()) {
-					File[] fs = f.listFiles();
-					if (null != fs) {
-						for (File child : fs) {
-							m = Math.max(m, child.lastModified());
-						}
-					}
-				}
-				o.put("time", TimeUtil.formatDateTime(new Date(m)));
+				o.put("time", TimeUtil.formatDateTime(new Date(getLastModified(f))));
 				array.put(o);
-				for (int i = 1; i < list.size(); i++) {
-					f = list.get(i);
-					o = new JSONObject();
-					o.put("name", f.getName());
-					m = f.lastModified();
-					if (f.isDirectory()) {
-						File[] fs = f.listFiles();
-						if (null != fs) {
-							for (File child : fs) {
-								m = Math.max(m, child.lastModified());
-							}
-						}
-					}
-					o.put("time", TimeUtil.formatDateTime(new Date(m)));
-					array.put(o);
-				}
 			}
 			response.setHeader("content-type", "application/json");
 			response.setStatus(RestfulResponse.STATUS_OK);
 			try (OutputStream out = response.openOutput()) {
 				out.write(array.toString().getBytes());
 			}
-		} else if (arr.length == 3) { // 如:"/java/crm/1.0";
-			String group = arr[0];
-			String project = arr[1];
-			String tag = arr[2];
+		} else if (StringUtil.isEmpty(name)) { // 如:"/java/crm/1.0";
 			JSONArray array = new JSONArray();
-			List<File> list = listFile(group + File.separator + project + File.separator + tag + File.separator);
-			if (!list.isEmpty()) {
+			List<File> list = listFile(projectPath + tag + File.separator);
+			for (int i = 0; i < list.size(); i++) {
+				File f = list.get(i);
 				JSONObject o = new JSONObject();
-				File f = list.get(0);
 				o.put("name", f.getName());
-				o.put("time", TimeUtil.formatDateTime(new Date(f.lastModified())));
+				o.put("time", TimeUtil.formatDateTime(new Date(getLastModified(f))));
 				array.put(o);
-				for (int i = 1; i < list.size(); i++) {
-					f = list.get(i);
-					o = new JSONObject();
-					o.put("name", f.getName());
-					o.put("time", TimeUtil.formatDateTime(new Date(f.lastModified())));
-					array.put(o);
-				}
 			}
 			response.setHeader("content-type", "application/json");
 			response.setStatus(RestfulResponse.STATUS_OK);
@@ -251,13 +221,9 @@ public class DistServiceImpl implements RestfulService, DistService {
 				out.write(array.toString().getBytes());
 			}
 			return;
-		} else if (arr.length == 4) {// 如:"/java/crm/1.0/crm.jar";
-			String group = arr[0];
-			String project = arr[1];
-			String tag = arr[2];
-			String name = arr[3];
+		} else {// 如:"/java/crm/1.0/crm.jar";
 			String method = request.getVerb();
-			String file = group + File.separator + project + File.separator + tag + File.separator + name;
+			String file = projectPath + tag + File.separator + name;
 			if ("get".equalsIgnoreCase(method)) {
 				File f = getFile(file);
 				outFile(f, response);
@@ -283,13 +249,23 @@ public class DistServiceImpl implements RestfulService, DistService {
 				response.openOutput().close();
 				return;
 			}
-		} else {
-			response.setStatus(RestfulResponse.STATUS_NOT_FOUND);
-			response.openOutput().close();
 		}
 	}
 
-	private void upload(String path, String group, RestfulRequest request, RestfulResponse response)
+	private static long getLastModified(File f) {
+		long m = 0;
+		if (f.isDirectory()) {
+			File[] fs = f.listFiles();
+			if (null != fs) {
+				for (File child : fs) {
+					m = Math.max(m, child.lastModified());
+				}
+			}
+		}
+		return m;
+	}
+
+	private void upload(String path, String basePath, RestfulRequest request, RestfulResponse response)
 			throws IOException {
 		String method = request.getVerb();
 		if ("get".equalsIgnoreCase(method)) {
@@ -323,8 +299,8 @@ public class DistServiceImpl implements RestfulService, DistService {
 					}
 					return;
 				}
-				String file = group + File.separator + checkPath(project.getString()) + File.separator
-						+ checkPath(tag.getString()) + File.separator + form.getFileName();
+				String file = basePath + checkPath(project.getString()) + File.separator + checkPath(tag.getString())
+						+ File.separator + form.getFileName();
 				File real = getFile(file);
 				File dir = real.getParentFile();
 				dir.mkdirs();
@@ -471,21 +447,48 @@ public class DistServiceImpl implements RestfulService, DistService {
 	}
 
 	private File getFile(String filepath) {
-		String org = null;// TODO
-		File file;
-		if (StringUtil.isEmpty(org)) {
-			file = new File(m_DistPath + filepath);
-		} else {
-			file = new File(m_DistPath + org + File.separator + filepath);
-		}
-		if (file.exists()) {
-			return file;
-		}
-		return null;
+		File file = new File(m_DistPath + filepath);
+		return file;
 	}
 
 	@Override
 	public void timeout(RestfulRequest request, RestfulResponse response) throws IOException {
 
+	}
+
+	static class PathView {
+		/** 组织 */
+		public String org;
+		/** 分组如 java/vue */
+		public String group;
+		/** 项目 */
+		public String project;
+		/** 标签 */
+		public String tag;
+		/** 名称 */
+		public String name;
+
+		public PathView(String[] arr) {
+			if (null == arr || arr.length == 0) {
+				return;
+			}
+			org = arr[0];
+			if (arr.length == 1) {
+				return;
+			}
+			group = arr[1];
+			if (arr.length == 2) {
+				return;
+			}
+			project = arr[2];
+			if (arr.length == 3) {
+				return;
+			}
+			tag = arr[3];
+			if (arr.length == 4) {
+				return;
+			}
+			name = arr[4];
+		}
 	}
 }
