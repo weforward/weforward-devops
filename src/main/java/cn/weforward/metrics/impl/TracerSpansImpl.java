@@ -18,6 +18,7 @@ import javax.annotation.Resource;
 
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.data.annotation.ResourceExt;
+import cn.weforward.devops.user.Organization;
 import cn.weforward.metrics.TracerSpan;
 import cn.weforward.metrics.TracerSpans;
 import cn.weforward.metrics.ext.SimpleTracerSpan;
@@ -35,18 +36,25 @@ public class TracerSpansImpl implements TracerSpans {
 	/** 追踪块集合 */
 	@ResourceExt(component = SimpleTracerSpan.class)
 	protected List<SimpleTracerSpan> m_Spans;
+	@Resource
+	protected String m_Organization;
 
 	protected TracerSpansImpl() {
 	}
 
-	public TracerSpansImpl(TracerSpan first) {
+	public TracerSpansImpl(TracerSpan first, Organization org) {
 		m_Id = first.getId();
+		m_Organization = org.getId();
 		m_Spans = new ArrayList<>();
 		add(first);
 	}
 
 	public String getId() {
 		return m_Id;
+	}
+
+	public String getOrganization() {
+		return m_Organization;
 	}
 
 	@Override

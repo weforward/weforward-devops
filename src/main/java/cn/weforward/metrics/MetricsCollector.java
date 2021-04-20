@@ -10,9 +10,11 @@
  */
 package cn.weforward.metrics;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+import cn.weforward.devops.user.Organization;
 import io.micrometer.core.instrument.Measurement;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Meter.Id;
@@ -30,8 +32,24 @@ public interface MetricsCollector {
 	MetricsCollector EMPTY = new MetricsCollector() {
 
 		@Override
-		public void collect(Id id, Iterable<Measurement> measure) {
+		public void collect(Organization org, Id id, Iterable<Measurement> measure) {
 
+		}
+
+		@Override
+		public OneMetrics getLately(Organization org, Id id, Statistic statistic) {
+			return null;
+		}
+
+		@Override
+		public ManyMetrics search(Organization org, Id id, String name, Tags exclude, Date begin, Date end,
+				int interval) {
+			return null;
+		}
+
+		@Override
+		public List<String> showTags(Organization org, Id id) {
+			return Collections.emptyList();
 		}
 
 		@Override
@@ -44,31 +62,25 @@ public interface MetricsCollector {
 	/**
 	 * 收集
 	 * 
+	 * @param org
 	 * @param id
 	 * @param measure
 	 */
-	void collect(Meter.Id id, Iterable<Measurement> measure);
-
-	/**
-	 * 清理数据
-	 * 
-	 * @param maxHistory 最大要保存的天数
-	 */
-	void clear(int maxHistory);
+	void collect(Organization org, Meter.Id id, Iterable<Measurement> measure);
 
 	/**
 	 * 获取最近一个指标(5分钟内)
 	 * 
+	 * @param org
 	 * @param id
 	 * @return
 	 */
-	default OneMetrics getLately(Meter.Id id, Statistic statistic) {
-		return null;
-	}
+	OneMetrics getLately(Organization org, Meter.Id id, Statistic statistic);
 
 	/**
 	 * 搜索指标
 	 * 
+	 * @param org
 	 * @param id
 	 * @param statistic
 	 * @param exclude
@@ -76,18 +88,22 @@ public interface MetricsCollector {
 	 * @param end
 	 * @return
 	 */
-	default ManyMetrics search(Meter.Id id, String name, Tags exclude, Date begin, Date end, int interval) {
-		return null;
-	}
+	ManyMetrics search(Organization org, Meter.Id id, String name, Tags exclude, Date begin, Date end, int interval);
 
 	/**
 	 * 显示标签
 	 * 
+	 * @param org
 	 * @param id
 	 * @return
 	 */
-	default List<String> showTags(Meter.Id id) {
-		return null;
-	}
+	List<String> showTags(Organization org, Meter.Id id);
+
+	/**
+	 * 清理数据
+	 * 
+	 * @param maxHistory 最大要保存的天数
+	 */
+	void clear(int maxHistory);
 
 }

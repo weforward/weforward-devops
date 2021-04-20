@@ -32,18 +32,18 @@ import cn.weforward.util.UserAuth;
  *
  */
 public class DistConfig {
+	/** 存储路径 */
+	@Value("${dist.distpath}")
+	protected String m_DistPath;
 	/** 允许访问的服务id */
-	@Value("${dist.allowIps}")
+	@Value("${dist.allowIps:}")
 	protected String m_AllowIps;
 	/** 可信的代理服务器id */
-	@Value("${dist.proxyIps}")
+	@Value("${dist.proxyIps:}")
 	protected String m_ProxyIps;
 	/** 是否验证用户 */
 	@Value("${dist.authuser}")
 	protected boolean m_AuthUser;
-	/** 存储路径 */
-	@Value("${dist.distpath}")
-	protected String m_DistPath;
 	/** 端口 */
 	@Value("${dist.port}")
 	protected int m_Port;

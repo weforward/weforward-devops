@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.List;
 
 import cn.weforward.common.ResultPage;
+import cn.weforward.devops.user.Organization;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Meter.Id;
 import io.micrometer.core.instrument.Tags;
@@ -28,22 +29,25 @@ public interface MetricsService {
 	/**
 	 * 显示标签
 	 * 
+	 * @param org 组织
 	 * @param id
 	 * @return
 	 */
-	List<String> showTags(Id id);
+	List<String> showTags(Organization org, Id id);
 
 	/**
 	 * 获取最近一个指标(5分钟内)
 	 * 
+	 * @param org 组织
 	 * @param id
 	 * @return
 	 */
-	OneMetrics getLately(Meter.Id id);
+	OneMetrics getLately(Organization org, Meter.Id id);
 
 	/**
 	 * 搜索指标
 	 * 
+	 * @param org      组织
 	 * @param id       统计项id
 	 * @param name     统计项名
 	 * @param exclude  排除的标签
@@ -52,11 +56,12 @@ public interface MetricsService {
 	 * @param interval 间隔，分钟
 	 * @return
 	 */
-	ManyMetrics search(Id id, String name, Tags exclude, Date begin, Date end, int interval);
+	ManyMetrics search(Organization org, Id id, String name, Tags exclude, Date begin, Date end, int interval);
 
 	/**
 	 * 搜索追踪树
 	 * 
+	 * @param org         组织
 	 * @param begin
 	 * @param end
 	 * @param serviceName
@@ -64,14 +69,16 @@ public interface MetricsService {
 	 * @param method
 	 * @return
 	 */
-	ResultPage<TracerSpanTree> searchTracer(Date begin, Date end, String serviceName, String serviceNo, String method);
+	ResultPage<TracerSpanTree> searchTracer(Organization org, Date begin, Date end, String serviceName,
+			String serviceNo, String method);
 
 	/**
 	 * 获取追踪树
 	 * 
-	 * @param id
+	 * @param org 组织
+	 * @param id  唯一id
 	 * @return
 	 */
-	TracerSpanTree getTracer(String id);
+	TracerSpanTree getTracer(Organization org, String id);
 
 }

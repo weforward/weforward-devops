@@ -13,11 +13,14 @@ package cn.weforward;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.Resource;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.common.util.ThreadPool;
+import cn.weforward.devops.user.OrganizationProvider;
 import cn.weforward.metrics.MetricsCollector;
 import cn.weforward.metrics.MetricsTracer;
 import cn.weforward.metrics.impl.InfluxdbMetricsCollector;
@@ -34,10 +37,10 @@ import cn.weforward.protocol.aio.netty.NettyHttpServer;
  */
 public class MetricsConfig {
 	/** 允许访问的服务id */
-	@Value("${metrics.allowIps}")
+	@Value("${metrics.allowIps:}")
 	protected String m_AllowIps;
 	/** 可信的代理服务器id */
-	@Value("${metrics.proxyIps}")
+	@Value("${metrics.proxyIps:}")
 	protected String m_ProxyIps;
 	/** 端口 */
 	@Value("${metrics.port}")
@@ -75,6 +78,9 @@ public class MetricsConfig {
 
 	@Value("${metrics.tracer.maxHistory}")
 	protected int m_TracerMaxHistory;
+	/** 组织供应商 */
+	@Resource
+	protected OrganizationProvider m_Provider;
 
 	@Bean
 	List<MetricsCollector> collectors() {
@@ -108,7 +114,7 @@ public class MetricsConfig {
 
 	@Bean
 	MetricsServiceImpl metricsService(List<MetricsCollector> collectors, List<MetricsTracer> tracers) {
-		MetricsServiceImpl s = new MetricsServiceImpl(m_CollectorMaxHistory, m_TracerMaxHistory);
+		MetricsServiceImpl s = new MetricsServiceImpl(m_CollectorMaxHistory, m_TracerMaxHistory, m_Provider);
 		s.setCollectors(collectors);
 		s.setTracers(tracers);
 		return s;

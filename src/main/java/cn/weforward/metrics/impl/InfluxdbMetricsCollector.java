@@ -31,6 +31,7 @@ import cn.weforward.common.util.NumberUtil;
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.common.util.TimeUtil;
 import cn.weforward.common.util.TransList;
+import cn.weforward.devops.user.Organization;
 import cn.weforward.metrics.ManyMetrics;
 import cn.weforward.metrics.MetricsCollector;
 import cn.weforward.metrics.OneMetrics;
@@ -90,10 +91,9 @@ public class InfluxdbMetricsCollector implements MetricsCollector {
 	}
 
 	@Override
-	public void collect(Id id, Iterable<Measurement> measure) {
+	public void collect(Organization org, Id id, Iterable<Measurement> measure) {
 		InfluxDB db = getDb();
-		Meter.Type type = id.getType();
-		String conventionName = escape(NamingConvention.snakeCase.name(id.getName(), type, id.getBaseUnit()));
+		String conventionName = getConventionName(org, id);
 		Point.Builder build = Point.measurement(conventionName);
 		// String help = StringUtil.toString(id.getDescription());
 		for (Tag t : id.getTags()) {
@@ -107,9 +107,8 @@ public class InfluxdbMetricsCollector implements MetricsCollector {
 	}
 
 	@Override
-	public OneMetrics getLately(Id id, Statistic statistic) {
-		Meter.Type type = id.getType();
-		String conventionName = escape(NamingConvention.snakeCase.name(id.getName(), type, id.getBaseUnit()));
+	public OneMetrics getLately(Organization org, Id id, Statistic statistic) {
+		String conventionName = getConventionName(org, id);
 		StringJoiner joiner = new StringJoiner(" AND ");
 		for (Tag t : id.getTags()) {
 			joiner.add("\"" + escape(t.getKey()) + "\"=~ /^" + escape(t.getValue()) + "$/");
@@ -129,9 +128,8 @@ public class InfluxdbMetricsCollector implements MetricsCollector {
 	}
 
 	@Override
-	public ManyMetrics search(Id id, String name, Tags exclude, Date begin, Date end, int interval) {
-		Meter.Type type = id.getType();
-		String conventionName = escape(NamingConvention.snakeCase.name(id.getName(), type, id.getBaseUnit()));
+	public ManyMetrics search(Organization org, Id id, String name, Tags exclude, Date begin, Date end, int interval) {
+		String conventionName = getConventionName(org, id);
 		StringJoiner joiner = new StringJoiner(" AND ");
 		for (Tag t : id.getTags()) {
 			joiner.add("\"" + escape(t.getKey()) + "\"=~ /^" + escape(t.getValue()) + "$/");
@@ -167,9 +165,10 @@ public class InfluxdbMetricsCollector implements MetricsCollector {
 	}
 
 	@Override
-	public List<String> showTags(Id id) {
+	public List<String> showTags(Organization org, Id id) {
 		Meter.Type type = id.getType();
-		String conventionName = escape(NamingConvention.snakeCase.name(id.getName(), type, id.getBaseUnit()));
+		String conventionName = org.getId() + "_"
+				+ escape(NamingConvention.snakeCase.name(id.getName(), type, id.getBaseUnit()));
 		StringJoiner joiner = new StringJoiner(" AND ");
 		for (Tag t : id.getTags()) {
 			joiner.add("key=\"" + escape(t.getKey()) + "\"");
@@ -211,6 +210,11 @@ public class InfluxdbMetricsCollector implements MetricsCollector {
 			}
 		}
 
+	}
+
+	private static String getConventionName(Organization org, Id id) {
+		return org.getId() + "_"
+				+ escape(NamingConvention.snakeCase.name(id.getName(), id.getType(), id.getBaseUnit()));
 	}
 
 	static final void appendEscape(char ch, StringBuilder sb) {

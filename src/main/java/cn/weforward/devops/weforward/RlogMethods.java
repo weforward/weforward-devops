@@ -17,10 +17,13 @@ import javax.annotation.Resource;
 
 import cn.weforward.common.ResultPage;
 import cn.weforward.common.util.StringUtil;
+import cn.weforward.devops.user.Organization;
+import cn.weforward.devops.user.OrganizationUser;
 import cn.weforward.devops.weforward.view.LogDetial;
 import cn.weforward.framework.ApiException;
 import cn.weforward.framework.WeforwardMethod;
 import cn.weforward.framework.WeforwardMethods;
+import cn.weforward.framework.WeforwardSession;
 import cn.weforward.protocol.Access;
 import cn.weforward.protocol.doc.annotation.DocAttribute;
 import cn.weforward.protocol.doc.annotation.DocMethod;
@@ -47,14 +50,14 @@ public class RlogMethods {
 	@WeforwardMethod
 	@DocMethod(description = "服务器列表")
 	public List<Server> servers() {
-		return m_RlogService.listServer();
+		return m_RlogService.listServer(getMyOrganization());
 	}
 
 	@WeforwardMethod
 	@DocMethod(description = "目录列表")
 	@DocParameter(@DocAttribute(name = "server", type = String.class, description = "服务器"))
 	public ResultPage<Directory> directorys(FriendlyObject params) {
-		return m_RlogService.listDirectory(params.getString("server"));
+		return m_RlogService.listDirectory(getMyOrganization(), params.getString("server"));
 	}
 
 	@WeforwardMethod
@@ -63,7 +66,8 @@ public class RlogMethods {
 			@DocAttribute(name = "directory", type = String.class, description = "目录") })
 	public ResultPage<Subject> subjects(FriendlyObject params) throws ApiException {
 		try {
-			return m_RlogService.listSubject(params.getString("server"), params.getString("directory"));
+			return m_RlogService.listSubject(getMyOrganization(), params.getString("server"),
+					params.getString("directory"));
 		} catch (IOException e) {
 			throw new ApiException(ApiException.CODE_INTERNAL_ERROR, e.getMessage(), e);
 		}
@@ -76,8 +80,8 @@ public class RlogMethods {
 			@DocAttribute(name = "subject", type = String.class, description = "主题") })
 	public Content content(FriendlyObject params) throws ApiException {
 		try {
-			return m_RlogService.getContent(params.getString("server"), params.getString("directory"),
-					params.getString("subject"));
+			return m_RlogService.getContent(getMyOrganization(), params.getString("server"),
+					params.getString("directory"), params.getString("subject"));
 		} catch (IOException e) {
 			throw new ApiException(ApiException.CODE_INTERNAL_ERROR, e.getMessage(), e);
 		}
@@ -94,7 +98,9 @@ public class RlogMethods {
 			String k = params.getString("keywords");
 			String op = params.getString("op");
 
-			LogPage logs = m_RlogService.getDetail(params.getString("server"), params.getString("directory"));
+			LogPage logs = m_RlogService.getDetail(getMyOrganization(),
+					params.getString("server"),
+					params.getString("directory"));
 			long p = params.getLong("page", logs.getPageCount() + 1);
 			LogDetial d = new LogDetial();
 			if ("first".equals(op)) {
@@ -134,4 +140,10 @@ public class RlogMethods {
 			throw new ApiException(ApiException.CODE_INTERNAL_ERROR, e.getMessage(), e);
 		}
 	}
+
+	private Organization getMyOrganization() {
+		OrganizationUser user = WeforwardSession.TLS.getUser();
+		return user.getOrganization();
+	}
+
 }

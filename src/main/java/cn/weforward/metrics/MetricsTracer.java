@@ -10,14 +10,12 @@
  */
 package cn.weforward.metrics;
 
-import java.io.IOException;
 import java.util.Date;
 
 import cn.weforward.common.ResultPage;
+import cn.weforward.common.util.ResultPageHelper;
+import cn.weforward.devops.user.Organization;
 import cn.weforward.trace.Trace;
-import io.micrometer.core.instrument.Measurement;
-import io.micrometer.core.instrument.Meter;
-import io.micrometer.core.instrument.Meter.Id;
 
 /**
  * 追踪者
@@ -30,17 +28,23 @@ public interface MetricsTracer {
 	MetricsTracer EMPTY = new MetricsTracer() {
 
 		@Override
-		public void collect(Id id, Iterable<Measurement> measure) {
+		public void collect(Organization org, Trace trace) {
 
+		}
+
+		@Override
+		public TracerSpanTree get(Organization org, String traceId) {
+			return null;
+		}
+
+		@Override
+		public ResultPage<TracerSpanTree> search(Organization org, Date begin, Date end, String serviceName,
+				String serviceNo, String method) {
+			return ResultPageHelper.empty();
 		}
 
 		@Override
 		public void clear(int maxHistory) {
-
-		}
-
-		@Override
-		public void collect(Trace trace) {
 
 		}
 
@@ -49,17 +53,33 @@ public interface MetricsTracer {
 	/**
 	 * 收集
 	 * 
-	 * @param id
-	 * @param measure
+	 * @param 组织
+	 * @param trace 追踪块
 	 */
-	void collect(Meter.Id id, Iterable<Measurement> measure);
+	void collect(Organization org, Trace trace);
 
 	/**
-	 * 收集
+	 * 查询追踪块
 	 * 
-	 * @param trace
+	 * @param 组织
+	 * @param traceId 追踪ID
+	 * @return
 	 */
-	void collect(Trace trace);
+	TracerSpanTree get(Organization org, String traceId);
+
+	/**
+	 * 查询追踪块
+	 * 
+	 * @param 组织
+	 * @param begin       开始时间
+	 * @param end         结束时间
+	 * @param serviceName 服务名
+	 * @param serviceNo   服务编号
+	 * @param method      方法名
+	 * @return
+	 */
+	ResultPage<TracerSpanTree> search(Organization org, Date begin, Date end, String serviceName, String serviceNo,
+			String method);
 
 	/**
 	 * 清理数据
@@ -67,32 +87,5 @@ public interface MetricsTracer {
 	 * @param maxHistory 最大要保存的天数
 	 */
 	void clear(int maxHistory);
-
-	/**
-	 * 查询追踪块
-	 * 
-	 * @param traceId
-	 * @return
-	 * @throws IOException
-	 */
-	default TracerSpanTree get(String traceId) {
-		return null;
-	}
-
-	/**
-	 * 查询 追踪块
-	 * 
-	 * @param begin
-	 * @param end
-	 * @param serviceName
-	 * @param serviceNo
-	 * @param method
-	 * @return
-	 * @throws IOException
-	 */
-	default ResultPage<TracerSpanTree> search(Date begin, Date end, String serviceName, String serviceNo,
-			String method) {
-		return null;
-	}
 
 }

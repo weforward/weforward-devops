@@ -9,11 +9,14 @@ import javax.annotation.Resource;
 import cn.weforward.common.util.Bytes;
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.common.util.TransList;
+import cn.weforward.devops.user.Organization;
+import cn.weforward.devops.user.OrganizationUser;
 import cn.weforward.devops.weforward.view.ByteMetrics;
 import cn.weforward.devops.weforward.view.NumberMetrics;
 import cn.weforward.framework.ApiException;
 import cn.weforward.framework.WeforwardMethod;
 import cn.weforward.framework.WeforwardMethods;
+import cn.weforward.framework.WeforwardSession;
 import cn.weforward.framework.doc.DocMethods;
 import cn.weforward.framework.util.ValidateUtil;
 import cn.weforward.metrics.ManyMetrics;
@@ -46,7 +49,7 @@ public class MetricsMethods {
 	public List<String> gwTags(FriendlyObject params) {
 		Tags tags = Tags.of("gatewayId", "*");
 		Meter.Id id = new Meter.Id(WeforwardMetrics.GATEWAY_UP_TIME, tags, null, null, Meter.Type.GAUGE);
-		return m_MetricsService.showTags(id);
+		return m_MetricsService.showTags(getMyOrganization(), id);
 	}
 
 	@DocMethod(description = "网关启动时间", index = 1)
@@ -276,7 +279,7 @@ public class MetricsMethods {
 	public List<String> msNameTags(FriendlyObject params) {
 		Tags tags = Tags.of("serviceName", "*");
 		Meter.Id id = new Meter.Id(WeforwardMetrics.UP_TIME, tags, null, null, Meter.Type.GAUGE);
-		return m_MetricsService.showTags(id);
+		return m_MetricsService.showTags(getMyOrganization(), id);
 	}
 
 	@DocMethod(description = "服务编号标签", index = 17)
@@ -284,7 +287,7 @@ public class MetricsMethods {
 	public List<String> msNoTags(FriendlyObject params) {
 		Tags tags = Tags.of("serviceNo", "*");
 		Meter.Id id = new Meter.Id(WeforwardMetrics.UP_TIME, tags, null, null, Meter.Type.GAUGE);
-		return m_MetricsService.showTags(id);
+		return m_MetricsService.showTags(getMyOrganization(), id);
 	}
 
 	@DocMethod(description = "服务启动时间", index = 18)
@@ -702,7 +705,7 @@ public class MetricsMethods {
 	public List<String> agentNameTags(FriendlyObject params) {
 		Tags tags = Tags.of("name", "*");
 		Meter.Id id = new Meter.Id("weforward.agent.uptime", tags, null, null, Meter.Type.GAUGE);
-		return m_MetricsService.showTags(id);
+		return m_MetricsService.showTags(getMyOrganization(), id);
 	}
 
 	@DocMethod(description = "容器路径标签", index = 41)
@@ -710,7 +713,7 @@ public class MetricsMethods {
 	public List<String> agentPathTags(FriendlyObject params) {
 		Tags tags = Tags.of("path", "*");
 		Meter.Id id = new Meter.Id("weforward.agent.disttotal", tags, null, null, Meter.Type.GAUGE);
-		return m_MetricsService.showTags(id);
+		return m_MetricsService.showTags(getMyOrganization(), id);
 	}
 
 	@DocMethod(description = "容器启动时间", index = 42)
@@ -1043,7 +1046,7 @@ public class MetricsMethods {
 	}
 
 	private Date getDate(Meter.Id mid) {
-		OneMetrics metrics = m_MetricsService.getLately(mid);
+		OneMetrics metrics = m_MetricsService.getLately(getMyOrganization(), mid);
 		if (null == metrics) {
 			return null;
 		}
@@ -1051,7 +1054,7 @@ public class MetricsMethods {
 	}
 
 	private String getTime(Meter.Id mid) {
-		OneMetrics metrics = m_MetricsService.getLately(mid);
+		OneMetrics metrics = m_MetricsService.getLately(getMyOrganization(), mid);
 		if (null == metrics) {
 			return null;
 		}
@@ -1075,7 +1078,7 @@ public class MetricsMethods {
 	}
 
 	private String getBytes(Meter.Id mid) {
-		OneMetrics metrics = m_MetricsService.getLately(mid);
+		OneMetrics metrics = m_MetricsService.getLately(getMyOrganization(), mid);
 		if (null == metrics) {
 			return null;
 		}
@@ -1085,7 +1088,7 @@ public class MetricsMethods {
 
 	private List<ByteMetrics> searchBytes(Meter.Id mid, String name, Tags exclude, Date begin, Date end, long value,
 			int interval) {
-		ManyMetrics m = m_MetricsService.search(mid, name, exclude, begin, end, interval);
+		ManyMetrics m = m_MetricsService.search(getMyOrganization(), mid, name, exclude, begin, end, interval);
 		if (null == m) {
 			return null;
 		}
@@ -1098,7 +1101,7 @@ public class MetricsMethods {
 
 	private List<NumberMetrics> searchNumbers(Meter.Id mid, String name, Tags exclude, Date begin, Date end,
 			int interval) {
-		ManyMetrics m = m_MetricsService.search(mid, name, exclude, begin, end, interval);
+		ManyMetrics m = m_MetricsService.search(getMyOrganization(), mid, name, exclude, begin, end, interval);
 		if (null == m) {
 			return null;
 		}
@@ -1107,5 +1110,10 @@ public class MetricsMethods {
 			return Collections.emptyList();
 		}
 		return TransList.valueOf(list, (e) -> new NumberMetrics(e.getTime(), ((long) (e.getValue()))));
+	}
+
+	private Organization getMyOrganization() {
+		OrganizationUser user = WeforwardSession.TLS.getUser();
+		return user.getOrganization();
 	}
 }

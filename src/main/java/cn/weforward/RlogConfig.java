@@ -10,11 +10,14 @@
  */
 package cn.weforward;
 
+import javax.annotation.Resource;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 
 import cn.weforward.common.util.ThreadPool;
 import cn.weforward.data.array.LabelSetFactory;
+import cn.weforward.devops.user.OrganizationProvider;
 import cn.weforward.protocol.aio.http.RestfulServer;
 import cn.weforward.protocol.aio.netty.NettyHttpServer;
 import cn.weforward.rlog.impl.RemoteLogServiceImpl;
@@ -27,28 +30,31 @@ import cn.weforward.util.FileClear;
  *
  */
 public class RlogConfig {
-	/** 允许访问的服务id */
-	@Value("${rlog.allowIps}")
-	protected String m_AllowIps;
-	/** 可信的代理服务器id */
-	@Value("${rlog.proxyIps}")
-	protected String m_ProxyIps;
 	/** 存储目录 */
 	@Value("${rlog.logpath}")
 	protected String m_LogPath;
 	/** 端口 */
 	@Value("${rlog.port}")
 	protected int m_Port;
+	/** 允许访问的服务id */
+	@Value("${rlog.allowIps:}")
+	protected String m_AllowIps;
+	/** 可信的代理服务器id */
+	@Value("${rlog.proxyIps:}")
+	protected String m_ProxyIps;
 	/** 最大请求包,单位m */
 	@Value("${dist.maxhttpsize:600}")
 	protected int m_MaxHttpSize;
 	/** 最大历史 */
 	@Value("${rlog.maxHistory}")
 	protected int m_MaxHistory;
+	/** 组织供应商 */
+	@Resource
+	protected OrganizationProvider m_Provider;
 
 	@Bean
 	RemoteLogServiceImpl rlogService(LabelSetFactory factory) {
-		RemoteLogServiceImpl s = new RemoteLogServiceImpl(factory, m_LogPath);
+		RemoteLogServiceImpl s = new RemoteLogServiceImpl(factory, m_LogPath, m_Provider);
 		return s;
 	}
 

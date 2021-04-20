@@ -102,7 +102,7 @@ public class DevopsConfig {
 	@Value("${dockerHubPassword}")
 	protected String m_DockerHubPassword;
 	/** dockerHub邮箱 */
-	@Value("${dockerHubEmail}")
+	@Value("${dockerHubEmail:}")
 	protected String m_DockerHubEmail;
 
 	@Value("${dist.username}")

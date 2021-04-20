@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.List;
 
 import cn.weforward.common.ResultPage;
+import cn.weforward.devops.user.Organization;
 
 /**
  * 远程服务实现
@@ -22,58 +23,57 @@ import cn.weforward.common.ResultPage;
  *
  */
 public interface RemoteLogService {
-	/**
-	 * 写日志
-	 * 
-	 * @param item
-	 */
-	void write(RemoteLogItem item);
 
 	/**
 	 * 获取服务器列表
 	 * 
+	 * @param org 组织
 	 * @return
 	 */
-	List<Server> listServer();
+	List<Server> listServer(Organization org);
 
 	/**
 	 * 获取服务器目录
 	 * 
+	 * @param org    组织
 	 * @param server
 	 * @return
 	 */
-	ResultPage<Directory> listDirectory(String server);
+	ResultPage<Directory> listDirectory(Organization org, String server);
 
 	/**
 	 * 获取主题列表
 	 * 
+	 * @param org       组织
 	 * @param server
 	 * @param directory
 	 * @return
 	 * @throws IOException
 	 */
-	ResultPage<Subject> listSubject(String server, String directory) throws IOException;
+	ResultPage<Subject> listSubject(Organization org, String server, String directory) throws IOException;
 
 	/**
 	 * 获取内容列表
 	 * 
+	 * @param org       组织
 	 * @param server
 	 * @param directory
 	 * @param subject
 	 * @return
 	 * @throws IOException
 	 */
-	Content getContent(String server, String directory, String subject) throws IOException;
+	Content getContent(Organization org, String server, String directory, String subject) throws IOException;
 
 	/**
 	 * 获取日志详情
 	 * 
+	 * @param org       组织
 	 * @param server
 	 * @param directory
 	 * @return
 	 * @throws IOException
 	 */
-	LogPage getDetail(String server, String directory) throws IOException;
+	LogPage getDetail(Organization org, String server, String directory) throws IOException;
 
 	/**
 	 * 日志项

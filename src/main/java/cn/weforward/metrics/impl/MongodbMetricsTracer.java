@@ -33,17 +33,15 @@ import cn.weforward.common.util.TimeUtil;
 import cn.weforward.data.mongodb.util.MongodbResultPage;
 import cn.weforward.data.mongodb.util.MongodbUtil;
 import cn.weforward.data.util.FieldMapper;
+import cn.weforward.devops.user.Organization;
 import cn.weforward.metrics.MetricsTracer;
 import cn.weforward.metrics.TracerSpanTree;
-import cn.weforward.metrics.WeforwardMetrics;
 import cn.weforward.metrics.ext.SimpleTracerSpan;
 import cn.weforward.protocol.datatype.DtObject;
 import cn.weforward.protocol.ext.ObjectMapper;
 import cn.weforward.protocol.support.datatype.SimpleDtObject;
 import cn.weforward.trace.Trace;
 import cn.weforward.trace.WeforwardTrace;
-import io.micrometer.core.instrument.Measurement;
-import io.micrometer.core.instrument.Meter.Id;
 
 /**
  * 基于mongodb的收集器
@@ -58,20 +56,22 @@ public class MongodbMetricsTracer implements MetricsTracer {
 	protected MongoDatabase m_Db;
 	protected MongoCollection<Document> m_Connection;
 
-	private static ObjectMapper<TracerSpansImpl> MAPPER = FieldMapper.valueOf(TracerSpansImpl.class);
+	private static  final ObjectMapper<TracerSpansImpl> MAPPER = FieldMapper.valueOf(TracerSpansImpl.class);
 
-	private static String ID = "_id";
+	private static final String ID = "_id";
 
-	private static String LASTMODIFIED = "_lastmodified";
+	private static final String LASTMODIFIED = "_lastmodified";
 
-	private static ReplaceOptions UPSERT_OPTIONS = new ReplaceOptions().upsert(true);
+	private static final String ORGANIZATION = "organization";
+
+	private static final ReplaceOptions UPSERT_OPTIONS = new ReplaceOptions().upsert(true);
 
 	public MongodbMetricsTracer(String url, String dbname) {
 		m_Db = MongodbUtil.create(url).getDatabase(dbname);
 	}
 
 	@Override
-	public void collect(Trace trace) {
+	public void collect(Organization org, Trace trace) {
 		String traceId = trace.getTraceId();
 		if (StringUtil.isEmpty(traceId)) {
 			return;
@@ -88,57 +88,15 @@ public class MongodbMetricsTracer implements MetricsTracer {
 		span.setDuration(duration);
 		synchronized (this) {
 			TracerSpansImpl spans;
-			spans = getSpans(traceId);
+			spans = getSpans(org, traceId);
 			if (null == spans) {
-				spans = new TracerSpansImpl(span);
+				spans = new TracerSpansImpl(span, org);
 			} else {
 				spans.add(span);
 			}
 			saveSpans(spans);
 		}
 
-	}
-
-	@Override
-	public void collect(Id id, Iterable<Measurement> measure) {
-		String traceId = id.getTag(WeforwardMetrics.LABEL_TRACE_ID);
-		if (StringUtil.isEmpty(traceId)) {
-			return;
-		}
-		long ts = 0;
-		long duration = 0;
-		for (Measurement m : measure) {
-			String name = m.getStatistic().name();
-			if (name.equals("VALUE")) {
-				ts = (long) (m.getValue() * 1000);
-			} else if (name.equals("TOTAL_TIME")) {
-				duration = (long) (m.getValue() * 1000);
-				try {
-					ts = Long.parseLong(id.getTag(WeforwardMetrics.LABEL_START_TIME_MS));
-				} catch (NumberFormatException e) {
-					ts = System.currentTimeMillis();
-				}
-
-			}
-		}
-		SimpleTracerSpan span = new SimpleTracerSpan(traceId, ts);
-		span.setName(id.getName());
-		span.setServiceNo(id.getTag(WeforwardMetrics.LABEL_SERVICE_NO));
-		span.setServiceName(id.getTag(WeforwardMetrics.LABEL_SERVICE_NAME));
-		span.setMethod(id.getTag(WeforwardMetrics.LABEL_METHOD_NAME));
-		span.setSpanId(id.getTag(WeforwardMetrics.LABEL_TRACE_SPAN_ID));
-		span.setParentId(id.getTag(WeforwardMetrics.LABEL_TRACE_PARENT_ID));
-		span.setDuration(duration);
-		synchronized (this) {
-			TracerSpansImpl spans;
-			spans = getSpans(traceId);
-			if (null == spans) {
-				spans = new TracerSpansImpl(span);
-			} else {
-				spans.add(span);
-			}
-			saveSpans(spans);
-		}
 	}
 
 	private MongoCollection<Document> getCollection() {
@@ -152,8 +110,9 @@ public class MongodbMetricsTracer implements MetricsTracer {
 		return m_Connection;
 	}
 
-	private TracerSpansImpl getSpans(String traceId) {
-		FindIterable<Document> it = getCollection().find(Filters.eq(ID, traceId));
+	private TracerSpansImpl getSpans(Organization org, String traceId) {
+		FindIterable<Document> it = getCollection()
+				.find(Filters.and(Filters.eq(ID, traceId), Filters.eq(ORGANIZATION, org.getId())));
 		Document doc = it.first();
 		if (null == doc) {
 			return null;
@@ -179,14 +138,15 @@ public class MongodbMetricsTracer implements MetricsTracer {
 	}
 
 	@Override
-	public TracerSpanTree get(String traceId) {
-		return TracerSpanTree.valueOf(getSpans(traceId));
+	public TracerSpanTree get(Organization org, String traceId) {
+		return TracerSpanTree.valueOf(getSpans(org, traceId));
 	}
 
 	@Override
-	public ResultPage<TracerSpanTree> search(Date begin, Date end, String serviceName, String serviceNo,
-			String method) {
+	public ResultPage<TracerSpanTree> search(Organization org, Date begin, Date end, String serviceName,
+			String serviceNo, String method) {
 		List<Bson> list = new ArrayList<>();
+		list.add(Filters.eq(ORGANIZATION, org.getId()));
 		list.add(Filters.gte(LASTMODIFIED, null == begin ? 0 : begin.getTime()));
 		list.add(Filters.lte(LASTMODIFIED, null == end ? System.currentTimeMillis() : end.getTime()));
 		if (!StringUtil.isEmpty(serviceName)) {
