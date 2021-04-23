@@ -33,8 +33,8 @@
 	</properties>
 
 	<scm>
-		<url>http://svn.navboy.com/omnigis/honinyun/weforward/trunk/weforward-devops/</url>
-		<tag>http://svn.navboy.com/omnigis/honinyun/weforward/tags/weforward-devops/</tag>
+		<url>https://codeup.aliyun.com/5faca4d322a8c7ff39350b14/weforward/weforward-devops.git</url>
+		<tag>https://codeup.aliyun.com/5faca4d322a8c7ff39350b14/weforward/weforward-devops.git</tag>
 	</scm>
 
 	<dependencies>
