@@ -118,6 +118,28 @@ public class InnerUserProvider implements UserProvider, UserAuth, AccessLoader {
 		return session.getUser();
 	}
 
+	@Override
+	public UserAccess refreshAccess(String accessId, String accessKey) {
+		SimpleUserAccess access = m_Access.get(accessId);
+		if (null == access) {
+			return null;
+		}
+		if ((!StringUtil.eq(accessKey, access.getAccessKeyBase64())
+				&& !StringUtil.eq(accessKey, access.getAccessKeyHex()))) {
+			return null;
+		}
+		SimpleSession session = access.getSession();
+		if (null == session) {
+			return null;
+		}
+		if (System.currentTimeMillis() > session.getExpireTime().getTime()) {
+			m_Access.remove(accessId);
+			return null;
+		}
+		session.refresh();
+		return access;
+	}
+
 	public ResultPage<User> searchUser(String keywords) {
 		return ResultPageHelper.singleton((User) m_Sa);
 	}
@@ -148,4 +170,5 @@ public class InnerUserProvider implements UserProvider, UserAuth, AccessLoader {
 		a.setValid(true);
 		return a;
 	}
+
 }

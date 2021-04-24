@@ -14,6 +14,7 @@ import cn.weforward.common.ResultPage;
 import cn.weforward.common.crypto.Base64;
 import cn.weforward.devops.user.OrganizationProvider;
 import cn.weforward.devops.user.OrganizationUser;
+import cn.weforward.devops.user.UserAccess;
 import cn.weforward.devops.user.UserProvider;
 import cn.weforward.framework.ApiException;
 import cn.weforward.framework.support.MicroserviceUserService;
@@ -81,16 +82,20 @@ public class MicroserviceUserProvider extends MicroserviceUserService implements
 		return access;
 	}
 
-	/* 获取内容 */
-	protected FriendlyObject getContentWithApiException(Response response) throws DataTypeCastExecption, ApiException {
-		if (response.getResponseCode() != 0) {
-			throw new RuntimeException("网关异常:" + response.getResponseCode() + "/" + response.getResponseMsg());
-		}
-		FriendlyObject result = FriendlyObject.valueOf(response.getServiceResult());
-		if (0 != result.getInt("code", -1)) {
-			throw new ApiException(result.getInt("code", -1), result.getString("msg"));
-		}
-		return result.getFriendlyObject("content");
+	@Override
+	public UserAccess refreshAccess(String accessId, String accessKey) throws ApiException {
+		ServiceInvoker invoker = getInvoker();
+		SimpleDtObject params = new SimpleDtObject();
+		params.put("accessId", SimpleDtString.valueOf(accessId));
+		params.put("accessKey", SimpleDtString.valueOf(accessKey));
+		Response response = invoker.invoke(genMethod("refreshAccess"), params);
+		FriendlyObject content = getContentWithApiException(response);
+		SimpleUserAccess access = new SimpleUserAccess();
+		access.setSessionId(content.getString("session_id"));
+		access.setAccessId(content.getString("access_id"));
+		access.setAccessKey(Base64.decode(content.getString("access_key")));
+		access.setAccessExpire(content.getLong("access_expire"));
+		return access;
 	}
 
 	@Override
@@ -139,6 +144,18 @@ public class MicroserviceUserProvider extends MicroserviceUserService implements
 				getRight(content.getFriendlyList("right")));
 		user.setOrganizationProvider(m_OrganizationProvider);
 		return user;
+	}
+
+	/* 获取内容 */
+	protected FriendlyObject getContentWithApiException(Response response) throws DataTypeCastExecption, ApiException {
+		if (response.getResponseCode() != 0) {
+			throw new RuntimeException("网关异常:" + response.getResponseCode() + "/" + response.getResponseMsg());
+		}
+		FriendlyObject result = FriendlyObject.valueOf(response.getServiceResult());
+		if (0 != result.getInt("code", -1)) {
+			throw new ApiException(result.getInt("code", -1), result.getString("msg"));
+		}
+		return result.getFriendlyObject("content");
 	}
 
 }

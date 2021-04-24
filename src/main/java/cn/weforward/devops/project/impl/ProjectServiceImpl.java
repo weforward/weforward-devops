@@ -223,7 +223,7 @@ public class ProjectServiceImpl extends ProjectDiImpl implements ProjectService 
 		if (null == r || !r.isMyOrganization(org)) {
 			return null;
 		}
-		return r.isRight(Running.RIGHT_SHOW) ? null : r;
+		return r.isRight(Running.RIGHT_SHOW) ? r : null;
 	}
 
 	@Override

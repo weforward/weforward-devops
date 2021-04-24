@@ -122,7 +122,7 @@ public class MultipleUserProvider implements UserProvider, UserAuth, AccessLoade
 				}
 			}
 		}
-		return null ;
+		return null;
 	}
 
 	@Override
@@ -136,6 +136,29 @@ public class MultipleUserProvider implements UserProvider, UserAuth, AccessLoade
 			}
 		}
 		return null;
+	}
+
+	@Override
+	public UserAccess refreshAccess(String accessId, String accessKey) throws ApiException {
+		Throwable error = null;
+		for (UserProvider p : m_Providers) {
+			try {
+				return p.refreshAccess(accessId, accessKey);
+			} catch (ApiException e) {
+				_Logger.warn("刷新异常", e);
+				error = e;
+			}
+		}
+		if (null == error) {
+			throw new NullPointerException("没有合适的用户供应商");
+		}
+		if (error instanceof ApiException) {
+			throw (ApiException) error;
+		} else if (error instanceof RuntimeException) {
+			throw (RuntimeException) error;
+		} else {
+			throw new RuntimeException(error);
+		}
 	}
 
 }

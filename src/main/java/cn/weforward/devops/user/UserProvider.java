@@ -73,4 +73,14 @@ public interface UserProvider extends UserService {
 	 */
 	ResultPage<User> searchUser(String keywords);
 
+	/**
+	 * 刷新凭证
+	 * 
+	 * @param accessId
+	 * @param accessKey
+	 * @return
+	 * @throws ApiException
+	 */
+	UserAccess refreshAccess(String accessId, String accessKey) throws ApiException;
+
 }

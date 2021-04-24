@@ -589,6 +589,9 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		DockerInspect inspert;
 		try {
 			DockerClient client = getClient();
+			if (null == client) {
+				return new VersionInfo("no version");
+			}
 			inspert = client.inspect(project.getName(), false);
 		} catch (DockerException | IOException e) {
 			return new VersionInfo("error:" + e.getMessage());

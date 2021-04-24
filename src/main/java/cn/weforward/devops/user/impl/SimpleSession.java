@@ -37,7 +37,7 @@ public class SimpleSession {
 	public SimpleSession(User user) {
 		m_User = user;
 		m_Id = genSessionId(user.getName());
-		m_Expire = new Date(System.currentTimeMillis() + TimeUtil.DAY_MILLS);
+		refresh();
 	}
 
 	/**
@@ -65,6 +65,10 @@ public class SimpleSession {
 
 	public User getUser() {
 		return m_User;
+	}
+
+	public void refresh() {
+		m_Expire = new Date(System.currentTimeMillis() + TimeUtil.DAY_MILLS);
 	}
 
 }

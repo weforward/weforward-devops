@@ -61,7 +61,14 @@ public class AuthMethods {
 	}
 
 	@WeforwardMethod
-	public void refreshAccess(FriendlyObject params) {
+	public DtBase refreshAccess(FriendlyObject params) throws ApiException {
+		String accessId = params.getString("access_id");
+		String accessKey = params.getString("access_key");
+		UserAccess access = m_UserProvider.refreshAccess(accessId, accessKey);
+		if (null == access) {
+			throw new ApiException(CommonServiceCodes.ILLEGAL_ARGUMENT.code, "刷新后access为空");
+		}
+		return toBase(access);
 	}
 
 }
