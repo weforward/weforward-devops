@@ -395,11 +395,7 @@ public class HomeMethods implements ResourceHandler {
 				}
 			}
 		}
-		Running p = m_ProjectService.getRunning(getMyOrganization(), params.getString("id"));
-		if (null == p) {
-			return null;
-		}
-		ForwardException.forwardToIfNeed(p);
+		Running p;
 		if ("add".equals(op)) {
 			Machine machine = m_ProjectService.getMachine(getMyOrganization(), params.getString("m"));
 			Project project = m_ProjectService.getProject(getMyOrganization(), params.getString("p"));
@@ -413,50 +409,57 @@ public class HomeMethods implements ResourceHandler {
 			if (null != props) {
 				p.setProps(props);
 			}
-		} else if ("update".equals(op)) {
-			Machine machine = m_ProjectService.getMachine(getMyOrganization(), params.getString("m"));
-			Project project = m_ProjectService.getProject(getMyOrganization(), params.getString("p"));
-			if (null != machine) {
-				p.setMachine(machine);
+		} else {
+			p = m_ProjectService.getRunning(getMyOrganization(), params.getString("id"));
+			if (null == p) {
+				return null;
 			}
-			if (null != project) {
-				p.setProject(project);
+			ForwardException.forwardToIfNeed(p);
+			if ("update".equals(op)) {
+				Machine machine = m_ProjectService.getMachine(getMyOrganization(), params.getString("m"));
+				Project project = m_ProjectService.getProject(getMyOrganization(), params.getString("p"));
+				if (null != machine) {
+					p.setMachine(machine);
+				}
+				if (null != project) {
+					p.setProject(project);
+				}
+				if (null != props) {
+					p.setProps(props);
+				}
+			} else if ("upgrade".equals(op)) {
+				p = m_ProjectService.getRunning(getMyOrganization(), params.getString("id"));
+				String version = params.getString("version");
+				OpTask task = p.upgrade(version, params.getString("note"));
+				return RunningOpView.valueOf(task);
+			} else if ("rollback".equals(op)) {
+				p = m_ProjectService.getRunning(getMyOrganization(), params.getString("id"));
+				OpTask task = p.rollback(params.getString("note"));
+				return RunningOpView.valueOf(task);
+			} else if ("restart".equals(op)) {
+				p = m_ProjectService.getRunning(getMyOrganization(), params.getString("id"));
+				OpTask task = p.restart(params.getString("note"));
+				return RunningOpView.valueOf(task);
+			} else if ("start".equals(op)) {
+				p = m_ProjectService.getRunning(getMyOrganization(), params.getString("id"));
+				OpTask task = p.start(params.getString("note"));
+				return RunningOpView.valueOf(task);
+			} else if ("stop".equals(op)) {
+				p = m_ProjectService.getRunning(getMyOrganization(), params.getString("id"));
+				OpTask task = p.stop(params.getString("note"));
+				return RunningOpView.valueOf(task);
+			} else if ("get_versions".equals(op)) {
+				p = m_ProjectService.getRunning(getMyOrganization(), params.getString("id"));
+				List<VersionInfo> versions = p.getUpgradeVersions();
+				List<String> array = new ArrayList<>();
+				for (VersionInfo v : versions) {
+					array.add(v.toString());
+				}
+				return new RunningOpView(p, array);
+			} else if ("delete".equals(op)) {
+				p = m_ProjectService.getRunning(getMyOrganization(), params.getString("id"));
+				m_ProjectService.delete(p);
 			}
-			if (null != props) {
-				p.setProps(props);
-			}
-		} else if ("upgrade".equals(op)) {
-			p = m_ProjectService.getRunning(getMyOrganization(), params.getString("id"));
-			String version = params.getString("version");
-			OpTask task = p.upgrade(version, params.getString("note"));
-			return RunningOpView.valueOf(task);
-		} else if ("rollback".equals(op)) {
-			p = m_ProjectService.getRunning(getMyOrganization(), params.getString("id"));
-			OpTask task = p.rollback(params.getString("note"));
-			return RunningOpView.valueOf(task);
-		} else if ("restart".equals(op)) {
-			p = m_ProjectService.getRunning(getMyOrganization(), params.getString("id"));
-			OpTask task = p.restart(params.getString("note"));
-			return RunningOpView.valueOf(task);
-		} else if ("start".equals(op)) {
-			p = m_ProjectService.getRunning(getMyOrganization(), params.getString("id"));
-			OpTask task = p.start(params.getString("note"));
-			return RunningOpView.valueOf(task);
-		} else if ("stop".equals(op)) {
-			p = m_ProjectService.getRunning(getMyOrganization(), params.getString("id"));
-			OpTask task = p.stop(params.getString("note"));
-			return RunningOpView.valueOf(task);
-		} else if ("get_versions".equals(op)) {
-			p = m_ProjectService.getRunning(getMyOrganization(), params.getString("id"));
-			List<VersionInfo> versions = p.getUpgradeVersions();
-			List<String> array = new ArrayList<>();
-			for (VersionInfo v : versions) {
-				array.add(v.toString());
-			}
-			return new RunningOpView(p, array);
-		} else if ("delete".equals(op)) {
-			p = m_ProjectService.getRunning(getMyOrganization(), params.getString("id"));
-			m_ProjectService.delete(p);
 		}
 		return new RunningOpView(p, Collections.emptyList());
 	}
