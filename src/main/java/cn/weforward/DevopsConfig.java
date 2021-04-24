@@ -133,6 +133,10 @@ public class DevopsConfig {
 	protected String m_UserId;
 	@Value("${weforward.user.name:admin}")
 	protected String m_UserName;
+	@Value("${weforward.user.password}")
+	protected String m_UserPassword;
+	@Value("${weforward.user.secretKey}")
+	protected String m_UserSecretKey;
 	@Value("${weforward.user.serviceName:}")
 	protected String m_UserServiceName;
 	@Value("${weforward.user.methodGroup:}")
@@ -203,8 +207,8 @@ public class DevopsConfig {
 		p.setRlogUrl(m_RlogUrl);
 		p.setApiUrl(m_ApiUrl);
 		p.setTaskExecutor(taskExecutor);
-		p.setDistUserName(m_DockerHubUsername);
-		p.setDistPassword(m_DockerHubPassword);
+		p.setDistUserName(m_UserId);
+		p.setDistPassword(m_UserPassword);
 		p.setUserService(userProvider);
 		p.setGroupService(groupProvider);
 		p.setOrganizationProvider(organizationProvider);
@@ -237,14 +241,14 @@ public class DevopsConfig {
 	}
 
 	@Bean(name = "userAuth")
-	UserProvider userProvider(@Value("${weforward.user.password}") String password,
-			@Value("${weforward.user.secretKey}") String secretKey, OrganizationProvider organizationProvider) {
+	UserProvider userProvider(OrganizationProvider organizationProvider) {
 		if (StringUtil.isEmpty(m_UserServiceName)) {
-			return new InnerUserProvider(m_UserId, m_UserName, password, secretKey, organizationProvider);
+			return new InnerUserProvider(m_UserId, m_UserName, m_UserPassword, m_UserSecretKey, organizationProvider);
 		}
 		MicroserviceUserProvider mp = new MicroserviceUserProvider(m_ApiUrl, m_ServiceAccessId, m_ServiceAccessKey,
 				m_UserServiceName, m_UserMethodGroup, organizationProvider);
-		InnerUserProvider ip = new InnerUserProvider(m_UserId, m_UserName, password, secretKey, organizationProvider);
+		InnerUserProvider ip = new InnerUserProvider(m_UserId, m_UserName, m_UserPassword, m_UserSecretKey,
+				organizationProvider);
 		return new MultipleUserProvider(mp, ip);
 	}
 
