@@ -41,9 +41,10 @@ import cn.weforward.metrics.MetricsService;
 import cn.weforward.metrics.MetricsTracer;
 import cn.weforward.metrics.OneMetrics;
 import cn.weforward.metrics.TracerSpanTree;
+import cn.weforward.protocol.ops.AccessExt;
 import cn.weforward.trace.CommonTrace;
 import cn.weforward.trace.Trace;
-import cn.weforward.util.HttpAuth;
+import cn.weforward.util.HttpAccessAuth;
 import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Measurement;
 import io.micrometer.core.instrument.Meter;
@@ -72,12 +73,12 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 	/** 清理线程 */
 	protected Thread m_Clears;
 	/** http验证 */
-	protected HttpAuth m_Auth;
+	protected HttpAccessAuth m_Auth;
 
 	protected OrganizationProvider m_Provider;
 
-	public MetricsServiceImpl(int collectorMaxHistory, int tracerMaxHistory, OrganizationProvider provider) {
-		m_Provider = provider;
+	public MetricsServiceImpl(int collectorMaxHistory, int tracerMaxHistory, HttpAccessAuth auth) {
+		m_Auth = auth;
 		m_CollectorMaxHistory = collectorMaxHistory;
 		m_TracerMaxHistory = tracerMaxHistory;
 		if (m_CollectorMaxHistory > 0 || m_TracerMaxHistory > 0) {
@@ -137,34 +138,21 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 		m_Tracers = FreezedList.freezed(tracers);
 	}
 
-	public void setAuth(HttpAuth auth) {
-		m_Auth = auth;
-	}
-
-	public HttpAuth getAuth() {
-		return m_Auth;
-	}
-
 	@Override
 	public void precheck(RestfulRequest request, RestfulResponse response) throws IOException {
-		HttpAuth auth = getAuth();
-		if (null != auth && null == auth.auth(request, response)) {
-			response.setStatus(RestfulResponse.STATUS_UNAUTHORIZED);
-			response.openOutput().close();
-			return;
-		}
 	}
 
 	@Override
 	public void service(RestfulRequest request, RestfulResponse response) throws IOException {
+		AccessExt access = m_Auth.auth(request, response);
 		String path = request.getUri();
 		if (path.length() > 1) {
 			if ("metrics".equals(path.substring(1, path.length() - 2))) {
-				metrics(request, response);
+				metrics(access, request, response);
 				return;
 			}
 			if ("trace".equals(path.substring(1, path.length() - 2))) {
-				trace(request, response);
+				trace(access, request, response);
 				return;
 			}
 		}
@@ -172,7 +160,7 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 		response.openOutput().close();
 	}
 
-	private void metrics(RestfulRequest request, RestfulResponse response) throws IOException {
+	private void metrics(AccessExt access, RestfulRequest request, RestfulResponse response) throws IOException {
 		String content = readRequest(request);
 		if (StringUtil.isEmpty(content)) {
 			response.setStatus(RestfulResponse.STATUS_OK);
@@ -184,11 +172,6 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 		JSONObject json = new JSONObject(content);
 		if (_Logger.isTraceEnabled()) {
 			_Logger.trace(json.toString());
-		}
-		String accessId = json.optString("accessId");
-		Organization org = m_Provider.getByAccessId(accessId);
-		if (null == org) {
-			return;
 		}
 		JSONObject id = json.getJSONObject("id");
 		String name = id.optString("name");
@@ -210,7 +193,7 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 		Meter.Id mid = new Meter.Id(name, Tags.concat(tagList), StringUtil.isEmpty(baseUnit) ? null : baseUnit,
 				StringUtil.isEmpty(description) ? null : description, Meter.Type.valueOf(type));
 		for (MetricsCollector collector : m_Collectors) {
-			collector.collect(org, mid, measureList);
+			collector.collect(access.getGroupId(), mid, measureList);
 		}
 		response.setStatus(RestfulResponse.STATUS_OK);
 		try (OutputStream out = response.openOutput()) {
@@ -219,7 +202,7 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 
 	}
 
-	private void trace(RestfulRequest request, RestfulResponse response) throws IOException {
+	private void trace(AccessExt access, RestfulRequest request, RestfulResponse response) throws IOException {
 		String content = readRequest(request);
 		if (StringUtil.isEmpty(content)) {
 			response.setStatus(RestfulResponse.STATUS_OK);
@@ -231,11 +214,6 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 		JSONObject json = new JSONObject(content);
 		if (_Logger.isTraceEnabled()) {
 			_Logger.trace(json.toString());
-		}
-		String accessId = json.optString("accessId");
-		Organization org = m_Provider.getByAccessId(accessId);
-		if (null == org) {
-			return;
 		}
 		String id = json.optString("id");
 		String parentId = json.optString("parentId");
@@ -250,7 +228,7 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 		}
 		Trace trace = CommonTrace.newTrace(id, parentId, traceId, timestamp, duration, kind, tagList);
 		for (MetricsTracer tracer : m_Tracers) {
-			tracer.collect(org, trace);
+			tracer.collect(access.getGroupId(), trace);
 		}
 		response.setStatus(RestfulResponse.STATUS_OK);
 		try (OutputStream out = response.openOutput()) {

@@ -56,7 +56,7 @@ public class MongodbMetricsTracer implements MetricsTracer {
 	protected MongoDatabase m_Db;
 	protected MongoCollection<Document> m_Connection;
 
-	private static  final ObjectMapper<TracerSpansImpl> MAPPER = FieldMapper.valueOf(TracerSpansImpl.class);
+	private static final ObjectMapper<TracerSpansImpl> MAPPER = FieldMapper.valueOf(TracerSpansImpl.class);
 
 	private static final String ID = "_id";
 
@@ -71,7 +71,7 @@ public class MongodbMetricsTracer implements MetricsTracer {
 	}
 
 	@Override
-	public void collect(Organization org, Trace trace) {
+	public void collect(String org, Trace trace) {
 		String traceId = trace.getTraceId();
 		if (StringUtil.isEmpty(traceId)) {
 			return;
@@ -110,9 +110,9 @@ public class MongodbMetricsTracer implements MetricsTracer {
 		return m_Connection;
 	}
 
-	private TracerSpansImpl getSpans(Organization org, String traceId) {
+	private TracerSpansImpl getSpans(String org, String traceId) {
 		FindIterable<Document> it = getCollection()
-				.find(Filters.and(Filters.eq(ID, traceId), Filters.eq(ORGANIZATION, org.getId())));
+				.find(Filters.and(Filters.eq(ID, traceId), Filters.eq(ORGANIZATION, org)));
 		Document doc = it.first();
 		if (null == doc) {
 			return null;
@@ -139,7 +139,7 @@ public class MongodbMetricsTracer implements MetricsTracer {
 
 	@Override
 	public TracerSpanTree get(Organization org, String traceId) {
-		return TracerSpanTree.valueOf(getSpans(org, traceId));
+		return TracerSpanTree.valueOf(getSpans(org.getId(), traceId));
 	}
 
 	@Override

@@ -51,13 +51,14 @@ import cn.weforward.data.array.LabelSet;
 import cn.weforward.data.array.LabelSetFactory;
 import cn.weforward.data.util.FieldMapper;
 import cn.weforward.devops.user.Organization;
-import cn.weforward.devops.user.OrganizationProvider;
+import cn.weforward.protocol.ops.AccessExt;
 import cn.weforward.rlog.Content;
 import cn.weforward.rlog.Directory;
 import cn.weforward.rlog.LogPage;
 import cn.weforward.rlog.RemoteLogService;
 import cn.weforward.rlog.Server;
 import cn.weforward.rlog.Subject;
+import cn.weforward.util.HttpAccessAuth;
 
 /**
  * 远程日志类
@@ -124,11 +125,11 @@ public class RemoteLogServiceImpl implements RestfulService, RemoteLogService, D
 	/** 日志路径 */
 	protected String m_LogPath;
 
-	OrganizationProvider m_Provider;
+	protected HttpAccessAuth m_Auth;
 
-	public RemoteLogServiceImpl(LabelSetFactory factory, String logpath, OrganizationProvider provider) {
+	public RemoteLogServiceImpl(LabelSetFactory factory, String logpath, HttpAccessAuth auth) {
 		m_Labels = factory.createLabelSet("rlogsubject", FieldMapper.valueOf(RemoteLogSubjectElement.class));
-		m_Provider = provider;
+		m_Auth = auth;
 		String path = FileUtil.getAbsolutePath(logpath, null);
 		m_LogPath = path.endsWith(File.separator) ? path : path + File.separator;
 		File logfile = new File(m_LogPath);
@@ -219,7 +220,7 @@ public class RemoteLogServiceImpl implements RestfulService, RemoteLogService, D
 		}
 	}
 
-	public void write(Organization org, RemoteLogItem item) {
+	public void write(String org, RemoteLogItem item) {
 		if (isTraceEnabled()) {
 			System.out.println(item.getServer() + "," + item.getSubject() + "," + item.getLevel());
 		}
@@ -240,7 +241,7 @@ public class RemoteLogServiceImpl implements RestfulService, RemoteLogService, D
 
 	@Override
 	public List<Server> listServer(Organization org) {
-		File file = findDir(getLogPath(org));
+		File file = findDir(getLogPath(org.getId()));
 		if (!file.exists()) {
 			return Collections.emptyList();
 		}
@@ -258,7 +259,7 @@ public class RemoteLogServiceImpl implements RestfulService, RemoteLogService, D
 
 	@Override
 	public ResultPage<Directory> listDirectory(Organization org, String server) {
-		File file = findDir(getLogPath(org) + File.separator + server);
+		File file = findDir(getLogPath(org.getId()) + File.separator + server);
 		if (!file.exists()) {
 			return ResultPageHelper.empty();
 		}
@@ -274,12 +275,12 @@ public class RemoteLogServiceImpl implements RestfulService, RemoteLogService, D
 			protected Directory trans(String v) {
 				String name = v.substring(0, v.length() - LOG_SUFFIX.length());
 				Label<? extends RemoteLogSubjectElement> l = m_Labels
-						.getLabel(RemoteLogSubjectElement.genLabel(org, server, name));
+						.getLabel(RemoteLogSubjectElement.genLabel(org.getId(), server, name));
 				int num = 0;
 				if (null != l) {
 					num = l.resultPage().getCount();
 				}
-				String path = getLogPath(org) + server + File.separator + v;
+				String path = getLogPath(org.getId()) + server + File.separator + v;
 				return new DirectoryVo(name, path, num);
 			}
 		};
@@ -288,7 +289,8 @@ public class RemoteLogServiceImpl implements RestfulService, RemoteLogService, D
 
 	@Override
 	public ResultPage<Subject> listSubject(Organization org, String server, String directory) throws IOException {
-		Label<RemoteLogSubjectElement> l = m_Labels.getLabel(RemoteLogSubjectElement.genLabel(org, server, directory));
+		Label<RemoteLogSubjectElement> l = m_Labels
+				.getLabel(RemoteLogSubjectElement.genLabel(org.getId(), server, directory));
 		if (null == l) {
 			return ResultPageHelper.empty();
 		}
@@ -305,13 +307,14 @@ public class RemoteLogServiceImpl implements RestfulService, RemoteLogService, D
 
 	@Override
 	public Content getContent(Organization org, String server, String directory, String subject) throws IOException {
-		RemoteLogSubjectElement ele = m_Labels.get(RemoteLogSubjectElement.genLabel(org, server, directory), subject);
+		RemoteLogSubjectElement ele = m_Labels.get(RemoteLogSubjectElement.genLabel(org.getId(), server, directory),
+				subject);
 		if (null == ele) {
 			return null;
 		}
 		long off = ele.getOffset();
 		int length = ele.getLength();
-		File file = sureDir(getLogPath(org) + File.separator + server);
+		File file = sureDir(getLogPath(org.getId()) + File.separator + server);
 		File log = new File(file, directory + LOG_SUFFIX);
 		if (!log.exists()) {
 			return null;
@@ -353,7 +356,7 @@ public class RemoteLogServiceImpl implements RestfulService, RemoteLogService, D
 		if (server.startsWith(".") || directory.startsWith(".")) {
 			throw new IllegalArgumentException("参数不合法");
 		}
-		String logname = getLogPath(org) + server + File.separator + directory + LOG_SUFFIX;
+		String logname = getLogPath(org.getId()) + server + File.separator + directory + LOG_SUFFIX;
 		return RlogResultImpl.valueOf(logname);
 	}
 
@@ -370,8 +373,8 @@ public class RemoteLogServiceImpl implements RestfulService, RemoteLogService, D
 		return new File(path);
 	}
 
-	public String getLogPath(Organization org) {
-		return m_LogPath + org.getId() + File.separator;
+	public String getLogPath(String org) {
+		return m_LogPath + org + File.separator;
 	}
 
 	static class Out {
@@ -465,6 +468,7 @@ public class RemoteLogServiceImpl implements RestfulService, RemoteLogService, D
 
 	@Override
 	public void service(RestfulRequest request, RestfulResponse response) throws IOException {
+		AccessExt access = m_Auth.auth(request, response);
 		String json = readRequest(request);
 		if (StringUtil.isEmpty(json)) {
 			response.setStatus(RestfulResponse.STATUS_OK);
@@ -484,16 +488,12 @@ public class RemoteLogServiceImpl implements RestfulService, RemoteLogService, D
 			return;
 		}
 		try {
-			Organization org = m_Provider.getByAccessId(mapped.optString("accessId"));
-			if (null == org) {
-				return;
-			}
 			RemoteLogItemImpl item = new RemoteLogItemImpl();
 			item.server = mapped.optString("server");
 			item.subject = mapped.optString("subject");
 			item.content = mapped.optString("content");
 			item.level = mapped.optString("level");
-			write(org, item);
+			write(access.getGroupId(), item);
 			response.setStatus(RestfulResponse.STATUS_OK);
 			try (OutputStream out = response.openOutput()) {
 				out.write("success".getBytes());

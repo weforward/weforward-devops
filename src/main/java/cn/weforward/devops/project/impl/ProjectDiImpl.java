@@ -49,6 +49,7 @@ import cn.weforward.devops.project.Project;
 import cn.weforward.devops.project.di.ProjectDi;
 import cn.weforward.devops.project.ext.AbstractMachine;
 import cn.weforward.devops.project.ext.AbstractProject;
+import cn.weforward.devops.user.AccessKeeper;
 import cn.weforward.devops.user.GroupProvider;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.devops.user.OrganizationProvider;
@@ -121,13 +122,11 @@ public abstract class ProjectDiImpl implements ProjectDi {
 	/** 用户组服务 */
 	protected GroupProvider m_GroupService;
 	/** 组织服务 */
-	protected OrganizationProvider m_OrganizationProvider;
+	protected OrganizationProvider m_OrganizationService;
+	/** 凭证管理 */
+	protected AccessKeeper m_AccessKeeper;
 	/** 任务执行器 */
 	protected TaskExecutor m_TaskExecutor;
-	/** dist帐号 */
-	protected String m_DistUserName;
-	/** dist密码 */
-	protected String m_DistPassword;
 	/** 系统配置 */
 	@Resource(name = "globalProperties")
 	protected Properties m_GlobalProperties;
@@ -159,6 +158,22 @@ public abstract class ProjectDiImpl implements ProjectDi {
 		m_PsSimpleRunning = m_PsFactroy.createPersister(SimpleRunning.class, this);
 		m_PsSimpleOpTask = m_PsFactroy.createPersister(SimpleOpTask.class, this);
 		m_DevopsLoggers = loggerFactory.createLogger("devops_log");
+	}
+
+	public void setUserService(UserProvider us) {
+		m_UserService = us;
+	}
+
+	public void setGroupService(GroupProvider gs) {
+		m_GroupService = gs;
+	}
+
+	public void setOrganizationService(OrganizationProvider os) {
+		m_OrganizationService = os;
+	}
+
+	public void setAccessKeeper(AccessKeeper keeper) {
+		m_AccessKeeper = keeper;
 	}
 
 	@Override
@@ -224,22 +239,6 @@ public abstract class ProjectDiImpl implements ProjectDi {
 		return m_PsFactroy.getPersister(clazz);
 	}
 
-	public void setUserService(UserProvider us) {
-		m_UserService = us;
-	}
-
-	public void setGroupService(GroupProvider gs) {
-		m_GroupService = gs;
-	}
-
-	public void setOrganizationProvider(OrganizationProvider os) {
-		m_OrganizationProvider = os;
-	}
-
-	public void setDockerHubUrl(String v) {
-		m_DockerHubUrl = v;
-	}
-
 	@Override
 	public ServiceProperties getServiceProperties(String label, String sid) {
 		ServiceProperties s = m_PropLabel.get(label, sid);
@@ -249,6 +248,10 @@ public abstract class ProjectDiImpl implements ProjectDi {
 	@Override
 	public void saveServiceProperties(String label, ServiceProperties ele) {
 		m_PropLabel.put(label, ele);
+	}
+
+	public void setDockerHubUrl(String v) {
+		m_DockerHubUrl = v;
 	}
 
 	@Override
@@ -389,7 +392,7 @@ public abstract class ProjectDiImpl implements ProjectDi {
 
 	@Override
 	public Organization getOrganization(String id) {
-		return m_OrganizationProvider.get(id);
+		return m_OrganizationService.get(id);
 	}
 
 	@Override
@@ -398,24 +401,6 @@ public abstract class ProjectDiImpl implements ProjectDi {
 				IndexKeywordHelper.newKeyword(org.getId()));
 		IndexResults irs = getProjectSearcher().search(ks, null);
 		return TransResultPage.valueOf(irs, (id) -> m_PsJavaProject.get(id.getKey()));
-	}
-
-	public void setDistUserName(String name) {
-		m_DistUserName = name;
-	}
-
-	@Override
-	public String getDistUserName() {
-		return StringUtil.toString(m_DistUserName);
-	}
-
-	public void setDistPassword(String password) {
-		m_DistPassword = password;
-	}
-
-	@Override
-	public String getDistPassword() {
-		return StringUtil.toString(m_DistPassword);
 	}
 
 	@Override

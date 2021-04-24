@@ -91,7 +91,7 @@ public class InfluxdbMetricsCollector implements MetricsCollector {
 	}
 
 	@Override
-	public void collect(Organization org, Id id, Iterable<Measurement> measure) {
+	public void collect(String org, Id id, Iterable<Measurement> measure) {
 		InfluxDB db = getDb();
 		String conventionName = getConventionName(org, id);
 		Point.Builder build = Point.measurement(conventionName);
@@ -108,7 +108,7 @@ public class InfluxdbMetricsCollector implements MetricsCollector {
 
 	@Override
 	public OneMetrics getLately(Organization org, Id id, Statistic statistic) {
-		String conventionName = getConventionName(org, id);
+		String conventionName = getConventionName(org.getId(), id);
 		StringJoiner joiner = new StringJoiner(" AND ");
 		for (Tag t : id.getTags()) {
 			joiner.add("\"" + escape(t.getKey()) + "\"=~ /^" + escape(t.getValue()) + "$/");
@@ -129,7 +129,7 @@ public class InfluxdbMetricsCollector implements MetricsCollector {
 
 	@Override
 	public ManyMetrics search(Organization org, Id id, String name, Tags exclude, Date begin, Date end, int interval) {
-		String conventionName = getConventionName(org, id);
+		String conventionName = getConventionName(org.getId(), id);
 		StringJoiner joiner = new StringJoiner(" AND ");
 		for (Tag t : id.getTags()) {
 			joiner.add("\"" + escape(t.getKey()) + "\"=~ /^" + escape(t.getValue()) + "$/");
@@ -212,9 +212,8 @@ public class InfluxdbMetricsCollector implements MetricsCollector {
 
 	}
 
-	private static String getConventionName(Organization org, Id id) {
-		return org.getId() + "_"
-				+ escape(NamingConvention.snakeCase.name(id.getName(), id.getType(), id.getBaseUnit()));
+	private static String getConventionName(String org, Id id) {
+		return org + "_" + escape(NamingConvention.snakeCase.name(id.getName(), id.getType(), id.getBaseUnit()));
 	}
 
 	static final void appendEscape(char ch, StringBuilder sb) {

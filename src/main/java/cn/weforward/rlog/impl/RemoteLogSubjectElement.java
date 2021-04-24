@@ -15,7 +15,6 @@ import java.util.Date;
 import javax.annotation.Resource;
 
 import cn.weforward.data.array.LabelElement;
-import cn.weforward.devops.user.Organization;
 
 /***
  * 远程日志主题
@@ -88,8 +87,8 @@ public class RemoteLogSubjectElement implements LabelElement {
 	 * @param directory
 	 * @return
 	 */
-	public static String genLabel(Organization org, String server, String directory) {
-		return org.getId() + "-" + server + "-" + directory;
+	public static String genLabel(String org, String server, String directory) {
+		return org + "-" + server + "-" + directory;
 	}
 
 }

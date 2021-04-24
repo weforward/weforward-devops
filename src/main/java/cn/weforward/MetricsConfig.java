@@ -20,7 +20,7 @@ import org.springframework.context.annotation.Bean;
 
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.common.util.ThreadPool;
-import cn.weforward.devops.user.OrganizationProvider;
+import cn.weforward.devops.user.AccessKeeper;
 import cn.weforward.metrics.MetricsCollector;
 import cn.weforward.metrics.MetricsTracer;
 import cn.weforward.metrics.impl.InfluxdbMetricsCollector;
@@ -28,6 +28,7 @@ import cn.weforward.metrics.impl.MetricsServiceImpl;
 import cn.weforward.metrics.impl.MongodbMetricsTracer;
 import cn.weforward.protocol.aio.http.RestfulServer;
 import cn.weforward.protocol.aio.netty.NettyHttpServer;
+import cn.weforward.util.HttpAccessAuth;
 
 /**
  * 指标配置
@@ -36,12 +37,6 @@ import cn.weforward.protocol.aio.netty.NettyHttpServer;
  *
  */
 public class MetricsConfig {
-	/** 允许访问的服务id */
-	@Value("${metrics.allowIps:}")
-	protected String m_AllowIps;
-	/** 可信的代理服务器id */
-	@Value("${metrics.proxyIps:}")
-	protected String m_ProxyIps;
 	/** 端口 */
 	@Value("${metrics.port}")
 	protected int m_Port;
@@ -78,9 +73,9 @@ public class MetricsConfig {
 
 	@Value("${metrics.tracer.maxHistory}")
 	protected int m_TracerMaxHistory;
-	/** 组织供应商 */
+	/** 凭证管理者 */
 	@Resource
-	protected OrganizationProvider m_Provider;
+	protected AccessKeeper m_AccessKeeper;
 
 	@Bean
 	List<MetricsCollector> collectors() {
@@ -114,7 +109,8 @@ public class MetricsConfig {
 
 	@Bean
 	MetricsServiceImpl metricsService(List<MetricsCollector> collectors, List<MetricsTracer> tracers) {
-		MetricsServiceImpl s = new MetricsServiceImpl(m_CollectorMaxHistory, m_TracerMaxHistory, m_Provider);
+		MetricsServiceImpl s = new MetricsServiceImpl(m_CollectorMaxHistory, m_TracerMaxHistory,
+				new HttpAccessAuth(m_AccessKeeper));
 		s.setCollectors(collectors);
 		s.setTracers(tracers);
 		return s;
@@ -130,8 +126,6 @@ public class MetricsConfig {
 		s.setGzipEnabled(true);
 		s.setIdle(10);
 		RestfulServer server = new RestfulServer(metricsService);
-		server.setAllowIps(m_AllowIps);
-		server.setProxyIps(m_ProxyIps);
 		ThreadPool mypool = new ThreadPool(threadPool);
 		mypool.setName("metrics");
 		server.setExecutor(mypool);

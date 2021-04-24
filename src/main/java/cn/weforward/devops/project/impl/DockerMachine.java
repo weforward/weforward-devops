@@ -142,8 +142,8 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	private HttpInvoker getInvoker() throws IOException {
 		if (null == m_Invoker) {
 			m_Invoker = new HttpInvoker(1, 3);
-			m_Invoker.setUserName(getBusinessDi().getDistUserName());
-			m_Invoker.setPassword(getBusinessDi().getDistPassword());
+			// m_Invoker.setUserName(getBusinessDi().getDistUserName());
+			// m_Invoker.setPassword(getBusinessDi().getDistPassword());
 		}
 		return m_Invoker;
 	}
@@ -194,7 +194,8 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	}
 
 	/* 构建 */
-	public boolean build(Project project, String revieson, OpProcessor processor) {
+	public boolean build(Running running, String revieson, OpProcessor processor) {
+		Project project = running.getProject();
 		Date time = VersionInfo.getTime(revieson);
 		String version = VersionInfo.getVersion(revieson);
 		String cname = project.getName();
@@ -222,8 +223,8 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		Map<String, String> buildargs = new HashMap<>();
 		buildargs.put("JAR_FILE", getBusinessDi().getDockerDistUrl() + cname + "/" + version + "/" + cname + ".jar?t="
 				+ (time.getTime() / 1000) + " -O " + cname + ".jar");
-		buildargs.put("USER", getBusinessDi().getDistUserName());
-		buildargs.put("PASS", getBusinessDi().getDistPassword());
+		buildargs.put("USER", getAccessId(running));
+		buildargs.put("PASS", getAccessKey(running));
 		buildargs.put("RES_URL", resurl);
 		Map<String, String> labels = new HashMap<>();
 		labels.put("revieson", revieson);
@@ -244,6 +245,16 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		}
 		processor(processor, "构建完成");
 		return true;
+	}
+
+	private String getAccessKey(Running running) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private String getAccessId(Running running) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
@@ -310,7 +321,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 				}
 			}
 			if (needbuild) {
-				if (!build(running.getProject(), revieson, processor)) {
+				if (!build(running, revieson, processor)) {
 					return;
 				}
 			}

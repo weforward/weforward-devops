@@ -58,8 +58,4 @@ public class InnerOrganizationProvider implements OrganizationProvider {
 		return null;
 	}
 
-	@Override
-	public Organization getByAccessId(String accessId) {
-		return m_Org;
-	}
 }

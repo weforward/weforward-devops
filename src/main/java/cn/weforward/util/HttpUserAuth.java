@@ -8,40 +8,31 @@
  * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * 
  */
-package cn.weforward.devops.user;
+package cn.weforward.util;
 
-import cn.weforward.common.ResultPage;
 import cn.weforward.protocol.ops.User;
 
 /**
- * 组织提供者
+ * http 用户验证器
  * 
  * @author daibo
  *
  */
-public interface OrganizationProvider {
-	/**
-	 * 搜索组织
-	 * 
-	 * @param keywords
-	 * @return
-	 */
-	ResultPage<Organization> search(String keywords);
+public class HttpUserAuth extends AbstractHttpAuth<User> {
 
-	/**
-	 * 获取组织
-	 * 
-	 * @param id
-	 * @return
-	 */
-	Organization get(String id);
+	protected UserAuth m_UserAuth;
 
-	/**
-	 * 获取组织
-	 * 
-	 * @param id
-	 * @return
-	 */
-	Organization get(User user);
+	public HttpUserAuth(UserAuth auth) {
+		m_UserAuth = auth;
+	}
+
+	@Override
+	public User check(String userName, String password) {
+		User user = m_UserAuth.checkPassword(userName, password);
+		if (null != user) {
+			return user;
+		}
+		return null;
+	}
 
 }

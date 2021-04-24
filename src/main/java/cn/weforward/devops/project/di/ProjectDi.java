@@ -127,20 +127,6 @@ public interface ProjectDi extends BusinessDi {
 	void saveServiceProperties(String label, ServiceProperties ele);
 
 	/**
-	 * 发布中心的帐号
-	 * 
-	 * @return
-	 */
-	String getDistUserName();
-
-	/**
-	 * 发布中心的密码
-	 * 
-	 * @return
-	 */
-	String getDistPassword();
-
-	/**
 	 * 获取机器
 	 * 
 	 * @param id

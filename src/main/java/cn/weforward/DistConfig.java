@@ -17,12 +17,14 @@ import org.springframework.context.annotation.Bean;
 
 import cn.weforward.common.restful.RestfulService;
 import cn.weforward.common.util.ThreadPool;
+import cn.weforward.devops.user.AccessKeeper;
 import cn.weforward.dist.DistService;
 import cn.weforward.dist.impl.DistServiceImpl;
 import cn.weforward.protocol.aio.http.RestfulServer;
 import cn.weforward.protocol.aio.netty.NettyHttpServer;
 import cn.weforward.util.FileClear;
-import cn.weforward.util.HttpAuth;
+import cn.weforward.util.HttpAccessAuth;
+import cn.weforward.util.HttpUserAuth;
 import cn.weforward.util.UserAuth;
 
 /**
@@ -35,15 +37,6 @@ public class DistConfig {
 	/** 存储路径 */
 	@Value("${dist.distpath}")
 	protected String m_DistPath;
-	/** 允许访问的服务id */
-	@Value("${dist.allowIps:}")
-	protected String m_AllowIps;
-	/** 可信的代理服务器id */
-	@Value("${dist.proxyIps:}")
-	protected String m_ProxyIps;
-	/** 是否验证用户 */
-	@Value("${dist.authuser}")
-	protected boolean m_AuthUser;
 	/** 端口 */
 	@Value("${dist.port}")
 	protected int m_Port;
@@ -56,13 +49,15 @@ public class DistConfig {
 	/** 用户验证器 */
 	@Resource
 	protected UserAuth m_UserAuth;
+	/** 凭证验证器 */
+	@Resource
+	protected AccessKeeper m_AccessKeeper;
 
 	@Bean
 	DistService distService() {
 		DistServiceImpl s = new DistServiceImpl(m_DistPath);
-		if (m_AuthUser) {
-			s.setAuth(new HttpAuth(m_UserAuth));
-		}
+		s.setUserAuth(new HttpUserAuth(m_UserAuth));
+		s.setAccessAuth(new HttpAccessAuth(m_AccessKeeper));
 		return s;
 	}
 
@@ -79,8 +74,6 @@ public class DistConfig {
 		s.setMaxHttpSize(m_MaxHttpSize * 1024 * 1024);
 		s.setIdle(1800);
 		RestfulServer server = new RestfulServer(distService);
-		server.setAllowIps(m_AllowIps);
-		server.setProxyIps(m_ProxyIps);
 		server.setQuickHandle(true);
 		ThreadPool mypool = new ThreadPool(threadPool);
 		mypool.setName("dist");

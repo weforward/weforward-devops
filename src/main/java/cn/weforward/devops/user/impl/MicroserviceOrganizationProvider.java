@@ -148,12 +148,6 @@ public class MicroserviceOrganizationProvider implements OrganizationProvider {
 		return toOrg(response);
 	}
 
-	@Override
-	public Organization getByAccessId(String accessId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 	private Organization toOrg(Response response) {
 		GatewayException.checkException(response);
 		FriendlyObject result = FriendlyObject.valueOf(response.getServiceResult());

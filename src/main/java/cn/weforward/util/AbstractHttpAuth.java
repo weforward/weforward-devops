@@ -16,33 +16,23 @@ import cn.weforward.common.crypto.Base64;
 import cn.weforward.common.restful.RestfulRequest;
 import cn.weforward.common.restful.RestfulResponse;
 import cn.weforward.common.util.StringUtil;
-import cn.weforward.protocol.Access;
-import cn.weforward.protocol.ops.User;
 
 /**
- * http验证器
+ * 抽象http验证器
  * 
  * @author daibo
  *
+ * @param <E>
  */
-public class HttpAuth {
-
-	protected UserAuth m_UserAuth;
+public abstract class AbstractHttpAuth<E> {
 
 	protected String m_AuthorizationType = "Basic";
-
-	public HttpAuth(UserAuth auth) {
-		m_UserAuth = auth;
-	}
 
 	public void setAuthorizationType(String type) {
 		m_AuthorizationType = type;
 	}
 
-	public User auth(RestfulRequest request, RestfulResponse response) throws IOException {
-		if (null == m_UserAuth) {
-			return null;
-		}
+	public E auth(RestfulRequest request, RestfulResponse response) throws IOException {
 		String authorization = request.getHeaders().get("Authorization");
 		if (StringUtil.eq(m_AuthorizationType, "Basic")) {
 			if (!StringUtil.isEmpty(authorization)) {
@@ -53,9 +43,9 @@ public class HttpAuth {
 					int index = code.indexOf(":");
 					String username = code.substring(0, index);
 					String password = code.substring(index + 1);
-					User user = check(username, password);
-					if (null != user) {
-						return user;
+					E e = check(username, password);
+					if (null != e) {
+						return e;
 					}
 				}
 			}
@@ -99,16 +89,5 @@ public class HttpAuth {
 
 	}
 
-	public User check(String userName, String password) {
-		User user = m_UserAuth.checkPassword(userName, password);
-		if (null != user) {
-			return user;
-		}
-		return null;
-	}
-
-	protected boolean isMayAccessId(String id) {
-		return null != id && id.startsWith(Access.KIND_USER + Access.SPEARATOR_STR);
-	}
-
+	protected abstract E check(String username, String password);
 }

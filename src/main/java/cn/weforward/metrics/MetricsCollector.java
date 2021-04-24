@@ -32,7 +32,7 @@ public interface MetricsCollector {
 	MetricsCollector EMPTY = new MetricsCollector() {
 
 		@Override
-		public void collect(Organization org, Id id, Iterable<Measurement> measure) {
+		public void collect(String org, Id id, Iterable<Measurement> measure) {
 
 		}
 
@@ -66,7 +66,7 @@ public interface MetricsCollector {
 	 * @param id
 	 * @param measure
 	 */
-	void collect(Organization org, Meter.Id id, Iterable<Measurement> measure);
+	void collect(String org, Meter.Id id, Iterable<Measurement> measure);
 
 	/**
 	 * 获取最近一个指标(5分钟内)

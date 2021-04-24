@@ -8,40 +8,28 @@
  * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * 
  */
-package cn.weforward.devops.user;
+package cn.weforward.util;
 
-import cn.weforward.common.ResultPage;
-import cn.weforward.protocol.ops.User;
+import cn.weforward.devops.user.AccessKeeper;
+import cn.weforward.protocol.ops.AccessExt;
 
 /**
- * 组织提供者
+ * http凭证验证
  * 
  * @author daibo
  *
  */
-public interface OrganizationProvider {
-	/**
-	 * 搜索组织
-	 * 
-	 * @param keywords
-	 * @return
-	 */
-	ResultPage<Organization> search(String keywords);
+public class HttpAccessAuth extends AbstractHttpAuth<AccessExt> {
 
-	/**
-	 * 获取组织
-	 * 
-	 * @param id
-	 * @return
-	 */
-	Organization get(String id);
+	protected AccessKeeper m_AccessKeeper;
 
-	/**
-	 * 获取组织
-	 * 
-	 * @param id
-	 * @return
-	 */
-	Organization get(User user);
+	public HttpAccessAuth(AccessKeeper accessKeeper) {
+		m_AccessKeeper = accessKeeper;
+	}
+
+	@Override
+	protected AccessExt check(String username, String password) {
+		return m_AccessKeeper.checkAccess(username, password);
+	}
 
 }

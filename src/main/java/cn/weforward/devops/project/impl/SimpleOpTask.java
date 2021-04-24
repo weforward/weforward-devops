@@ -141,7 +141,7 @@ public class SimpleOpTask extends AbstractPersistent<ProjectDi> implements OpTas
 			break;
 		case ACTION_BUILD:
 			if (m instanceof DockerMachine) {
-				((DockerMachine) m).build(getRunning().getProject(), m_Version, this);
+				((DockerMachine) m).build(getRunning(), m_Version, this);
 			}
 			break;
 		case ACTION_PRINT_STACK:

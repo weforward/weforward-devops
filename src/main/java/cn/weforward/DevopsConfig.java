@@ -33,6 +33,7 @@ import cn.weforward.devops.alarm.AlarmService;
 import cn.weforward.devops.alarm.impl.AlarmServiceImpl;
 import cn.weforward.devops.project.ProjectService;
 import cn.weforward.devops.project.impl.ProjectServiceImpl;
+import cn.weforward.devops.user.AccessKeeper;
 import cn.weforward.devops.user.GroupProvider;
 import cn.weforward.devops.user.OrganizationProvider;
 import cn.weforward.devops.user.UserProvider;
@@ -189,11 +190,16 @@ public class DevopsConfig {
 		return new HttpKeeper(m_ApiUrl, m_KeeperAccessId, m_KeeperAccessKey);
 	}
 
+	@Bean
+	AccessKeeper accessKeeper(Keeper keeper) {
+		return null == keeper ? null : new AccessKeeper(keeper);
+	}
+
 	/** 项目服务 */
 	@Bean
 	ProjectService projectService(PersisterFactory persisterFactroy, SearcherFactory searcherFactory,
 			LabelSetFactory labelSetFactory, BusinessLoggerFactory loggerFactory, UserProvider userProvider,
-			GroupProvider groupProvider, OrganizationProvider organizationProvider) {
+			GroupProvider groupProvider, OrganizationProvider organizationProvider, AccessKeeper accessKeeper) {
 		ProjectServiceImpl p = new ProjectServiceImpl(persisterFactroy, searcherFactory, labelSetFactory,
 				loggerFactory);
 		p.setDockerHubUrl(m_DockerHubUrl);
@@ -207,11 +213,10 @@ public class DevopsConfig {
 		p.setRlogUrl(m_RlogUrl);
 		p.setApiUrl(m_ApiUrl);
 		p.setTaskExecutor(taskExecutor);
-		p.setDistUserName(m_UserId);
-		p.setDistPassword(m_UserPassword);
 		p.setUserService(userProvider);
 		p.setGroupService(groupProvider);
-		p.setOrganizationProvider(organizationProvider);
+		p.setOrganizationService(organizationProvider);
+		p.setAccessKeeper(accessKeeper);
 		return p;
 	}
 

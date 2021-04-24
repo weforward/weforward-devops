@@ -32,6 +32,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.weforward.common.DictionaryExt;
 import cn.weforward.common.restful.RestfulRequest;
 import cn.weforward.common.restful.RestfulResponse;
 import cn.weforward.common.restful.RestfulService;
@@ -44,9 +45,11 @@ import cn.weforward.devops.user.OrganizationUser;
 import cn.weforward.dist.DistService;
 import cn.weforward.framework.web.upload.WebFileUpload;
 import cn.weforward.framework.web.upload.WebForm;
+import cn.weforward.protocol.ops.AccessExt;
 import cn.weforward.protocol.ops.User;
 import cn.weforward.util.CaUtil;
-import cn.weforward.util.HttpAuth;
+import cn.weforward.util.HttpAccessAuth;
+import cn.weforward.util.HttpUserAuth;
 
 /**
  * 发布服务
@@ -58,10 +61,14 @@ public class DistServiceImpl implements RestfulService, DistService {
 	/** 日志 */
 	final static Logger _Logger = LoggerFactory.getLogger(DistServiceImpl.class);
 
+	final static String DEVOPS_USER_AGENT = "devops";
+
 	/** 发布包路径 */
 	protected String m_DistPath;
-	/** http验证 */
-	protected HttpAuth m_Auth;
+
+	protected HttpUserAuth m_UserAuth;
+
+	protected HttpAccessAuth m_AccessAuth;
 	/** 临时文件计数 */
 	private AtomicLong m_TempCount = new AtomicLong();
 
@@ -75,12 +82,12 @@ public class DistServiceImpl implements RestfulService, DistService {
 
 	}
 
-	public void setAuth(HttpAuth auth) {
-		m_Auth = auth;
+	public void setUserAuth(HttpUserAuth auth) {
+		m_UserAuth = auth;
 	}
 
-	public HttpAuth getAuth() {
-		return m_Auth;
+	public void setAccessAuth(HttpAccessAuth auth) {
+		m_AccessAuth = auth;
 	}
 
 	@Override
@@ -110,16 +117,16 @@ public class DistServiceImpl implements RestfulService, DistService {
 		if (!path.startsWith("/dist/")) {
 			return;// 只验证dist
 		}
-		HttpAuth auth = getAuth();
-		if (null != auth) {
-			User user = auth.auth(request, response);
-			if (null == user) {
-				response.setStatus(RestfulResponse.STATUS_UNAUTHORIZED);
-				response.openOutput().close();
-				return;
-			}
-			if (user instanceof OrganizationUser) {
-				// 检查组织用户的权限
+		String userAgent = getHeader(request, "User-Agent");
+		if (userAgent.startsWith(DEVOPS_USER_AGENT)) {
+			HttpAccessAuth auth = m_AccessAuth;
+			if (null != auth) {
+				AccessExt user = auth.auth(request, response);
+				if (null == user) {
+					response.setStatus(RestfulResponse.STATUS_UNAUTHORIZED);
+					response.openOutput().close();
+					return;
+				}
 				String org = ((OrganizationUser) user).getOrganization().getId();
 				if (!path.startsWith("/dist/" + org + "/")) {
 					response.setStatus(RestfulResponse.STATUS_FORBIDDEN);
@@ -128,7 +135,34 @@ public class DistServiceImpl implements RestfulService, DistService {
 				}
 			}
 
+		} else {
+			HttpUserAuth auth = m_UserAuth;
+			if (null != auth) {
+				User user = auth.auth(request, response);
+				if (null == user) {
+					response.setStatus(RestfulResponse.STATUS_UNAUTHORIZED);
+					response.openOutput().close();
+					return;
+				}
+				if (user instanceof OrganizationUser) {
+					// 检查组织用户的权限
+					String org = ((OrganizationUser) user).getOrganization().getId();
+					if (!path.startsWith("/dist/" + org + "/")) {
+						response.setStatus(RestfulResponse.STATUS_FORBIDDEN);
+						response.openOutput().close();
+						return;
+					}
+				}
+			}
 		}
+	}
+
+	private String getHeader(RestfulRequest request, String key) {
+		DictionaryExt<String, String> headers = request.getHeaders();
+		if (null == headers) {
+			return "";
+		}
+		return StringUtil.toString(headers.get(key));
 	}
 
 	@Override

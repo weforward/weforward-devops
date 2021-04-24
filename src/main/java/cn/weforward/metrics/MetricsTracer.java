@@ -28,7 +28,7 @@ public interface MetricsTracer {
 	MetricsTracer EMPTY = new MetricsTracer() {
 
 		@Override
-		public void collect(Organization org, Trace trace) {
+		public void collect(String org, Trace trace) {
 
 		}
 
@@ -53,10 +53,10 @@ public interface MetricsTracer {
 	/**
 	 * 收集
 	 * 
-	 * @param 组织
+	 * @param org   组织
 	 * @param trace 追踪块
 	 */
-	void collect(Organization org, Trace trace);
+	void collect(String org, Trace trace);
 
 	/**
 	 * 查询追踪块

@@ -17,11 +17,12 @@ import org.springframework.context.annotation.Bean;
 
 import cn.weforward.common.util.ThreadPool;
 import cn.weforward.data.array.LabelSetFactory;
-import cn.weforward.devops.user.OrganizationProvider;
+import cn.weforward.devops.user.AccessKeeper;
 import cn.weforward.protocol.aio.http.RestfulServer;
 import cn.weforward.protocol.aio.netty.NettyHttpServer;
 import cn.weforward.rlog.impl.RemoteLogServiceImpl;
 import cn.weforward.util.FileClear;
+import cn.weforward.util.HttpAccessAuth;
 
 /**
  * 远程日志配置
@@ -36,25 +37,19 @@ public class RlogConfig {
 	/** 端口 */
 	@Value("${rlog.port}")
 	protected int m_Port;
-	/** 允许访问的服务id */
-	@Value("${rlog.allowIps:}")
-	protected String m_AllowIps;
-	/** 可信的代理服务器id */
-	@Value("${rlog.proxyIps:}")
-	protected String m_ProxyIps;
 	/** 最大请求包,单位m */
 	@Value("${dist.maxhttpsize:600}")
 	protected int m_MaxHttpSize;
 	/** 最大历史 */
 	@Value("${rlog.maxHistory}")
 	protected int m_MaxHistory;
-	/** 组织供应商 */
+	/** 凭证管理者 */
 	@Resource
-	protected OrganizationProvider m_Provider;
+	protected AccessKeeper m_AccessKeeper;
 
 	@Bean
 	RemoteLogServiceImpl rlogService(LabelSetFactory factory) {
-		RemoteLogServiceImpl s = new RemoteLogServiceImpl(factory, m_LogPath, m_Provider);
+		RemoteLogServiceImpl s = new RemoteLogServiceImpl(factory, m_LogPath, new HttpAccessAuth(m_AccessKeeper));
 		return s;
 	}
 
@@ -71,8 +66,6 @@ public class RlogConfig {
 		s.setMaxHttpSize(m_MaxHttpSize * 1024 * 1024);
 		s.setIdle(10);
 		RestfulServer server = new RestfulServer(rlogService);
-		server.setAllowIps(m_AllowIps);
-		server.setProxyIps(m_ProxyIps);
 		ThreadPool mypool = new ThreadPool(threadPool);
 		mypool.setName("rlog");
 		server.setExecutor(mypool);

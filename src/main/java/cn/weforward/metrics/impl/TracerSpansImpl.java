@@ -18,7 +18,6 @@ import javax.annotation.Resource;
 
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.data.annotation.ResourceExt;
-import cn.weforward.devops.user.Organization;
 import cn.weforward.metrics.TracerSpan;
 import cn.weforward.metrics.TracerSpans;
 import cn.weforward.metrics.ext.SimpleTracerSpan;
@@ -42,9 +41,9 @@ public class TracerSpansImpl implements TracerSpans {
 	protected TracerSpansImpl() {
 	}
 
-	public TracerSpansImpl(TracerSpan first, Organization org) {
+	public TracerSpansImpl(TracerSpan first, String org) {
 		m_Id = first.getId();
-		m_Organization = org.getId();
+		m_Organization = org;
 		m_Spans = new ArrayList<>();
 		add(first);
 	}

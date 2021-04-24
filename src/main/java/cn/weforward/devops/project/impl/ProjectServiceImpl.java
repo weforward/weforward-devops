@@ -42,6 +42,7 @@ import cn.weforward.devops.project.ext.AbstractMachine;
 import cn.weforward.devops.project.ext.AbstractProject;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.framework.ApiException;
+import cn.weforward.protocol.ops.AccessExt;
 import cn.weforward.util.OperatorUtils;
 
 /**
@@ -296,12 +297,12 @@ public class ProjectServiceImpl extends ProjectDiImpl implements ProjectService 
 	@Override
 	public List<Prop> loadServiceProperties(String projectName, String serverId, String accessId) {
 		List<Prop> list = new ArrayList<>();
-		Organization org = m_OrganizationProvider.getByAccessId(accessId);
-		if (null == org) {
+		AccessExt access = m_AccessKeeper.getAccess(accessId);
+		if (null == access) {
 			_Logger.warn(projectName + "," + serverId + "," + accessId + "未找到对应组织返回空集!");
 			return Collections.emptyList();
 		}
-		String label = SimpleRunning.genLabel(org.getId(), projectName);
+		String label = SimpleRunning.genLabel(access.getGroupId(), projectName);
 		ServiceProperties runningProps = getServiceProperties(label, serverId);
 		boolean matchAccess = false;
 		for (Prop p : runningProps.getProps()) {

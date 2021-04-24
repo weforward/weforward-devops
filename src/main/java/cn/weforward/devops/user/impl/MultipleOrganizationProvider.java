@@ -70,15 +70,4 @@ public class MultipleOrganizationProvider implements OrganizationProvider {
 		return null;
 	}
 
-	@Override
-	public Organization getByAccessId(String accessId) {
-		for (OrganizationProvider p : m_Providers) {
-			Organization org = p.get(accessId);
-			if (null != org) {
-				return org;
-			}
-		}
-		return null;
-	}
-
 }
