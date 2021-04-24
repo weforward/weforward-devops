@@ -16,6 +16,7 @@ import cn.weforward.common.crypto.Base64;
 import cn.weforward.common.restful.RestfulRequest;
 import cn.weforward.common.restful.RestfulResponse;
 import cn.weforward.common.util.StringUtil;
+import cn.weforward.protocol.Access;
 import cn.weforward.protocol.ops.User;
 
 /**
@@ -52,7 +53,7 @@ public class HttpAuth {
 					int index = code.indexOf(":");
 					String username = code.substring(0, index);
 					String password = code.substring(index + 1);
-					User user = m_UserAuth.check(username, password);
+					User user = check(username, password);
 					if (null != user) {
 						return user;
 					}
@@ -96,6 +97,24 @@ public class HttpAuth {
 		throw new UnsupportedOperationException("不支持的验证方法" + m_AuthorizationType);
 //		}
 
+	}
+
+	public User check(String userName, String password) {
+		if (isMayAccessId(userName)) {
+			User user = m_UserAuth.checkAccess(userName, password);
+			if (null != user) {
+				return user;
+			}
+		}
+		User user = m_UserAuth.checkPassword(userName, password);
+		if (null != user) {
+			return user;
+		}
+		return null;
+	}
+
+	private boolean isMayAccessId(String id) {
+		return null != id && id.startsWith(Access.KIND_USER + Access.SPEARATOR_STR);
 	}
 
 }

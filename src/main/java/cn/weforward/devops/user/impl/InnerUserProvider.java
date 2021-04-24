@@ -20,7 +20,6 @@ import cn.weforward.common.crypto.Hex;
 import cn.weforward.common.util.ResultPageHelper;
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.devops.user.OrganizationProvider;
-import cn.weforward.devops.user.OrganizationUser;
 import cn.weforward.devops.user.UserAccess;
 import cn.weforward.devops.user.UserProvider;
 import cn.weforward.framework.ApiException;
@@ -140,16 +139,38 @@ public class InnerUserProvider implements UserProvider, UserAuth, AccessLoader {
 		return access;
 	}
 
+	@Override
 	public ResultPage<User> searchUser(String keywords) {
 		return ResultPageHelper.singleton((User) m_Sa);
 	}
 
 	@Override
-	public OrganizationUser check(String userName, String password) {
+	public User checkPassword(String userName, String password) {
 		if (StringUtil.eq(m_Sa.getName(), userName) && m_Sa.checkPassword(password)) {
 			return m_Sa;
 		}
 		return null;
+	}
+
+	@Override
+	public User checkAccess(String accessId, String accessKey) {
+		SimpleUserAccess access = m_Access.get(accessId);
+		if (null == access) {
+			return null;
+		}
+		if ((!StringUtil.eq(accessKey, access.getAccessKeyBase64())
+				&& !StringUtil.eq(accessKey, access.getAccessKeyHex()))) {
+			return null;
+		}
+		SimpleSession session = access.getSession();
+		if (null == session) {
+			return null;
+		}
+		if (System.currentTimeMillis() > session.getExpireTime().getTime()) {
+			m_Access.remove(accessId);
+			return null;
+		}
+		return session.getUser();
 	}
 
 	/* 开始凭证对象 */
@@ -164,7 +185,6 @@ public class InnerUserProvider implements UserProvider, UserAuth, AccessLoader {
 			return null;
 		}
 		cn.weforward.protocol.support.SimpleAccess a = new cn.weforward.protocol.support.SimpleAccess();
-
 		a.setAccessId(access.getAccessId());
 		a.setAccessKey(access.getAccessKey());
 		a.setValid(true);

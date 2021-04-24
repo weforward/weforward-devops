@@ -119,20 +119,29 @@ public class MicroserviceUserProvider extends MicroserviceUserService implements
 	}
 
 	@Override
-	public OrganizationUser check(String userName, String password) {
+	public User checkPassword(String userName, String password) {
 		ServiceInvoker invoker = getInvoker();
 		SimpleDtObject params = new SimpleDtObject();
 		params.put("user_name", SimpleDtString.valueOf(userName));
 		params.put("password", SimpleDtString.valueOf(password));
-		Response response = invoker.invoke(genMethod("login"), params);
+		Response response = invoker.invoke(genMethod("checkPassword"), params);
 		if (response.getResponseCode() != 0) {
 			throw new RuntimeException("网关异常:" + response.getResponseCode() + "/" + response.getResponseMsg());
 		}
-		FriendlyObject result = FriendlyObject.valueOf(response.getServiceResult());
-		if (0 != result.getInt("code", -1)) {
-			return (OrganizationUser) getUserByAccess(result.getString("access_id"));
+		return getUser(getContent(response));
+	}
+
+	@Override
+	public User checkAccess(String accessId, String accessKey) {
+		ServiceInvoker invoker = getInvoker();
+		SimpleDtObject params = new SimpleDtObject();
+		params.put("accessId", SimpleDtString.valueOf(accessId));
+		params.put("accessKey", SimpleDtString.valueOf(accessKey));
+		Response response = invoker.invoke(genMethod("checkAccess"), params);
+		if (response.getResponseCode() != 0) {
+			throw new RuntimeException("网关异常:" + response.getResponseCode() + "/" + response.getResponseMsg());
 		}
-		return null;
+		return (OrganizationUser) getUser(getContent(response));
 	}
 
 	/* 获取用户 */

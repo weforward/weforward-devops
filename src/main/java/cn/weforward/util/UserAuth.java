@@ -20,11 +20,20 @@ import cn.weforward.protocol.ops.User;
  */
 public interface UserAuth {
 	/**
-	 * 检查用户
+	 * 检查密码
 	 * 
 	 * @param userName
 	 * @param password
 	 * @return
 	 */
-	User check(String userName, String password);
+	User checkPassword(String userName, String password);
+
+	/**
+	 * 检查凭证
+	 * 
+	 * @param userName
+	 * @param password
+	 * @return
+	 */
+	User checkAccess(String userName, String password);
 }

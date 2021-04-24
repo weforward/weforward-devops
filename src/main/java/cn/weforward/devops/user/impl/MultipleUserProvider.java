@@ -113,16 +113,29 @@ public class MultipleUserProvider implements UserProvider, UserAuth, AccessLoade
 	}
 
 	@Override
-	public User check(String userName, String password) {
+	public UserAccess refreshAccess(String accessId, String accessKey) throws ApiException {
+		Throwable error = null;
 		for (UserProvider p : m_Providers) {
-			if (p instanceof UserAuth) {
-				User user = ((UserAuth) p).check(userName, password);
-				if (null != user) {
-					return user;
+			try {
+				UserAccess access = p.refreshAccess(accessId, accessKey);
+				if (null != access) {
+					return access;
 				}
+			} catch (ApiException e) {
+				_Logger.warn("刷新异常", e);
+				error = e;
 			}
 		}
-		return null;
+		if (null == error) {
+			return null;// 没有合适的access
+		}
+		if (error instanceof ApiException) {
+			throw (ApiException) error;
+		} else if (error instanceof RuntimeException) {
+			throw (RuntimeException) error;
+		} else {
+			throw new RuntimeException(error);
+		}
 	}
 
 	@Override
@@ -139,26 +152,29 @@ public class MultipleUserProvider implements UserProvider, UserAuth, AccessLoade
 	}
 
 	@Override
-	public UserAccess refreshAccess(String accessId, String accessKey) throws ApiException {
-		Throwable error = null;
+	public User checkPassword(String userName, String password) {
 		for (UserProvider p : m_Providers) {
-			try {
-				return p.refreshAccess(accessId, accessKey);
-			} catch (ApiException e) {
-				_Logger.warn("刷新异常", e);
-				error = e;
+			if (p instanceof UserAuth) {
+				User user = ((UserAuth) p).checkPassword(userName, password);
+				if (null != user) {
+					return user;
+				}
 			}
 		}
-		if (null == error) {
-			throw new NullPointerException("没有合适的用户供应商");
+		return null;
+	}
+
+	@Override
+	public User checkAccess(String userName, String password) {
+		for (UserProvider p : m_Providers) {
+			if (p instanceof UserAuth) {
+				User user = ((UserAuth) p).checkAccess(userName, password);
+				if (null != user) {
+					return user;
+				}
+			}
 		}
-		if (error instanceof ApiException) {
-			throw (ApiException) error;
-		} else if (error instanceof RuntimeException) {
-			throw (RuntimeException) error;
-		} else {
-			throw new RuntimeException(error);
-		}
+		return null;
 	}
 
 }
