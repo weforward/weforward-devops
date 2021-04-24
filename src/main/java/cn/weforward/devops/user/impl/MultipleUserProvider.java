@@ -164,17 +164,17 @@ public class MultipleUserProvider implements UserProvider, UserAuth, AccessLoade
 		return null;
 	}
 
-	@Override
-	public User checkAccess(String userName, String password) {
-		for (UserProvider p : m_Providers) {
-			if (p instanceof UserAuth) {
-				User user = ((UserAuth) p).checkAccess(userName, password);
-				if (null != user) {
-					return user;
-				}
-			}
-		}
-		return null;
-	}
+// @Override
+//	public User checkAccess(String userName, String password) {
+//		for (UserProvider p : m_Providers) {
+//			if (p instanceof UserAuth) {
+//				User user = ((UserAuth) p).checkAccess(userName, password);
+//				if (null != user) {
+//					return user;
+//				}
+//			}
+//		}
+//		return null;
+//	}
 
 }

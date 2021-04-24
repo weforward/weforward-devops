@@ -28,12 +28,12 @@ public interface UserAuth {
 	 */
 	User checkPassword(String userName, String password);
 
-	/**
-	 * 检查凭证
-	 * 
-	 * @param userName
-	 * @param password
-	 * @return
-	 */
-	User checkAccess(String userName, String password);
+//	/**
+//	 * 检查凭证
+//	 * 
+//	 * @param userName
+//	 * @param password
+//	 * @return
+//	 */
+//	User checkAccess(String userName, String password);
 }

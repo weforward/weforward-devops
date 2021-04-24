@@ -100,12 +100,6 @@ public class HttpAuth {
 	}
 
 	public User check(String userName, String password) {
-		if (isMayAccessId(userName)) {
-			User user = m_UserAuth.checkAccess(userName, password);
-			if (null != user) {
-				return user;
-			}
-		}
 		User user = m_UserAuth.checkPassword(userName, password);
 		if (null != user) {
 			return user;
@@ -113,7 +107,7 @@ public class HttpAuth {
 		return null;
 	}
 
-	private boolean isMayAccessId(String id) {
+	protected boolean isMayAccessId(String id) {
 		return null != id && id.startsWith(Access.KIND_USER + Access.SPEARATOR_STR);
 	}
 
