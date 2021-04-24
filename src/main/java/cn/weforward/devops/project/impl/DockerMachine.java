@@ -542,6 +542,9 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	public NameItem queryState(Project project) {
 		try {
 			DockerClient client = getClient();
+			if (null == client) {
+				return Running.STATE_STOPED;
+			}
 			DockerInspect inspert;
 			try {
 				inspert = client.inspect(project.getName(), false);
