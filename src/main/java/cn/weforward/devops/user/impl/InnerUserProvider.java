@@ -52,6 +52,7 @@ public class InnerUserProvider implements UserProvider, UserAuth, AccessLoader {
 		m_Sa = new SimpleOrganizationUser(id, name, ALLRIGHTS);
 		m_Sa.setOrganizationProvider(organizationProvider);
 		m_Sa.setPassword(password);
+		m_Sa.setInner(true);
 		setSecretKeyHex(secretKey);
 	}
 

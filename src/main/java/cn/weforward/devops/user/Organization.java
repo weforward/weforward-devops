@@ -20,8 +20,6 @@ import cn.weforward.common.util.StringUtil;
  */
 public class Organization {
 
-	public static final Organization DEFAULT = new Organization("default", "默认");
-
 	protected String m_Id;
 
 	protected String m_Name;

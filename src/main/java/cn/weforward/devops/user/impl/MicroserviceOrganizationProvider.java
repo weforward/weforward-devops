@@ -17,11 +17,18 @@ import cn.weforward.common.util.ResultPageHelper;
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.devops.user.OrganizationProvider;
+import cn.weforward.protocol.Response;
 import cn.weforward.protocol.client.ServiceInvoker;
 import cn.weforward.protocol.client.ServiceInvokerFactory;
+import cn.weforward.protocol.client.execption.GatewayException;
+import cn.weforward.protocol.client.execption.MicroserviceException;
 import cn.weforward.protocol.client.ext.RemoteResultPage;
 import cn.weforward.protocol.client.ext.RequestInvokeParam;
+import cn.weforward.protocol.gateway.Keeper;
 import cn.weforward.protocol.ops.User;
+import cn.weforward.protocol.support.NamingConverter;
+import cn.weforward.protocol.support.datatype.FriendlyObject;
+import cn.weforward.protocol.support.datatype.SimpleDtObject;
 
 /**
  * 基于微服务实现组织提供者
@@ -39,26 +46,36 @@ public class MicroserviceOrganizationProvider implements OrganizationProvider {
 	/** 服务名 */
 	protected String m_ServiceName;
 	/** 方法名 */
-	protected String m_MethodName;
-
+	protected String m_MethodGroup;
 	/** 服务调用器 */
 	protected ServiceInvoker m_Invoker;
-
+	/** （网关）管理接口 */
+	protected Keeper m_Keeper;
+	/** 组织缓存 */
 	protected LruCache<String, Organization> m_Organizations;
 
 	public MicroserviceOrganizationProvider(String apiUrl, String accessId, String accessKey, String serviceName,
-			String methodName) {
+			String methodGroup) {
 		m_ApiUrl = apiUrl;
 		m_AccessId = accessId;
 		m_AccessKey = accessKey;
 		m_ServiceName = serviceName;
-		m_MethodName = methodName;
+		m_MethodGroup = StringUtil.toString(methodGroup);
 		m_Organizations = new LruCache<String, Organization>("weforward-organization");
 		GcCleaner.register(m_Organizations);
 	}
 
+	public void setKeeper(Keeper keeper) {
+		m_Keeper = keeper;
+	}
+
+	/* 生成方法名 */
+	protected String genMethod(String method) {
+		return m_MethodGroup + NamingConverter.camelToWf(method);
+	}
+
 	public ServiceInvoker getInvoker() {
-		if (StringUtil.isEmpty(m_ServiceName) || StringUtil.isEmpty(m_MethodName)) {
+		if (StringUtil.isEmpty(m_ServiceName)) {
 			return null;
 		}
 		if (null == m_Invoker) {
@@ -91,40 +108,60 @@ public class MicroserviceOrganizationProvider implements OrganizationProvider {
 		if (StringUtil.isEmpty(id)) {
 			return null;
 		}
-		ResultPage<Organization> rp = search(id);
-		for (int i = 1; rp.gotoPage(i); i++) {
-			for (Organization g : rp) {
-				if (StringUtil.eq(id, g.getId())) {
-					return g;
-				}
-			}
+		ServiceInvoker invoker = getInvoker();
+		if (null == invoker) {
+			return null;
 		}
-		return null;
+		String method = genMethod("getOrg");
+		SimpleDtObject params = new SimpleDtObject();
+		params.put("id", id);
+		Response response = invoker.invoke(method, null);
+		return toOrg(response);
+
 	}
 
 	@Override
 	public ResultPage<Organization> search(String keywords) {
 		ServiceInvoker invoker = getInvoker();
 		if (null == invoker) {
-			return ResultPageHelper.singleton(Organization.DEFAULT);
+			return ResultPageHelper.empty();
 		}
-		String method = m_MethodName;
-		return new RemoteResultPage<Organization>(Organization.class, m_Invoker, method,
-				RequestInvokeParam.valueOf("keywords", keywords)) {
-		};
+		String method = genMethod("searchOrg");
+		return new RemoteResultPage<Organization>(Organization.class, invoker, method,
+				RequestInvokeParam.valueOf("keywords", keywords));
 
 	}
 
 	@Override
 	public Organization get(User user) {
-		// TODO Auto-generated method stub
-		return null;
+		if (null == user) {
+			return null;
+		}
+		ServiceInvoker invoker = getInvoker();
+		if (null == invoker) {
+			return null;
+		}
+		String method = genMethod("getOrgByUser");
+		SimpleDtObject params = new SimpleDtObject();
+		params.put("user", user.getId());
+		Response response = invoker.invoke(method, null);
+		return toOrg(response);
 	}
 
 	@Override
 	public Organization getByAccessId(String accessId) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	private Organization toOrg(Response response) {
+		GatewayException.checkException(response);
+		FriendlyObject result = FriendlyObject.valueOf(response.getServiceResult());
+		MicroserviceException.checkException(result);
+		Organization org = new Organization();
+		org.setId(result.getString("id"));
+		org.setName(result.getString("name"));
+		return org;
 	}
 
 }

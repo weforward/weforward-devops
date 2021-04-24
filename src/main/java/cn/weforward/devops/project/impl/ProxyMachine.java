@@ -109,8 +109,6 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 	private HttpInvoker getInvoker() throws IOException {
 		if (null == m_Invoker) {
 			m_Invoker = new HttpInvoker(3, 10);
-			m_Invoker.setUserName(getBusinessDi().getDistUserName());
-			m_Invoker.setPassword(getBusinessDi().getDistPassword());
 		}
 		return m_Invoker;
 	}
