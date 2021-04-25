@@ -268,12 +268,12 @@ public class SimpleRunning extends AbstractPersistent<ProjectDi>
 
 	@Override
 	public VersionInfo getCurrentVersion() {
-		return ((AbstractMachine) getMachine()).queryCurrentVersion(getProject());
+		return ((AbstractMachine) getMachine()).queryCurrentVersion(this);
 	}
 
 	@Override
 	public List<VersionInfo> getUpgradeVersions() {
-		List<VersionInfo> vs = ((AbstractMachine) getMachine()).queryUpgradeVersions(getProject());
+		List<VersionInfo> vs = ((AbstractMachine) getMachine()).queryUpgradeVersions(this);
 		if (vs.size() > 10) {
 			return vs.subList(0, 10);
 		}

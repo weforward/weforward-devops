@@ -34,8 +34,6 @@ import javax.annotation.Resource;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.HttpGet;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelSftp;
@@ -52,7 +50,6 @@ import cn.weforward.common.ResultPage;
 import cn.weforward.common.util.NumberUtil;
 import cn.weforward.common.util.ResultPageHelper;
 import cn.weforward.common.util.StringUtil;
-import cn.weforward.common.util.TimeUtil;
 import cn.weforward.data.annotation.Inherited;
 import cn.weforward.data.annotation.ResourceExt;
 import cn.weforward.data.persister.Persister;
@@ -472,9 +469,10 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 	}
 
 	@Override
-	public VersionInfo queryCurrentVersion(Project project) {
+	public VersionInfo queryCurrentVersion(Running running) {
 		ChannelSftp sftp;
 		List<Session> sessions = Collections.emptyList();
+		Project project = running.getProject();
 		try {
 			sessions = openSessions();
 			for (Session session : sessions) {
@@ -495,44 +493,6 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 				}
 			}
 		}
-
-	}
-
-	@Override
-	public List<VersionInfo> queryUpgradeVersions(Project project) {
-		try {
-			String cname = project.getName();
-			String url = getBusinessDi().getProxyDistUrl();
-			String json = getInvoker().get(url + cname, null);
-			JSONArray array = new JSONArray(json);
-			List<VersionInfo> list = new ArrayList<>(array.length());
-			for (int i = 0; i < array.length(); i++) {
-				JSONObject o = array.getJSONObject(i);
-				list.add(new VersionInfo(o.getString("name"), TimeUtil.parseDate(o.getString("time"))));
-			}
-			Collections.sort(list, _BY_VERSION);
-			return list;
-		} catch (Throwable e) {
-			throw new IllegalArgumentException("获取版本异常", e);
-		}
-		// try {
-		// String cname = project.getName();
-		// String url = getBusinessDi().getProxyDistUrl();
-		// SVNURL surl = SVNURL.parseURIEncoded(url);
-		// SVNRepository repository = SVNRepositoryFactory.create(surl);
-		// repository.setAuthenticationManager(getAuthManager());
-		// List<SVNDirEntry> list = new ArrayList<>();
-		// repository.getDir(cname, SVNRevision.HEAD.getNumber(), false, list);
-		// int l = Math.min(list.size(), MAX_VERSION_NUM);
-		// List<VersionInfo> result = new ArrayList<>(l);
-		// for (int i = 0; i < list.size(); i++) {
-		// SVNDirEntry d = list.get(i);
-		// result.add(new VersionInfo(d.getName(), d.getDate()));
-		// }
-		// return result;
-		// } catch (Throwable e) {
-		// throw new IllegalArgumentException("获取版本异常", e);
-		// }
 
 	}
 

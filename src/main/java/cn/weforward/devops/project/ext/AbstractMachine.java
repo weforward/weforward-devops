@@ -10,6 +10,7 @@
  */
 package cn.weforward.devops.project.ext;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -17,6 +18,8 @@ import java.util.List;
 
 import javax.annotation.Resource;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +28,7 @@ import cn.weforward.common.ResultPage;
 import cn.weforward.common.util.FreezedList;
 import cn.weforward.common.util.NumberUtil;
 import cn.weforward.common.util.StringUtil;
+import cn.weforward.common.util.TimeUtil;
 import cn.weforward.data.UniteId;
 import cn.weforward.data.annotation.Index;
 import cn.weforward.data.annotation.ResourceExt;
@@ -40,12 +44,14 @@ import cn.weforward.devops.project.OpProcessor.Status;
 import cn.weforward.devops.project.Project;
 import cn.weforward.devops.project.ProjectService;
 import cn.weforward.devops.project.Running;
+import cn.weforward.devops.project.RunningProp;
 import cn.weforward.devops.project.VersionInfo;
 import cn.weforward.devops.project.di.ProjectDi;
 import cn.weforward.devops.project.impl.IdAndRight;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.framework.WeforwardSession;
 import cn.weforward.protocol.ops.User;
+import cn.weforward.util.HttpInvoker;
 import cn.weforward.util.OperatorUtils;
 
 /**
@@ -261,18 +267,45 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 	/**
 	 * 查询当前版本
 	 * 
-	 * @param project
+	 * @param running
 	 * @return
 	 */
-	public abstract VersionInfo queryCurrentVersion(Project project);
+	public abstract VersionInfo queryCurrentVersion(Running running);
+
+	private HttpInvoker getInvoker(String accessId, String accessKey) throws IOException {
+		HttpInvoker invoker = new HttpInvoker(1, 3);
+		invoker.setUserName(accessId);
+		invoker.setPassword(accessKey);
+		return invoker;
+	}
 
 	/**
 	 * 查询可升级版本
 	 * 
-	 * @param project
+	 * @param running
 	 * @return
 	 */
-	public abstract List<VersionInfo> queryUpgradeVersions(Project project);
+	public List<VersionInfo> queryUpgradeVersions(Running running) {
+		try {
+			Project project = running.getProject();
+			String cname = project.getName();
+			String url = getBusinessDi().getDockerDistUrl();
+			String accessId = getAccessId(running);
+			String accessKey = getAccessKey(running);
+			String json = getInvoker(accessId, accessKey).get(url + project.getOrganization().getId() + "/" + cname,
+					null);
+			JSONArray array = new JSONArray(json);
+			List<VersionInfo> list = new ArrayList<>(array.length());
+			for (int i = 0; i < array.length(); i++) {
+				JSONObject o = array.getJSONObject(i);
+				list.add(new VersionInfo(o.optString("name"), TimeUtil.parseDate(o.optString("time"))));
+			}
+			Collections.sort(list, _BY_VERSION);
+			return list;
+		} catch (Throwable e) {
+			throw new IllegalArgumentException("获取版本异常", e);
+		}
+	}
 
 	/**
 	 * 查询系统日志
@@ -348,6 +381,24 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 
 	private static boolean isRight(int r, int right) {
 		return r == (r & right);
+	}
+
+	protected static String getAccessId(Running running) {
+		for (RunningProp prop : running.getProps()) {
+			if (StringUtil.eq(prop.getKey(), RunningProp.WEFORWARD_SERVICE_ACCESS_ID)) {
+				return prop.getValue();
+			}
+		}
+		return null;
+	}
+
+	protected static String getAccessKey(Running running) {
+		for (RunningProp prop : running.getProps()) {
+			if (StringUtil.eq(prop.getKey(), RunningProp.WEFORWARD_SERVICE_ACCESS_KEY)) {
+				return prop.getValue();
+			}
+		}
+		return null;
 	}
 
 	public boolean isMyOrganization(Organization org) {

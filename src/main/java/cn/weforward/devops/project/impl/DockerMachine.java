@@ -27,9 +27,6 @@ import java.util.TimeZone;
 
 import javax.annotation.Resource;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import cn.weforward.common.NameItem;
 import cn.weforward.common.ResultPage;
 import cn.weforward.common.io.BytesOutputStream;
@@ -58,7 +55,6 @@ import cn.weforward.devops.project.di.ProjectDi;
 import cn.weforward.devops.project.ext.AbstractMachine;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.util.CaUtil;
-import cn.weforward.util.HttpInvoker;
 import cn.weforward.util.docker.AuthInfo;
 import cn.weforward.util.docker.DockerBuildProgesser;
 import cn.weforward.util.docker.DockerClient;
@@ -110,8 +106,6 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	protected String m_Url;
 	/** docker客户端 */
 	private DockerClient m_Client;
-	/** 调用器 */
-	private HttpInvoker m_Invoker;
 
 	private Comparator<File> _BY_TIME = new Comparator<File>() {
 
@@ -137,15 +131,6 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		genPersistenceId();
 		m_Url = url;
 		persistenceUpdateNow();
-	}
-
-	private HttpInvoker getInvoker() throws IOException {
-		if (null == m_Invoker) {
-			m_Invoker = new HttpInvoker(1, 3);
-			// m_Invoker.setUserName(getBusinessDi().getDistUserName());
-			// m_Invoker.setPassword(getBusinessDi().getDistPassword());
-		}
-		return m_Invoker;
 	}
 
 	/* 客户端 */
@@ -245,16 +230,6 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		}
 		processor(processor, "构建完成");
 		return true;
-	}
-
-	private String getAccessKey(Running running) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	private String getAccessId(Running running) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override
@@ -596,8 +571,9 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	}
 
 	@Override
-	public VersionInfo queryCurrentVersion(Project project) {
+	public VersionInfo queryCurrentVersion(Running running) {
 		DockerInspect inspert;
+		Project project = running.getProject();
 		try {
 			DockerClient client = getClient();
 			if (null == client) {
@@ -623,25 +599,6 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			}
 		}
 		return new VersionInfo("no version");
-	}
-
-	@Override
-	public List<VersionInfo> queryUpgradeVersions(Project project) {
-		try {
-			String cname = project.getName();
-			String url = getBusinessDi().getDockerDistUrl();
-			String json = getInvoker().get(url + cname, null);
-			JSONArray array = new JSONArray(json);
-			List<VersionInfo> list = new ArrayList<>(array.length());
-			for (int i = 0; i < array.length(); i++) {
-				JSONObject o = array.getJSONObject(i);
-				list.add(new VersionInfo(o.optString("name"), TimeUtil.parseDate(o.optString("time"))));
-			}
-			Collections.sort(list, _BY_VERSION);
-			return list;
-		} catch (Throwable e) {
-			throw new IllegalArgumentException("获取版本异常", e);
-		}
 	}
 
 	@Override

@@ -283,11 +283,28 @@ public class DistServiceImpl implements RestfulService, DistService {
 		String project = checkPath(view.project);
 		String tag = checkPath(view.tag);
 		String name = checkPath(view.name);
-		String projectPath = org + File.separator + group + File.separator + project + File.separator;
-		String file = projectPath + tag + File.separator + name;
-		File f = getFile(file);
-		outFile(f, response);
-		return;
+		if (StringUtil.isEmpty(tag)) {
+			String projectPath = org + File.separator + group + File.separator + project + File.separator;
+			JSONArray array = new JSONArray();
+			List<File> list = listFile(projectPath);
+			for (int i = 0; i < list.size(); i++) {
+				File f = list.get(i);
+				JSONObject o = new JSONObject();
+				o.put("name", f.getName());
+				o.put("time", TimeUtil.formatDateTime(new Date(getLastModified(f))));
+				array.put(o);
+			}
+			response.setHeader("content-type", "application/json");
+			response.setStatus(RestfulResponse.STATUS_OK);
+			try (OutputStream out = response.openOutput()) {
+				out.write(array.toString().getBytes());
+			}
+		} else {
+			String projectPath = org + File.separator + group + File.separator + project + File.separator;
+			String file = projectPath + tag + File.separator + name;
+			File f = getFile(file);
+			outFile(f, response);
+		}
 	}
 
 	private static long getLastModified(File f) {
