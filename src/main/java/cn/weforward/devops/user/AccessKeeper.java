@@ -3,6 +3,7 @@ package cn.weforward.devops.user;
 import cn.weforward.common.ResultPage;
 import cn.weforward.common.util.ResultPageHelper;
 import cn.weforward.common.util.StringUtil;
+import cn.weforward.protocol.Access;
 import cn.weforward.protocol.gateway.Keeper;
 import cn.weforward.protocol.ops.AccessExt;
 
@@ -21,7 +22,7 @@ public class AccessKeeper {
 	}
 
 	public AccessExt getAccess(String accessId) {
-		ResultPage<AccessExt> rp = m_Keeper.listAccess(null, null);
+		ResultPage<AccessExt> rp = m_Keeper.listAccess(Access.KIND_SERVICE, null, null);
 		for (AccessExt a : ResultPageHelper.toForeach(rp)) {
 			if (StringUtil.eq(accessId, a.getAccessId())) {
 				return a;

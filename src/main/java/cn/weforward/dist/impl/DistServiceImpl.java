@@ -135,13 +135,13 @@ public class DistServiceImpl implements RestfulService, DistService {
 		} else if (path.startsWith("/download/")) {
 			HttpAccessAuth auth = m_AccessAuth;
 			if (null != auth) {
-				AccessExt user = auth.auth(request, response);
-				if (null == user) {
+				AccessExt access = auth.auth(request, response);
+				if (null == access) {
 					response.setStatus(RestfulResponse.STATUS_UNAUTHORIZED);
 					response.openOutput().close();
 					return;
 				}
-				String org = ((OrganizationUser) user).getOrganization().getId();
+				String org = access.getGroupId();
 				if (!path.startsWith("/download/" + org + "/")) {
 					response.setStatus(RestfulResponse.STATUS_FORBIDDEN);
 					response.openOutput().close();

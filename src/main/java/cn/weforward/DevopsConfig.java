@@ -82,12 +82,6 @@ public class DevopsConfig {
 	/** 服务访问key */
 	@Value("${weforward.service.accessKey:}")
 	protected String m_ServiceAccessKey;
-	/** 访问凭证id */
-	@Value("${weforward.keeper.accessId:}")
-	protected String m_KeeperAccessId;
-	/** 访问凭证key */
-	@Value("${weforward.keeper.accessKey:}")
-	protected String m_KeeperAccessKey;
 
 	/** dockerHub地址 */
 	@Value("${dockerHubUrl}")
@@ -180,10 +174,7 @@ public class DevopsConfig {
 
 	@Bean
 	Keeper keeper() {
-		if (StringUtil.isEmpty(m_KeeperAccessId) || StringUtil.isEmpty(m_KeeperAccessKey)) {
-			return null;
-		}
-		return new HttpKeeper(m_ApiUrl, m_KeeperAccessId, m_KeeperAccessKey);
+		return new HttpKeeper(m_ApiUrl, m_ServiceAccessId, m_ServiceAccessKey);
 	}
 
 	@Bean
