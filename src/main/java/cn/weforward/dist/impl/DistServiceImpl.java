@@ -32,7 +32,6 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.weforward.common.DictionaryExt;
 import cn.weforward.common.restful.RestfulRequest;
 import cn.weforward.common.restful.RestfulResponse;
 import cn.weforward.common.restful.RestfulService;
@@ -114,28 +113,7 @@ public class DistServiceImpl implements RestfulService, DistService {
 			return;
 		}
 		String path = request.getUri();
-		if (!path.startsWith("/dist/")) {
-			return;// 只验证dist
-		}
-		String userAgent = getHeader(request, "User-Agent");
-		if (userAgent.startsWith(DEVOPS_USER_AGENT)) {
-			HttpAccessAuth auth = m_AccessAuth;
-			if (null != auth) {
-				AccessExt user = auth.auth(request, response);
-				if (null == user) {
-					response.setStatus(RestfulResponse.STATUS_UNAUTHORIZED);
-					response.openOutput().close();
-					return;
-				}
-				String org = ((OrganizationUser) user).getOrganization().getId();
-				if (!path.startsWith("/dist/" + org + "/")) {
-					response.setStatus(RestfulResponse.STATUS_FORBIDDEN);
-					response.openOutput().close();
-					return;
-				}
-			}
-
-		} else {
+		if (path.startsWith("/dist/")) {
 			HttpUserAuth auth = m_UserAuth;
 			if (null != auth) {
 				User user = auth.auth(request, response);
@@ -154,15 +132,23 @@ public class DistServiceImpl implements RestfulService, DistService {
 					}
 				}
 			}
+		} else if (path.startsWith("/download/")) {
+			HttpAccessAuth auth = m_AccessAuth;
+			if (null != auth) {
+				AccessExt user = auth.auth(request, response);
+				if (null == user) {
+					response.setStatus(RestfulResponse.STATUS_UNAUTHORIZED);
+					response.openOutput().close();
+					return;
+				}
+				String org = ((OrganizationUser) user).getOrganization().getId();
+				if (!path.startsWith("/download/" + org + "/")) {
+					response.setStatus(RestfulResponse.STATUS_FORBIDDEN);
+					response.openOutput().close();
+					return;
+				}
+			}
 		}
-	}
-
-	private String getHeader(RestfulRequest request, String key) {
-		DictionaryExt<String, String> headers = request.getHeaders();
-		if (null == headers) {
-			return "";
-		}
-		return StringUtil.toString(headers.get(key));
 	}
 
 	@Override
@@ -203,6 +189,8 @@ public class DistServiceImpl implements RestfulService, DistService {
 			}
 		} else if (path.startsWith("/dist/")) {
 			dist(path, request, response);
+		} else if (path.startsWith("/download/")) {
+			download(path, request, response);
 		} else {
 			response.setStatus(RestfulResponse.STATUS_NOT_FOUND);
 			response.openOutput().close();
@@ -214,15 +202,15 @@ public class DistServiceImpl implements RestfulService, DistService {
 		path = path.substring("/dist/".length());
 		String arr[] = path.split("/");
 		PathView view = new PathView(arr);
-		String org = view.org;
-		String group = view.group;
-		String project = view.project;
+		String org = checkPath(view.org);
+		String group = checkPath(view.group);
+		String project = checkPath(view.project);
 		if (StringUtil.eq(project, "__upload")) {
 			upload(path, org + File.separator + group + File.separator, request, response);
 			return;
 		}
-		String tag = view.tag;
-		String name = view.name;
+		String tag = checkPath(view.tag);
+		String name = checkPath(view.name);
 		String projectPath = org + File.separator + group + File.separator + project + File.separator;
 		if (StringUtil.isEmpty(tag)) {
 			JSONArray array = new JSONArray();
@@ -284,6 +272,22 @@ public class DistServiceImpl implements RestfulService, DistService {
 				return;
 			}
 		}
+	}
+
+	private void download(String path, RestfulRequest request, RestfulResponse response) throws IOException {
+		path = path.substring("/download/".length());
+		String arr[] = path.split("/");
+		PathView view = new PathView(arr);
+		String org = checkPath(view.org);
+		String group = checkPath(view.group);
+		String project = checkPath(view.project);
+		String tag = checkPath(view.tag);
+		String name = checkPath(view.name);
+		String projectPath = org + File.separator + group + File.separator + project + File.separator;
+		String file = projectPath + tag + File.separator + name;
+		File f = getFile(file);
+		outFile(f, response);
+		return;
 	}
 
 	private static long getLastModified(File f) {
@@ -355,6 +359,9 @@ public class DistServiceImpl implements RestfulService, DistService {
 	}
 
 	private static String checkPath(String v) {
+		if (null == v) {
+			return v;
+		}
 		if (v.indexOf('/') >= 0 || v.indexOf('\\') >= 0) {
 			throw new UnsupportedOperationException("不支持\\和/");
 		}
@@ -379,7 +386,7 @@ public class DistServiceImpl implements RestfulService, DistService {
 	}
 
 	private void outFile(File f, RestfulResponse response) throws IOException {
-		if (null == f) {
+		if (null == f || !f.exists()) {
 			response.setStatus(RestfulResponse.STATUS_NOT_FOUND);
 			response.openOutput().close();
 			return;
