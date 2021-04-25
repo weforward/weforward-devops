@@ -80,10 +80,8 @@ public abstract class ProjectDiImpl implements ProjectDi {
 	protected String m_DockerHubPassword;
 	/** dockerHub用户邮箱 */
 	protected String m_DockerHubEmail;
-	/** Proxy发行版本地址 */
-	protected String m_ProxyDistUrl;
-	/** Docker发行版本地址 */
-	protected String m_DockerDistUrl;
+	/** 下载地址 */
+	protected String m_DownloadUrl;
 	/** svn用户名 */
 	protected String m_SvnUsername;
 	/** svn密码 */
@@ -295,22 +293,13 @@ public abstract class ProjectDiImpl implements ProjectDi {
 		return m_DockerHubEmail;
 	}
 
-	public void setProxyDistUrl(String v) {
-		m_ProxyDistUrl = v;
-	}
-
-	public void setDockerDistUrl(String v) {
-		m_DockerDistUrl = v;
+	public void setDownloadUrl(String v) {
+		m_DownloadUrl = v;
 	}
 
 	@Override
-	public String getProxyDistUrl() {
-		return m_ProxyDistUrl;
-	}
-
-	@Override
-	public String getDockerDistUrl() {
-		return m_DockerDistUrl;
+	public String getDownloadUrl() {
+		return m_DownloadUrl;
 	}
 
 	public void setRlogUrl(String url) {

@@ -47,7 +47,9 @@ import cn.weforward.devops.project.Running;
 import cn.weforward.devops.project.RunningProp;
 import cn.weforward.devops.project.VersionInfo;
 import cn.weforward.devops.project.di.ProjectDi;
+import cn.weforward.devops.project.impl.HtmlProject;
 import cn.weforward.devops.project.impl.IdAndRight;
+import cn.weforward.devops.project.impl.JavaProject;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.framework.WeforwardSession;
 import cn.weforward.protocol.ops.User;
@@ -288,12 +290,10 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 	public List<VersionInfo> queryUpgradeVersions(Running running) {
 		try {
 			Project project = running.getProject();
-			String cname = project.getName();
-			String url = getBusinessDi().getDockerDistUrl();
+			String url = genUrl(project);
 			String accessId = getAccessId(running);
 			String accessKey = getAccessKey(running);
-			String json = getInvoker(accessId, accessKey).get(url + project.getOrganization().getId() + "/" + cname,
-					null);
+			String json = getInvoker(accessId, accessKey).get(url, null);
 			JSONArray array = new JSONArray(json);
 			List<VersionInfo> list = new ArrayList<>(array.length());
 			for (int i = 0; i < array.length(); i++) {
@@ -304,6 +304,21 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 			return list;
 		} catch (Throwable e) {
 			throw new IllegalArgumentException("获取版本异常", e);
+		}
+	}
+
+	protected String genUrl(Project project) {
+		return getBusinessDi().getDownloadUrl() + project.getOrganization().getId() + "/" + getType(project) + "/"
+				+ project.getName()+"/";
+	}
+
+	protected static String getType(Project project) {
+		if (project instanceof JavaProject) {
+			return "java";
+		} else if (project instanceof HtmlProject) {
+			return "html";
+		} else {
+			return "unknown";
 		}
 	}
 

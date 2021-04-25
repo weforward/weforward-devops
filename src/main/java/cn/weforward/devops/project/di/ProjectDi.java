@@ -54,11 +54,8 @@ public interface ProjectDi extends BusinessDi {
 	/** 任务执行器 */
 	TaskExecutor getTaskExecutor();
 
-	/** 发行版地址 */
-	String getProxyDistUrl();
-
-	/** 发行版地址 */
-	String getDockerDistUrl();
+	/** 下载地址 */
+	String getDownloadUrl();
 
 	/** 获取用户 */
 	User getUser(String id);

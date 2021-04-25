@@ -64,19 +64,15 @@ public class DevopsConfig {
 	/** mongodb数据库名 */
 	@Value("${mongodb.dbname}")
 	protected String m_MongodbDbname;
-	/** proxy机器svndist地址 */
-	@Value("${proxyDistUrl}")
-	protected String m_ProxyDistUrl;
-	/** docker机器svndist地址 */
-	@Value("${dockerDistUrl}")
-	protected String m_DockerDistUrl;
-	/** 日志url */
-	@Value("${rlog.url}")
-	protected String m_RlogUrl;
+	/** 下载资源地址 */
+	@Value("${download.url}")
+	protected String m_DownloadUrl;
 	/** 资源url */
 	@Value("${resource.url}")
 	protected String m_ResourceUrl;
-
+	/** 日志url */
+	@Value("${rlog.url}")
+	protected String m_RlogUrl;
 	/** 服务网关地址 */
 	@Value("${weforward.apiUrl:}")
 	protected String m_ApiUrl;
@@ -207,8 +203,7 @@ public class DevopsConfig {
 		p.setDockerHubUsername(m_DockerHubUsername);
 		p.setDockerHubPassword(m_DockerHubPassword);
 		p.setDockerHubEmail(m_DockerHubEmail);
-		p.setProxyDistUrl(m_ProxyDistUrl);
-		p.setDockerDistUrl(m_DockerDistUrl);
+		p.setDownloadUrl(m_DownloadUrl);
 		p.setResourceUrl(m_ResourceUrl);
 		p.setRlogUrl(m_RlogUrl);
 		p.setApiUrl(m_ApiUrl);

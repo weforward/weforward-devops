@@ -230,7 +230,7 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 		Project project = running.getProject();
 		String cname = project.getName();
 		processor(processor, "开始升级项目" + cname + "/" + version);
-		String url = getBusinessDi().getProxyDistUrl() + cname + "/" + version;
+		String url = genUrl(project) + version;
 		File dstPath = new File(System.getProperty("java.io.tmpdir") + "/devops-" + cname + "-" + version);
 		if (!dstPath.exists()) {
 			dstPath.mkdir();
