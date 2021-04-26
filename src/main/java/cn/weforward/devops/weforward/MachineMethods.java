@@ -12,6 +12,9 @@ package cn.weforward.devops.weforward;
 
 import javax.annotation.Resource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cn.weforward.devops.project.Machine;
 import cn.weforward.devops.project.ProjectService;
 import cn.weforward.devops.weforward.view.MachineInfoParam;
@@ -29,6 +32,9 @@ import cn.weforward.protocol.doc.annotation.DocMethod;
  */
 @WeforwardMethods(kind = Access.KIND_SERVICE)
 public class MachineMethods {
+
+	final static Logger _Logger = LoggerFactory.getLogger(MachineMethods.class);
+
 	@Resource
 	protected ProjectService m_ProjectService;
 
@@ -36,6 +42,7 @@ public class MachineMethods {
 	@WeforwardMethod
 	public void heartbeat(MachineInfoParam param) {
 		Machine m = m_ProjectService.findMachine(param.getName());
+		_Logger.info(param.getName() + "," + m);
 		ForwardException.forwardToIfNeed(m);
 		if (null != m) {
 			m.setInfo(param.getInfo());

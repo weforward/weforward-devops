@@ -469,6 +469,9 @@ public class RemoteLogServiceImpl implements RestfulService, RemoteLogService, D
 	@Override
 	public void service(RestfulRequest request, RestfulResponse response) throws IOException {
 		AccessExt access = m_Auth.auth(request, response);
+		if (null == access) {
+			return;
+		}
 		String json = readRequest(request);
 		if (StringUtil.isEmpty(json)) {
 			response.setStatus(RestfulResponse.STATUS_OK);
