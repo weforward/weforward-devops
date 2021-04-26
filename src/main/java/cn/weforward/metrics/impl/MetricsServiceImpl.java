@@ -145,6 +145,9 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 	@Override
 	public void service(RestfulRequest request, RestfulResponse response) throws IOException {
 		AccessExt access = m_Auth.auth(request, response);
+		if (null == access) {
+			return;
+		}
 		String path = request.getUri();
 		if (path.length() > 1) {
 			if ("metrics".equals(path.substring(1, path.length() - 2))) {
