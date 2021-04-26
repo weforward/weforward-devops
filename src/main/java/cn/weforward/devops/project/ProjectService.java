@@ -185,9 +185,10 @@ public interface ProjectService {
 	/**
 	 * 查找机器
 	 * 
+	 * @param accessid
 	 * @param name
 	 * @return
 	 */
-	Machine findMachine(String name);
+	Machine findMachine(String accessId, String name);
 
 }

@@ -350,7 +350,11 @@ public class ProjectServiceImpl extends ProjectDiImpl implements ProjectService 
 	}
 
 	@Override
-	public Machine findMachine(String name) {
+	public Machine findMachine(String accessId, String name) {
+		AccessExt access = m_AccessKeeper.getAccess(accessId);
+		if (null == access) {
+			return null;
+		}
 		for (Persister<? extends AbstractMachine> ps : m_Machines) {
 			ResultPage<? extends AbstractMachine> rp = ps.startsWith(null);
 			for (AbstractMachine p : ResultPageHelper.toForeach(rp)) {

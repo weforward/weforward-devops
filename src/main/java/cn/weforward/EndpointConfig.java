@@ -114,6 +114,8 @@ public class EndpointConfig {
 		register.setServiceId(m_ServerId);
 		register.setServiceNo(m_ServerId);
 		register.setServiceName(m_DevopsName);
+		register.setUserName(m_ServiceAccessId);
+		register.setPassword(m_ServiceAccessKey);
 		return register;
 	}
 
