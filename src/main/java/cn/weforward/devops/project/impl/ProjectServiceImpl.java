@@ -361,7 +361,7 @@ public class ProjectServiceImpl extends ProjectDiImpl implements ProjectService 
 				if (null == p) {
 					continue;
 				}
-				if (StringUtil.eq(name, p.getName())) {
+				if (StringUtil.eq(name, p.getName()) && p.isMyOrganization(access)) {
 					return p;
 				}
 			}

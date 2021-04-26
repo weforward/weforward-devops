@@ -52,6 +52,7 @@ import cn.weforward.devops.project.impl.IdAndRight;
 import cn.weforward.devops.project.impl.JavaProject;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.framework.WeforwardSession;
+import cn.weforward.protocol.ops.AccessExt;
 import cn.weforward.protocol.ops.User;
 import cn.weforward.util.HttpInvoker;
 import cn.weforward.util.OperatorUtils;
@@ -309,7 +310,7 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 
 	protected String genUrl(Project project) {
 		return getBusinessDi().getDownloadUrl() + project.getOrganization().getId() + "/" + getType(project) + "/"
-				+ project.getName()+"/";
+				+ project.getName() + "/";
 	}
 
 	protected static String getType(Project project) {
@@ -418,6 +419,10 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 
 	public boolean isMyOrganization(Organization org) {
 		return StringUtil.eq(m_Organization, org.getId());
+	}
+
+	public boolean isMyOrganization(AccessExt access) {
+		return StringUtil.eq(m_Organization, access.getAccessId());
 	}
 
 	@Override
