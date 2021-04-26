@@ -422,7 +422,7 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 	}
 
 	public boolean isMyOrganization(AccessExt access) {
-		return StringUtil.eq(m_Organization, access.getAccessId());
+		return StringUtil.eq(m_Organization, access.getGroupId());
 	}
 
 	@Override
