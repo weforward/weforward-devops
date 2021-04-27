@@ -273,7 +273,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			client.setAuthInfos(infos);
 			image = huburl + "/" + cname + ":" + version;
 		} else {
-			image = huburl + "/" + cname + ":" + version;
+			image = cname + ":" + version;
 		}
 
 		// 先看看自己有没有
