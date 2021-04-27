@@ -84,16 +84,16 @@ public class DevopsConfig {
 	protected String m_ServiceAccessKey;
 
 	/** dockerHub地址 */
-	@Value("${dockerHubUrl}")
+	@Value("${dockerHubUrl:}")
 	protected String m_DockerHubUrl;
 	/** dockerHub https地址 */
-	@Value("${dockerHubHttpsUrl}")
+	@Value("${dockerHubHttpsUrl:}")
 	protected String m_DockerHubHttpsUrl;
 	/** dockerHub用户名 */
-	@Value("${dockerHubUsername}")
+	@Value("${dockerHubUsername:}")
 	protected String m_DockerHubUsername;
 	/** dockerHub密码 */
-	@Value("${dockerHubPassword}")
+	@Value("${dockerHubPassword:}")
 	protected String m_DockerHubPassword;
 	/** dockerHub邮箱 */
 	@Value("${dockerHubEmail:}")

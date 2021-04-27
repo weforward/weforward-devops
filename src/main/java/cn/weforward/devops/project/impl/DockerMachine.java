@@ -199,10 +199,16 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		} else {
 			huburl = getBusinessDi().getDockerHubUrl();
 		}
-		AuthInfo info = new AuthInfo(huburl, getBusinessDi().getDockerHubUsername(),
-				getBusinessDi().getDockerHubPassword(), getBusinessDi().getDockerHubEmail());
-		List<AuthInfo> infos = Collections.singletonList(info);
-		client.setAuthInfos(infos);
+		String t;
+		if (!StringUtil.isEmpty(huburl)) {
+			AuthInfo info = new AuthInfo(huburl, getBusinessDi().getDockerHubUsername(),
+					getBusinessDi().getDockerHubPassword(), getBusinessDi().getDockerHubEmail());
+			List<AuthInfo> infos = Collections.singletonList(info);
+			client.setAuthInfos(infos);
+			t = huburl + "/" + cname + ":" + version;
+		} else {
+			t = cname + ":" + version;
+		}
 		String resurl = getBusinessDi().getResourceUrl();
 		String remote = resurl + "Dockerfile";
 		Map<String, String> buildargs = new HashMap<>();
@@ -214,7 +220,6 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		buildargs.put("RES_URL", resurl);
 		Map<String, String> labels = new HashMap<>();
 		labels.put("revieson", revieson);
-		String t = huburl + "/" + cname + ":" + version;
 		try {
 			client.build(remote, buildargs, labels, t, new DockerBuildProgesserWrap(processor));
 		} catch (DockerException e) {
@@ -222,12 +227,14 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			_Logger.error("构建异常", e);
 			return false;
 		}
-		try {
-			client.push(huburl + "/" + cname, version, new DockerPushProgesserWrap(processor));
-		} catch (DockerException e) {
-			processor(processor, "构建异常，push出错，" + e.toString());
-			_Logger.error("构建异常", e);
-			return false;
+		if (!StringUtil.isEmpty(huburl)) {
+			try {
+				client.push(huburl + "/" + cname, version, new DockerPushProgesserWrap(processor));
+			} catch (DockerException e) {
+				processor(processor, "构建异常，push出错，" + e.toString());
+				_Logger.error("构建异常", e);
+				return false;
+			}
 		}
 		processor(processor, "构建完成");
 		return true;
@@ -258,12 +265,17 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		} else {
 			huburl = getBusinessDi().getDockerHubUrl();
 		}
-		AuthInfo info = new AuthInfo(huburl, getBusinessDi().getDockerHubUsername(),
-				getBusinessDi().getDockerHubPassword(), getBusinessDi().getDockerHubEmail());
-		List<AuthInfo> infos = Collections.singletonList(info);
-		client.setAuthInfos(infos);
+		String image;
+		if (!StringUtil.isEmpty(huburl)) {
+			AuthInfo info = new AuthInfo(huburl, getBusinessDi().getDockerHubUsername(),
+					getBusinessDi().getDockerHubPassword(), getBusinessDi().getDockerHubEmail());
+			List<AuthInfo> infos = Collections.singletonList(info);
+			client.setAuthInfos(infos);
+			image = huburl + "/" + cname + ":" + version;
+		} else {
+			image = huburl + "/" + cname + ":" + version;
+		}
 
-		String image = huburl + "/" + cname + ":" + version;
 		// 先看看自己有没有
 		DockerImageInspect inspect;
 		try {
@@ -274,24 +286,20 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			return;
 		}
 		if (null == inspect || !StringUtil.eq(inspect.getLabel(REVEISION_LABEL), revieson)) {
-			// 没有重新拉取
-			boolean needbuild = false;
-			try {
-				client.pull(image, new DockerPullProgesserWrap(processor));
-			} catch (NoSuchImageException e) {
+			boolean needbuild;
+			if (StringUtil.isEmpty(huburl)) {
 				needbuild = true;
-			} catch (DockerException e) {
-				processor(processor, "升级异常，拉取镜像出错，" + e.toString());
-				_Logger.error("升级异常", e);
-				return;
-			}
-			if (!needbuild) {
-				// 有拉取到，重复检查一下
+			} else {
 				try {
+					// 没有重新拉取
+					client.pull(image, new DockerPullProgesserWrap(processor));
+					// 有拉取到，重复检查一下
 					inspect = client.image(image);
 					needbuild = (null == inspect || !StringUtil.eq(inspect.getLabel(REVEISION_LABEL), revieson));
+				} catch (NoSuchImageException e) {
+					needbuild = true;
 				} catch (DockerException e) {
-					processor(processor, "升级异常，查询镜像出错，" + e.toString());
+					processor(processor, "升级异常，拉取镜像出错，" + e.toString());
 					_Logger.error("升级异常", e);
 					return;
 				}
