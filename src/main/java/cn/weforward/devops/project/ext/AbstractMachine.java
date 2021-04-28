@@ -275,7 +275,7 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 	 */
 	public abstract VersionInfo queryCurrentVersion(Running running);
 
-	private HttpInvoker getInvoker(String accessId, String accessKey) throws IOException {
+	protected HttpInvoker getInvoker(String accessId, String accessKey) throws IOException {
 		HttpInvoker invoker = new HttpInvoker(1, 3);
 		invoker.setUserName(accessId);
 		invoker.setPassword(accessKey);
