@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 
 import cn.weforward.devops.project.ProjectService;
 import cn.weforward.devops.project.Prop;
-import cn.weforward.devops.user.impl.InnerOrganizationProvider;
 import cn.weforward.framework.ApiException;
 import cn.weforward.framework.WeforwardMethod;
 import cn.weforward.framework.WeforwardMethods;
@@ -40,8 +39,6 @@ public class ConfigMethods {
 
 	@Resource
 	protected ProjectService m_ProjectService;
-	@Resource
-	protected InnerOrganizationProvider m_OrganizationProvider;
 
 	@WeforwardMethod
 	public List<Prop> serviceprops(FriendlyObject params) throws ApiException {
