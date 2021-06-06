@@ -273,7 +273,7 @@ public class DevopsConfig {
 				m_UserServiceName, m_UserMethodGroup, roleProvider, organizationProvider);
 		InnerUserProvider ip = new InnerUserProvider(m_UserId, m_UserName, m_UserPassword, m_UserSecretKey,
 				roleProvider, organizationProvider);
-		return new MultipleUserProvider(mp, ip);
+		return new MultipleUserProvider(ip, mp);
 	}
 
 	@Bean
