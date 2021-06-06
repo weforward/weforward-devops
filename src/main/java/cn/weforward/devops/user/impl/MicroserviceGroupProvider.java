@@ -91,6 +91,26 @@ public class MicroserviceGroupProvider implements GroupProvider {
 
 	@Override
 	public Group getGroup(Organization org, String id) {
+		if (StringUtil.isEmpty(id)) {
+			return null;
+		}
+		Group g = m_Groups.get(id);
+		if (null != g) {
+			return g;
+		}
+		g = doGet(org, id);
+		if (null == g) {
+			return null;
+		}
+		Group old = m_Groups.putIfAbsent(id, g);
+		if (null != old) {
+			return old;
+		} else {
+			return g;
+		}
+	}
+
+	private Group doGet(Organization org, String id) {
 		if (null == org) {
 			return null;
 		}
