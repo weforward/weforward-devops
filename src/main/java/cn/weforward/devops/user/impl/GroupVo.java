@@ -13,7 +13,7 @@ package cn.weforward.devops.user.impl;
 import java.util.Collections;
 import java.util.List;
 
-import cn.weforward.common.util.StringUtil;
+import cn.weforward.common.UniteId;
 import cn.weforward.common.util.TransList;
 import cn.weforward.devops.user.Group;
 import cn.weforward.devops.user.UserProvider;
@@ -73,11 +73,15 @@ public class GroupVo implements Group {
 	@Override
 	public boolean include(User user) {
 		for (String id : m_Users) {
-			if (StringUtil.eq(id, user.getId())) {
+			if (eq(id, user.getId())) {
 				return true;
 			}
 		}
 		return false;
+	}
+
+	private boolean eq(String id, String id2) {
+		return UniteId.getOrdinal(id).equals(UniteId.getOrdinal(id2));
 	}
 
 	public void setUsers(List<String> ids) {

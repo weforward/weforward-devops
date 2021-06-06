@@ -89,14 +89,16 @@ public class SystemMethods {
 	public ResultPage<GroupDetailView> groups(FriendlyObject params) throws ApiException {
 		String keywords = params.getString("keywords");
 		ResultPage<Group> rp = (ResultPage<Group>) m_GroupProvider.search(getMyOrganization(), keywords);
-		rp = ResultPageHelper.reverseResultPage(rp);
-		return new TransResultPage<GroupDetailView, Group>(rp) {
+		// rp = ResultPageHelper.reverseResultPage(rp);
+		TransResultPage<GroupDetailView, Group> rp1 = new TransResultPage<GroupDetailView, Group>(rp) {
 
 			@Override
 			protected GroupDetailView trans(Group src) {
 				return GroupDetailView.valueOf(src);
 			}
 		};
+		return rp1;
+
 	}
 
 	@WeforwardMethod

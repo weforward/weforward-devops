@@ -660,7 +660,7 @@ public class HomeMethods implements ResourceHandler {
 	public ResultPage<GroupView> groups(GroupsParam params) throws ApiException {
 		String keywords = params.getKeywords();
 		ResultPage<Group> rp = (ResultPage<Group>) m_GroupProvider.search(getMyOrganization(), keywords);
-		rp = ResultPageHelper.reverseResultPage(rp);
+		// rp = ResultPageHelper.reverseResultPage(rp);
 		return new TransResultPage<GroupView, Group>(rp) {
 
 			@Override
