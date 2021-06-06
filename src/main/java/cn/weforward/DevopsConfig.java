@@ -36,9 +36,11 @@ import cn.weforward.devops.project.impl.ProjectServiceImpl;
 import cn.weforward.devops.user.AccessKeeper;
 import cn.weforward.devops.user.GroupProvider;
 import cn.weforward.devops.user.OrganizationProvider;
+import cn.weforward.devops.user.RoleProvider;
 import cn.weforward.devops.user.UserProvider;
 import cn.weforward.devops.user.impl.InnerGroupProvider;
 import cn.weforward.devops.user.impl.InnerOrganizationProvider;
+import cn.weforward.devops.user.impl.InnerRoleProvider;
 import cn.weforward.devops.user.impl.InnerUserProvider;
 import cn.weforward.devops.user.impl.MicroserviceOrganizationProvider;
 import cn.weforward.devops.user.impl.MicroserviceUserProvider;
@@ -231,15 +233,21 @@ public class DevopsConfig {
 		return new InnerGroupProvider(persisterFactroy, userProvider);
 	}
 
+	@Bean
+	RoleProvider roleProvider() {
+		return new InnerRoleProvider();
+	}
+
 	@Bean(name = "userAuth")
-	UserProvider userProvider(OrganizationProvider organizationProvider) {
+	UserProvider userProvider(RoleProvider roleProvider, OrganizationProvider organizationProvider) {
 		if (StringUtil.isEmpty(m_UserServiceName)) {
-			return new InnerUserProvider(m_UserId, m_UserName, m_UserPassword, m_UserSecretKey, organizationProvider);
+			return new InnerUserProvider(m_UserId, m_UserName, m_UserPassword, m_UserSecretKey, roleProvider,
+					organizationProvider);
 		}
 		MicroserviceUserProvider mp = new MicroserviceUserProvider(m_ApiUrl, m_ServiceAccessId, m_ServiceAccessKey,
-				m_UserServiceName, m_UserMethodGroup, organizationProvider);
+				m_UserServiceName, m_UserMethodGroup, roleProvider, organizationProvider);
 		InnerUserProvider ip = new InnerUserProvider(m_UserId, m_UserName, m_UserPassword, m_UserSecretKey,
-				organizationProvider);
+				roleProvider, organizationProvider);
 		return new MultipleUserProvider(mp, ip);
 	}
 

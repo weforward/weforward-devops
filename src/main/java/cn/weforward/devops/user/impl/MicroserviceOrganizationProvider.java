@@ -115,7 +115,7 @@ public class MicroserviceOrganizationProvider implements OrganizationProvider {
 		String method = genMethod("getOrg");
 		SimpleDtObject params = new SimpleDtObject();
 		params.put("id", id);
-		Response response = invoker.invoke(method, null);
+		Response response = invoker.invoke(method, params);
 		return toOrg(response);
 
 	}
