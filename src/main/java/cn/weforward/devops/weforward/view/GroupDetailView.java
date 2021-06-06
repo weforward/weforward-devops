@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import cn.weforward.devops.project.Group;
+import cn.weforward.devops.user.Group;
 import cn.weforward.protocol.ops.User;
 
 /**

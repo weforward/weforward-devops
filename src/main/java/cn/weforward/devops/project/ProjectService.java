@@ -15,6 +15,7 @@ import java.util.List;
 import cn.weforward.common.NameItem;
 import cn.weforward.common.NameItems;
 import cn.weforward.common.ResultPage;
+import cn.weforward.devops.user.Group;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.framework.ApiException;
 

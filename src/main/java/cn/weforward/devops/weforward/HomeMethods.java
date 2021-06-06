@@ -38,8 +38,6 @@ import cn.weforward.devops.alarm.Alarm;
 import cn.weforward.devops.alarm.AlarmService;
 import cn.weforward.devops.project.Bind;
 import cn.weforward.devops.project.Env;
-import cn.weforward.devops.project.Group;
-import cn.weforward.devops.project.GroupRight;
 import cn.weforward.devops.project.Machine;
 import cn.weforward.devops.project.OpTask;
 import cn.weforward.devops.project.Project;
@@ -52,7 +50,9 @@ import cn.weforward.devops.project.impl.DockerMachine;
 import cn.weforward.devops.project.impl.HtmlProject;
 import cn.weforward.devops.project.impl.JavaProject;
 import cn.weforward.devops.project.impl.ProxyMachine;
+import cn.weforward.devops.user.Group;
 import cn.weforward.devops.user.GroupProvider;
+import cn.weforward.devops.user.GroupRight;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.devops.user.OrganizationUser;
 import cn.weforward.devops.user.UserProvider;
@@ -659,8 +659,7 @@ public class HomeMethods implements ResourceHandler {
 	@DocReturn(description = "群组结果集合")
 	public ResultPage<GroupView> groups(GroupsParam params) throws ApiException {
 		String keywords = params.getKeywords();
-		@SuppressWarnings("unchecked")
-		ResultPage<Group> rp = (ResultPage<Group>) m_GroupProvider.searchGroups(getMyOrganization(), keywords);
+		ResultPage<Group> rp = (ResultPage<Group>) m_GroupProvider.search(getMyOrganization(), keywords);
 		rp = ResultPageHelper.reverseResultPage(rp);
 		return new TransResultPage<GroupView, Group>(rp) {
 

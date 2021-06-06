@@ -11,7 +11,6 @@
 package cn.weforward.devops.user;
 
 import cn.weforward.common.ResultPage;
-import cn.weforward.devops.project.Group;
 
 /**
  * 群组供应
@@ -45,5 +44,5 @@ public interface GroupProvider {
 	 * @param keywords 关键字
 	 * @return
 	 */
-	ResultPage<? extends Group> searchGroups(Organization org, String keywords);
+	ResultPage<Group> search(Organization org, String keywords);
 }

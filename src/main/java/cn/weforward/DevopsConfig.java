@@ -42,9 +42,13 @@ import cn.weforward.devops.user.impl.InnerGroupProvider;
 import cn.weforward.devops.user.impl.InnerOrganizationProvider;
 import cn.weforward.devops.user.impl.InnerRoleProvider;
 import cn.weforward.devops.user.impl.InnerUserProvider;
+import cn.weforward.devops.user.impl.MicroserviceGroupProvider;
 import cn.weforward.devops.user.impl.MicroserviceOrganizationProvider;
+import cn.weforward.devops.user.impl.MicroserviceRoleProvider;
 import cn.weforward.devops.user.impl.MicroserviceUserProvider;
+import cn.weforward.devops.user.impl.MultipleGroupProvider;
 import cn.weforward.devops.user.impl.MultipleOrganizationProvider;
+import cn.weforward.devops.user.impl.MultipleRoleProvider;
 import cn.weforward.devops.user.impl.MultipleUserProvider;
 import cn.weforward.protocol.gateway.Keeper;
 import cn.weforward.protocol.gateway.http.HttpKeeper;
@@ -121,6 +125,15 @@ public class DevopsConfig {
 	protected String m_OrganizationServiceName;
 	@Value("${weforward.organization.methodGroup:}")
 	protected String m_OrganizationMethodGroup;
+	@Value("${weforward.group.serviceName:}")
+	protected String m_GroupServiceName;
+	@Value("${weforward.group.methodGroup:}")
+	protected String m_GroupMethodGroup;
+
+	@Value("${weforward.role.serviceName:}")
+	protected String m_RoleServiceName;
+	@Value("${weforward.role.methodGroup:}")
+	protected String m_RoleMethodGroup;
 
 	@Value("${weforward.user.id:_admin}")
 	protected String m_UserId;
@@ -230,12 +243,24 @@ public class DevopsConfig {
 
 	@Bean
 	GroupProvider groupProviderProvider(PersisterFactory persisterFactroy, UserProvider userProvider) {
-		return new InnerGroupProvider(persisterFactroy, userProvider);
+		if (StringUtil.isEmpty(m_GroupServiceName)) {
+			return new InnerGroupProvider(persisterFactroy, userProvider);
+		}
+		MicroserviceGroupProvider mp = new MicroserviceGroupProvider(m_ApiUrl, m_ServiceAccessId, m_ServiceAccessKey,
+				m_GroupServiceName, m_GroupMethodGroup, userProvider);
+		InnerGroupProvider ip = new InnerGroupProvider(persisterFactroy, userProvider);
+		return new MultipleGroupProvider(mp, ip);
 	}
 
 	@Bean
 	RoleProvider roleProvider() {
-		return new InnerRoleProvider();
+		if (StringUtil.isEmpty(m_RoleServiceName)) {
+			return new InnerRoleProvider();
+		}
+		MicroserviceRoleProvider mp = new MicroserviceRoleProvider(m_ApiUrl, m_ServiceAccessId, m_ServiceAccessKey,
+				m_RoleServiceName, m_RoleMethodGroup);
+		InnerRoleProvider ip = new InnerRoleProvider();
+		return new MultipleRoleProvider(mp, ip);
 	}
 
 	@Bean(name = "userAuth")

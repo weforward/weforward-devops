@@ -15,10 +15,10 @@ import java.util.List;
 import cn.weforward.common.util.TransList;
 import cn.weforward.devops.project.Bind;
 import cn.weforward.devops.project.Env;
-import cn.weforward.devops.project.GroupRight;
 import cn.weforward.devops.project.Machine;
 import cn.weforward.devops.project.MachineInfo;
 import cn.weforward.devops.project.Prop;
+import cn.weforward.devops.user.GroupRight;
 import cn.weforward.protocol.doc.annotation.DocAttribute;
 import cn.weforward.protocol.doc.annotation.DocObject;
 

@@ -14,6 +14,7 @@ import java.util.List;
 
 import cn.weforward.common.Nameable;
 import cn.weforward.data.persister.Persistent;
+import cn.weforward.devops.user.GroupRight;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.protocol.ops.User;
 
