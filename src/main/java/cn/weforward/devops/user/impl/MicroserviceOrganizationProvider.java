@@ -22,8 +22,9 @@ import cn.weforward.protocol.client.ServiceInvoker;
 import cn.weforward.protocol.client.ServiceInvokerFactory;
 import cn.weforward.protocol.client.execption.GatewayException;
 import cn.weforward.protocol.client.execption.MicroserviceException;
-import cn.weforward.protocol.client.ext.RemoteResultPage;
-import cn.weforward.protocol.client.ext.RequestInvokeParam;
+import cn.weforward.protocol.client.ext.TransRemoteResultPage;
+import cn.weforward.protocol.datatype.DtBase;
+import cn.weforward.protocol.datatype.DtObject;
 import cn.weforward.protocol.gateway.Keeper;
 import cn.weforward.protocol.ops.User;
 import cn.weforward.protocol.support.NamingConverter;
@@ -127,8 +128,15 @@ public class MicroserviceOrganizationProvider implements OrganizationProvider {
 			return ResultPageHelper.empty();
 		}
 		String method = genMethod("searchOrg");
-		return new RemoteResultPage<Organization>(Organization.class, invoker, method,
-				RequestInvokeParam.valueOf("keywords", keywords));
+		SimpleDtObject params = new SimpleDtObject();
+		params.put("keywords", keywords);
+		return new TransRemoteResultPage<Organization>(invoker, method, params) {
+
+			@Override
+			protected Organization trans(DtBase item) {
+				return toOrg(FriendlyObject.valueOf((DtObject) item));
+			}
+		};
 
 	}
 
@@ -144,7 +152,7 @@ public class MicroserviceOrganizationProvider implements OrganizationProvider {
 		String method = genMethod("getOrgByUser");
 		SimpleDtObject params = new SimpleDtObject();
 		params.put("user", user.getId());
-		Response response = invoker.invoke(method, null);
+		Response response = invoker.invoke(method, params);
 		return toOrg(response);
 	}
 
@@ -152,9 +160,20 @@ public class MicroserviceOrganizationProvider implements OrganizationProvider {
 		GatewayException.checkException(response);
 		FriendlyObject result = FriendlyObject.valueOf(response.getServiceResult());
 		MicroserviceException.checkException(result);
+		if (result.isNull()) {
+			return null;
+		}
+		FriendlyObject content = result.getFriendlyObject("content");
+		if (content.isNull()) {
+			return null;
+		}
+		return toOrg(content);
+	}
+
+	private Organization toOrg(FriendlyObject content) {
 		Organization org = new Organization();
-		org.setId(result.getString("id"));
-		org.setName(result.getString("name"));
+		org.setId(content.getString("short_name"));
+		org.setName(content.getString("name"));
 		return org;
 	}
 

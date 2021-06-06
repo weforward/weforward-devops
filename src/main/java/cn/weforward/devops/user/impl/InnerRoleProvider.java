@@ -23,9 +23,10 @@ public class InnerRoleProvider implements RoleProvider {
 	@Override
 	public List<Right> getRights(User user) {
 		if (user instanceof SimpleOrganizationUser) {
-			if (((SimpleOrganizationUser) user).isInner()) {
-				return ALLRIGHTS;
-			}
+			// TODO
+			// if (((SimpleOrganizationUser) user).isInner()) {
+			return ALLRIGHTS;
+			// }
 		}
 		return Collections.emptyList();
 	}
