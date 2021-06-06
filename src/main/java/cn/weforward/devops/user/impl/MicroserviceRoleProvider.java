@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import cn.weforward.common.sys.GcCleaner;
-import cn.weforward.common.util.LruCache;
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.devops.user.OrganizationUser;
 import cn.weforward.devops.user.RoleProvider;
@@ -44,10 +42,8 @@ public class MicroserviceRoleProvider implements RoleProvider {
 	protected ServiceInvoker m_Invoker;
 	/** （网关）管理接口 */
 	protected Keeper m_Keeper;
+
 	/** 缓存 */
-	protected LruCache<String, List<Role>> m_Roles;
-	/** 缓存 */
-	protected LruCache<String, List<Right>> m_Rights;
 
 	public MicroserviceRoleProvider(String apiUrl, String accessId, String accessKey, String serviceName,
 			String methodGroup) {
@@ -56,10 +52,6 @@ public class MicroserviceRoleProvider implements RoleProvider {
 		m_AccessKey = accessKey;
 		m_ServiceName = serviceName;
 		m_MethodGroup = StringUtil.toString(methodGroup);
-		m_Roles = new LruCache<String, List<Role>>("weforward-roles");
-		m_Rights = new LruCache<String, List<Right>>("weforward-right");
-		GcCleaner.register(m_Roles);
-		GcCleaner.register(m_Rights);
 	}
 
 	/* 生成方法名 */
