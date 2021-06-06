@@ -238,7 +238,7 @@ public class DevopsConfig {
 				m_ServiceAccessKey, m_OrganizationServiceName, m_OrganizationMethodGroup);
 		mp.setKeeper(keeper);
 		InnerOrganizationProvider ip = new InnerOrganizationProvider(m_Organizationid, m_OrganizationName);
-		return new MultipleOrganizationProvider(Arrays.asList(mp, ip));
+		return new MultipleOrganizationProvider(Arrays.asList(ip, mp));
 	}
 
 	@Bean
@@ -249,7 +249,7 @@ public class DevopsConfig {
 		MicroserviceGroupProvider mp = new MicroserviceGroupProvider(m_ApiUrl, m_ServiceAccessId, m_ServiceAccessKey,
 				m_GroupServiceName, m_GroupMethodGroup, userProvider);
 		InnerGroupProvider ip = new InnerGroupProvider(persisterFactroy, userProvider);
-		return new MultipleGroupProvider(mp, ip);
+		return new MultipleGroupProvider(ip, mp);
 	}
 
 	@Bean
@@ -260,7 +260,7 @@ public class DevopsConfig {
 		MicroserviceRoleProvider mp = new MicroserviceRoleProvider(m_ApiUrl, m_ServiceAccessId, m_ServiceAccessKey,
 				m_RoleServiceName, m_RoleMethodGroup);
 		InnerRoleProvider ip = new InnerRoleProvider();
-		return new MultipleRoleProvider(mp, ip);
+		return new MultipleRoleProvider(ip, mp);
 	}
 
 	@Bean(name = "userAuth")
