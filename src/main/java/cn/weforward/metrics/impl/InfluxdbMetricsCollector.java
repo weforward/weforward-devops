@@ -78,7 +78,12 @@ public class InfluxdbMetricsCollector implements MetricsCollector {
 	private InfluxDB getDb() {
 		if (null == m_DB) {
 			Builder client = new OkHttpClient.Builder();
-			InfluxDB db = InfluxDBFactory.connect(m_ServerUrl, m_Username, m_Password, client);
+			InfluxDB db;
+			if (StringUtil.isEmpty(m_Username) || StringUtil.isEmpty(m_Password)) {
+				db = InfluxDBFactory.connect(m_ServerUrl, client);
+			} else {
+				db = InfluxDBFactory.connect(m_ServerUrl, m_Username, m_Password, client);
+			}
 			try {
 				db.query(new Query("create database " + m_DBName));
 			} catch (Throwable e) {

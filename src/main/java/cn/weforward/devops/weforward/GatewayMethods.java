@@ -20,14 +20,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import cn.weforward.common.ResultPage;
-import cn.weforward.common.util.ListUtil;
 import cn.weforward.common.util.NumberUtil;
 import cn.weforward.common.util.ResultPageHelper;
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.common.util.TransResultPage;
-import cn.weforward.common.util.UnionResultPage;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.devops.user.OrganizationProvider;
+import cn.weforward.devops.user.OrganizationUser;
 import cn.weforward.devops.weforward.view.AccessView;
 import cn.weforward.devops.weforward.view.RightTableInfoView;
 import cn.weforward.devops.weforward.view.ServiceInfoView;
@@ -35,6 +34,7 @@ import cn.weforward.devops.weforward.view.TrafficTableInfoView;
 import cn.weforward.framework.ApiException;
 import cn.weforward.framework.WeforwardMethod;
 import cn.weforward.framework.WeforwardMethods;
+import cn.weforward.framework.WeforwardSession;
 import cn.weforward.protocol.Access;
 import cn.weforward.protocol.datatype.DtBase;
 import cn.weforward.protocol.datatype.DtNumber;
@@ -66,9 +66,14 @@ public class GatewayMethods {
 	@Autowired(required = false)
 	protected Keeper m_Keeper;
 	@Resource
-	protected OrganizationProvider m_GroupProvider;
+	protected OrganizationProvider m_OrganizationProvider;
 
 	static final org.slf4j.Logger _Logger = LoggerFactory.getLogger(GatewayMethods.class);
+
+	private Organization getMyOrganization() {
+		OrganizationUser user = WeforwardSession.TLS.getUser();
+		return user.getOrganization();
+	}
 
 	@WeforwardMethod
 	public ResultPage<Organization> merchants(FriendlyObject params) {
@@ -76,41 +81,21 @@ public class GatewayMethods {
 			return ResultPageHelper.empty();
 		}
 		String k = params.getString("keywords");
-		List<String> list = m_Keeper.listAccessGroup(Access.KIND_SERVICE);
-		ResultPage<Organization> rp = m_GroupProvider.search(k);
-		if (ListUtil.isEmpty(list)) {
-			return rp;
-		}
-		ResultPage<String> ids = ResultPageHelper.toResultPage(list);
-		ResultPage<Organization> accessGroups = new TransResultPage<Organization, String>(ids) {
-
-			@Override
-			protected Organization trans(String id) {
-				Organization g = m_GroupProvider.get(id);
-				return null == g ? new Organization(id, null) : g;
-			}
-		};
-		if (0 == rp.getCount()) {
-			return accessGroups;
-		}
-		List<ResultPage<Organization>> pages = new ArrayList<>();
-		pages.add(accessGroups);
-		pages.add(rp);
-		return UnionResultPage.union(pages, null);
-
+		return m_OrganizationProvider.search(k);
 	}
 
+	@DocMethod(title = "创建Access")
 	@WeforwardMethod
 	public AccessView access(FriendlyObject params) throws ApiException {
 		String op = params.getString("op");
 		AccessExt info = null;
 		if ("create".equals(op)) {
 			String kind = params.getString("kind");
-			String group = params.getString("group");
+			String group = getMyOrganization().getId();
 			String summary = params.getString("summary");
 			info = m_Keeper.createAccess(kind, group, summary);
 		}
-		return AccessView.valueOf(info, m_GroupProvider);
+		return AccessView.valueOf(info, m_OrganizationProvider);
 	}
 
 	@DocMethod(title = "列举Access", description = "按类型、组、关键字列举Access")
@@ -122,14 +107,14 @@ public class GatewayMethods {
 			return ResultPageHelper.empty();
 		}
 		String kind = params.getString("kind");
-		String group = params.getString("group");
+		String group = getMyOrganization().getId();
 		String keyword = params.getString("keyword");
 		ResultPage<AccessExt> rp = m_Keeper.listAccess(kind, group, keyword);
 		return new TransResultPage<AccessView, AccessExt>(rp) {
 
 			@Override
 			protected AccessView trans(AccessExt src) {
-				return AccessView.valueOf(src, m_GroupProvider);
+				return AccessView.valueOf(src, m_OrganizationProvider);
 			}
 		};
 	}
@@ -204,7 +189,7 @@ public class GatewayMethods {
 				_Logger.warn("right找不到[" + name + "]");
 			}
 		}
-		return RightTableInfoView.valueOf(name, info, m_GroupProvider);
+		return RightTableInfoView.valueOf(name, info, m_OrganizationProvider);
 	}
 
 	@WeforwardMethod

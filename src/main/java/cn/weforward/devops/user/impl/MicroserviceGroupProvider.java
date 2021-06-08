@@ -10,13 +10,18 @@
  */
 package cn.weforward.devops.user.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import cn.weforward.common.ResultPage;
 import cn.weforward.common.sys.GcCleaner;
 import cn.weforward.common.util.LruCache;
 import cn.weforward.common.util.ResultPageHelper;
 import cn.weforward.common.util.StringUtil;
+import cn.weforward.devops.user.Group;
+import cn.weforward.devops.user.GroupProvider;
 import cn.weforward.devops.user.Organization;
-import cn.weforward.devops.user.OrganizationProvider;
+import cn.weforward.devops.user.UserProvider;
 import cn.weforward.protocol.Response;
 import cn.weforward.protocol.client.ServiceInvoker;
 import cn.weforward.protocol.client.ServiceInvokerFactory;
@@ -26,18 +31,18 @@ import cn.weforward.protocol.client.ext.TransRemoteResultPage;
 import cn.weforward.protocol.datatype.DtBase;
 import cn.weforward.protocol.datatype.DtObject;
 import cn.weforward.protocol.gateway.Keeper;
-import cn.weforward.protocol.ops.User;
 import cn.weforward.protocol.support.NamingConverter;
+import cn.weforward.protocol.support.datatype.FriendlyList;
 import cn.weforward.protocol.support.datatype.FriendlyObject;
 import cn.weforward.protocol.support.datatype.SimpleDtObject;
 
 /**
- * 基于微服务实现组织提供者
+ * 基于微服务的角色供应商实现
  * 
  * @author daibo
  *
  */
-public class MicroserviceOrganizationProvider implements OrganizationProvider {
+public class MicroserviceGroupProvider implements GroupProvider {
 	/** 服务地址 */
 	protected String m_ApiUrl;
 	/** 服务访问id */
@@ -52,22 +57,21 @@ public class MicroserviceOrganizationProvider implements OrganizationProvider {
 	protected ServiceInvoker m_Invoker;
 	/** （网关）管理接口 */
 	protected Keeper m_Keeper;
-	/** 组织缓存 */
-	protected LruCache<String, Organization> m_Organizations;
+	/** 缓存 */
+	protected LruCache<String, Group> m_Groups;
 
-	public MicroserviceOrganizationProvider(String apiUrl, String accessId, String accessKey, String serviceName,
-			String methodGroup) {
+	protected UserProvider m_UserProvider;
+
+	public MicroserviceGroupProvider(String apiUrl, String accessId, String accessKey, String serviceName,
+			String methodGroup, UserProvider userProvder) {
 		m_ApiUrl = apiUrl;
 		m_AccessId = accessId;
 		m_AccessKey = accessKey;
 		m_ServiceName = serviceName;
 		m_MethodGroup = StringUtil.toString(methodGroup);
-		m_Organizations = new LruCache<String, Organization>("weforward-organization");
-		GcCleaner.register(m_Organizations);
-	}
-
-	public void setKeeper(Keeper keeper) {
-		m_Keeper = keeper;
+		m_UserProvider = userProvder;
+		m_Groups = new LruCache<String, Group>("weforward-groups");
+		GcCleaner.register(m_Groups);
 	}
 
 	/* 生成方法名 */
@@ -85,19 +89,20 @@ public class MicroserviceOrganizationProvider implements OrganizationProvider {
 		return m_Invoker;
 	}
 
-	public Organization get(String id) {
+	@Override
+	public Group getGroup(Organization org, String id) {
 		if (StringUtil.isEmpty(id)) {
 			return null;
 		}
-		Organization g = m_Organizations.get(id);
+		Group g = m_Groups.get(id);
 		if (null != g) {
 			return g;
 		}
-		g = doGet(id);
+		g = doGet(org, id);
 		if (null == g) {
 			return null;
 		}
-		Organization old = m_Organizations.putIfAbsent(id, g);
+		Group old = m_Groups.putIfAbsent(id, g);
 		if (null != old) {
 			return old;
 		} else {
@@ -105,76 +110,66 @@ public class MicroserviceOrganizationProvider implements OrganizationProvider {
 		}
 	}
 
-	private Organization doGet(String id) {
-		if (StringUtil.isEmpty(id)) {
+	private Group doGet(Organization org, String id) {
+		if (null == org) {
 			return null;
 		}
 		ServiceInvoker invoker = getInvoker();
 		if (null == invoker) {
 			return null;
 		}
-		String method = genMethod("getOrg");
+		String orgId = org.getId();
+		String method = genMethod("getGroup");
 		SimpleDtObject params = new SimpleDtObject();
+		params.put("org", orgId);
 		params.put("id", id);
 		Response response = invoker.invoke(method, params);
-		return toOrg(response);
-
-	}
-
-	@Override
-	public ResultPage<Organization> search(String keywords) {
-		ServiceInvoker invoker = getInvoker();
-		if (null == invoker) {
-			return ResultPageHelper.empty();
-		}
-		String method = genMethod("searchOrg");
-		SimpleDtObject params = new SimpleDtObject();
-		params.put("keywords", keywords);
-		return new TransRemoteResultPage<Organization>(invoker, method, params) {
-
-			@Override
-			protected Organization trans(DtBase item) {
-				return toOrg(FriendlyObject.valueOf((DtObject) item));
-			}
-		};
-
-	}
-
-	@Override
-	public Organization get(User user) {
-		if (null == user) {
-			return null;
-		}
-		ServiceInvoker invoker = getInvoker();
-		if (null == invoker) {
-			return null;
-		}
-		String method = genMethod("getOrgByUser");
-		SimpleDtObject params = new SimpleDtObject();
-		params.put("user", user.getId());
-		Response response = invoker.invoke(method, params);
-		return toOrg(response);
-	}
-
-	private Organization toOrg(Response response) {
 		GatewayException.checkException(response);
 		FriendlyObject result = FriendlyObject.valueOf(response.getServiceResult());
 		MicroserviceException.checkException(result);
 		if (result.isNull()) {
 			return null;
 		}
-		FriendlyObject content = result.getFriendlyObject("content");
-		if (content.isNull()) {
-			return null;
-		}
-		return toOrg(content);
+		return toGroup(result.getFriendlyObject("content"));
 	}
 
-	private Organization toOrg(FriendlyObject content) {
-		Organization org = new Organization();
-		org.setId(content.getString("id"));
-		org.setName(content.getString("name"));
-		return org;
+	@Override
+	public ResultPage<Group> search(Organization org, String keywords) {
+		ServiceInvoker invoker = getInvoker();
+		if (null == invoker) {
+			return ResultPageHelper.empty();
+		}
+		String method = genMethod("searchGroup");
+		SimpleDtObject params = new SimpleDtObject();
+		params.put("org", org.getId());
+		params.put("keywords", keywords);
+		return new TransRemoteResultPage<Group>(invoker, method, params) {
+
+			@Override
+			protected Group trans(DtBase item) {
+				return toGroup(FriendlyObject.valueOf((DtObject) item));
+			}
+		};
+	}
+
+	private Group toGroup(FriendlyObject params) {
+		GroupVo vo = new GroupVo();
+		vo.setId(params.getString("id"));
+		vo.setName(params.getString("name"));
+		vo.setNote(params.getString("note"));
+		vo.setUserProvider(m_UserProvider);
+		FriendlyList list = params.getFriendlyList("users");
+		List<String> users = new ArrayList<>(list.size());
+		for (int i = 0; i < list.size(); i++) {
+			users.add(list.getString(i));
+		}
+		vo.setUsers(users);
+		return vo;
+	}
+
+	@Override
+	public Group addGroup(Organization org, String name) {
+		throw new UnsupportedOperationException();
 	}
 
 }

@@ -8,81 +8,41 @@
  * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * 
  */
-package cn.weforward.devops.project;
+package cn.weforward.devops.user.impl;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
+import cn.weforward.devops.user.RoleProvider;
+import cn.weforward.protocol.ops.Right;
+import cn.weforward.protocol.ops.Role;
 import cn.weforward.protocol.ops.User;
 
 /**
- * 组
+ * 内部角色实现
  * 
  * @author daibo
  *
  */
-public interface Group {
-	/**
-	 * 组id
-	 * 
-	 * @return
-	 */
-	String getId();
+public class InnerRoleProvider implements RoleProvider {
+	/** 所有权限 */
+	final static List<Right> ALLRIGHTS = Arrays.asList(new SimpleRight(Right.RULE_ALLOW, "/devops/**"),
+			new SimpleRight(Right.RULE_ALLOW, "/user/**"));
 
-	/**
-	 * 设置名称
-	 * 
-	 * @param name
-	 */
-	void setName(String name);
+	@Override
+	public List<Right> getRights(User user) {
+		if (user instanceof SimpleOrganizationUser) {
+			if (((SimpleOrganizationUser) user).isInner()) {
+				return ALLRIGHTS;
+			}
+		}
+		return Collections.emptyList();
+	}
 
-	/**
-	 * 名称
-	 * 
-	 * @return
-	 */
-	String getName();
-
-	/**
-	 * 备注
-	 * 
-	 * @param note
-	 */
-	void setNote(String note);
-
-	/**
-	 * 备注
-	 * 
-	 * @return
-	 */
-	String getNote();
-
-	/**
-	 * 添加用户
-	 * 
-	 * @param user
-	 */
-	void addUser(User user);
-
-	/**
-	 * 运行用户
-	 * 
-	 * @param user
-	 */
-	void removeUser(User user);
-
-	/**
-	 * 是否包含指定用户
-	 * 
-	 * @param user
-	 * @return
-	 */
-	boolean include(User user);
-
-	/**
-	 * 获取用户
-	 * 
-	 * @return
-	 */
-	List<User> getUsers();
+	@Override
+	public List<Role> getRoles(User user) {
+		return Collections.emptyList();
+	}
 
 }

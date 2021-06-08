@@ -13,6 +13,7 @@ package cn.weforward.devops.user.impl;
 import cn.weforward.common.ResultPage;
 import cn.weforward.common.crypto.Base64;
 import cn.weforward.devops.user.OrganizationProvider;
+import cn.weforward.devops.user.RoleProvider;
 import cn.weforward.devops.user.UserAccess;
 import cn.weforward.devops.user.UserProvider;
 import cn.weforward.framework.ApiException;
@@ -57,12 +58,14 @@ public class MicroserviceUserProvider extends MicroserviceUserService implements
 		}
 	};
 
+	protected RoleProvider m_RoleProvider;
 	protected OrganizationProvider m_OrganizationProvider;
 
 	public MicroserviceUserProvider(String apiUrl, String accessId, String accessKey, String serviceName,
-			String methodGroup, OrganizationProvider provider) {
+			String methodGroup, RoleProvider roleProvider, OrganizationProvider organizationProvider) {
 		super(apiUrl, accessId, accessKey, serviceName, methodGroup);
-		m_OrganizationProvider = provider;
+		m_RoleProvider = roleProvider;
+		m_OrganizationProvider = organizationProvider;
 	}
 
 	@Override
@@ -130,26 +133,13 @@ public class MicroserviceUserProvider extends MicroserviceUserService implements
 		return getUser(getContent(response));
 	}
 
-//	@Override
-//	public User checkAccess(String accessId, String accessKey) {
-//		ServiceInvoker invoker = getInvoker();
-//		SimpleDtObject params = new SimpleDtObject();
-//		params.put("accessId", SimpleDtString.valueOf(accessId));
-//		params.put("accessKey", SimpleDtString.valueOf(accessKey));
-//		Response response = invoker.invoke(genMethod("checkAccess"), params);
-//		if (response.getResponseCode() != 0) {
-//			throw new RuntimeException("网关异常:" + response.getResponseCode() + "/" + response.getResponseMsg());
-//		}
-//		return (OrganizationUser) getUser(getContent(response));
-//	}
-
 	/* 获取用户 */
 	protected User getUser(FriendlyObject content) {
 		if (content.isNull()) {
 			return null;
 		}
-		SimpleOrganizationUser user = new SimpleOrganizationUser(content.getString("id"), content.getString("name"),
-				getRight(content.getFriendlyList("right")));
+		SimpleOrganizationUser user = new SimpleOrganizationUser(content.getString("id"), content.getString("name"));
+		user.setRoleProvider(m_RoleProvider);
 		user.setOrganizationProvider(m_OrganizationProvider);
 		return user;
 	}

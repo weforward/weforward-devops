@@ -20,7 +20,7 @@ import cn.weforward.data.persister.Persistent;
 import cn.weforward.data.persister.Persister;
 import cn.weforward.data.persister.PersisterFactory;
 import cn.weforward.data.persister.ext.ConditionUtil;
-import cn.weforward.devops.project.Group;
+import cn.weforward.devops.user.Group;
 import cn.weforward.devops.user.GroupProvider;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.devops.user.UserProvider;
@@ -61,12 +61,13 @@ public class InnerGroupProvider implements GroupProvider, GroupDi {
 		return group;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public ResultPage<? extends Group> searchGroups(Organization org, String keywords) {
+	public ResultPage<Group> search(Organization org, String keywords) {
 		ResultPage<? extends Group> rp = m_PsSimpleGroup
 				.search(ConditionUtil.eq(ConditionUtil.field("m_Organization"), org.getId()));
 		if (StringUtil.isEmpty(keywords)) {
-			return rp;
+			return (ResultPage<Group>) rp;
 		}
 		List<Group> list = new ArrayList<>();
 		for (Group g : ResultPageHelper.toForeach(rp)) {

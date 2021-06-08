@@ -34,8 +34,6 @@ import cn.weforward.data.search.SearchableExt;
 import cn.weforward.data.search.util.IndexElementHelper;
 import cn.weforward.data.search.util.IndexKeywordHelper;
 import cn.weforward.devops.project.Env;
-import cn.weforward.devops.project.Group;
-import cn.weforward.devops.project.GroupRight;
 import cn.weforward.devops.project.Machine;
 import cn.weforward.devops.project.OpTask;
 import cn.weforward.devops.project.Project;
@@ -46,6 +44,8 @@ import cn.weforward.devops.project.RunningProp;
 import cn.weforward.devops.project.VersionInfo;
 import cn.weforward.devops.project.di.ProjectDi;
 import cn.weforward.devops.project.ext.AbstractMachine;
+import cn.weforward.devops.user.Group;
+import cn.weforward.devops.user.GroupRight;
 import cn.weforward.devops.user.Organization;
 
 /**

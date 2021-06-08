@@ -12,11 +12,15 @@ package cn.weforward.devops.weforward;
 
 import javax.annotation.Resource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cn.weforward.devops.project.Machine;
 import cn.weforward.devops.project.ProjectService;
 import cn.weforward.devops.weforward.view.MachineInfoParam;
 import cn.weforward.framework.WeforwardMethod;
 import cn.weforward.framework.WeforwardMethods;
+import cn.weforward.framework.WeforwardSession;
 import cn.weforward.framework.exception.ForwardException;
 import cn.weforward.protocol.Access;
 import cn.weforward.protocol.doc.annotation.DocMethod;
@@ -29,13 +33,16 @@ import cn.weforward.protocol.doc.annotation.DocMethod;
  */
 @WeforwardMethods(kind = Access.KIND_SERVICE)
 public class MachineMethods {
+
+	final static Logger _Logger = LoggerFactory.getLogger(MachineMethods.class);
+
 	@Resource
 	protected ProjectService m_ProjectService;
 
 	@DocMethod(description = "机器心跳方法")
 	@WeforwardMethod
 	public void heartbeat(MachineInfoParam param) {
-		Machine m = m_ProjectService.findMachine(param.getName());
+		Machine m = m_ProjectService.findMachine(WeforwardSession.TLS.getSession().getAccessId(), param.getName());
 		ForwardException.forwardToIfNeed(m);
 		if (null != m) {
 			m.setInfo(param.getInfo());

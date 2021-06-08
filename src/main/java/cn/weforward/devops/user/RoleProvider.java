@@ -8,75 +8,34 @@
  * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * 
  */
-package cn.weforward.devops.weforward.view;
+package cn.weforward.devops.user;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-import cn.weforward.devops.user.Group;
+import cn.weforward.protocol.ops.Right;
+import cn.weforward.protocol.ops.Role;
 import cn.weforward.protocol.ops.User;
 
 /**
- * 组详情视图
+ * 角色供应商
  * 
  * @author daibo
  *
  */
-public class GroupDetailView extends GroupView {
+public interface RoleProvider {
 	/**
-	 * 构造
+	 * 获取角色
 	 * 
-	 * @param g
-	 */
-	public GroupDetailView(Group g) {
-		super(g);
-	}
-
-	/**
-	 * 构造对象
-	 * 
-	 * @param g
+	 * @param user
 	 * @return
 	 */
-	public static GroupDetailView valueOf(Group g) {
-		return null == g ? null : new GroupDetailView(g);
-	}
+	List<Role> getRoles(User user);
 
 	/**
-	 * 备注
+	 * 获取权限
 	 * 
-	 * @return
+	 * @param user
 	 */
-	public String getNote() {
-		return m_Group.getNote();
-	}
-
-	/**
-	 * 获取用户
-	 * 
-	 * @return
-	 */
-	public List<UserView> getUsers() {
-		List<User> users = m_Group.getUsers();
-		if (null == users) {
-			return Collections.emptyList();
-		}
-		List<UserView> list = new ArrayList<>();
-		for (User user : users) {
-			if (null == user) {
-				continue;
-			}
-			list.add(UserView.valueOf(user));
-		}
-		return list;
-//		return new TransList<UserView, User>(group.getUsers()) {
-//
-//			@Override
-//			public UserView trans(User v) {
-//				return UserView.valueOf(v);
-//			}
-//		};
-	}
+	List<Right> getRights(User user);
 
 }

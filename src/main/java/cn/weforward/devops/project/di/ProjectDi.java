@@ -18,13 +18,13 @@ import cn.weforward.data.UniteId;
 import cn.weforward.data.log.BusinessLog;
 import cn.weforward.data.persister.BusinessDi;
 import cn.weforward.data.search.Searcher;
-import cn.weforward.devops.project.Group;
 import cn.weforward.devops.project.Machine;
 import cn.weforward.devops.project.Project;
 import cn.weforward.devops.project.ext.AbstractProject;
 import cn.weforward.devops.project.impl.JavaProject;
 import cn.weforward.devops.project.impl.ServiceProperties;
 import cn.weforward.devops.project.impl.SimpleRunning;
+import cn.weforward.devops.user.Group;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.protocol.ops.User;
 

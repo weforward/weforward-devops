@@ -13,8 +13,8 @@ package cn.weforward.devops.weforward.view;
 import java.util.Collections;
 import java.util.List;
 
-import cn.weforward.devops.project.Group;
-import cn.weforward.devops.project.GroupRight;
+import cn.weforward.devops.user.Group;
+import cn.weforward.devops.user.GroupRight;
 import cn.weforward.protocol.doc.annotation.DocAttribute;
 import cn.weforward.protocol.doc.annotation.DocObject;
 

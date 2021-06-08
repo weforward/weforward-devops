@@ -30,7 +30,6 @@ import cn.weforward.data.persister.ext.ConditionUtil;
 import cn.weforward.data.search.IndexResult;
 import cn.weforward.data.search.IndexResults;
 import cn.weforward.data.search.SearcherFactory;
-import cn.weforward.devops.project.Group;
 import cn.weforward.devops.project.Machine;
 import cn.weforward.devops.project.OpTask;
 import cn.weforward.devops.project.Project;
@@ -40,6 +39,7 @@ import cn.weforward.devops.project.Running;
 import cn.weforward.devops.project.RunningProp;
 import cn.weforward.devops.project.ext.AbstractMachine;
 import cn.weforward.devops.project.ext.AbstractProject;
+import cn.weforward.devops.user.Group;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.framework.ApiException;
 import cn.weforward.protocol.ops.AccessExt;
@@ -350,14 +350,18 @@ public class ProjectServiceImpl extends ProjectDiImpl implements ProjectService 
 	}
 
 	@Override
-	public Machine findMachine(String name) {
+	public Machine findMachine(String accessId, String name) {
+		AccessExt access = m_AccessKeeper.getAccess(accessId);
+		if (null == access) {
+			return null;
+		}
 		for (Persister<? extends AbstractMachine> ps : m_Machines) {
 			ResultPage<? extends AbstractMachine> rp = ps.startsWith(null);
 			for (AbstractMachine p : ResultPageHelper.toForeach(rp)) {
 				if (null == p) {
 					continue;
 				}
-				if (StringUtil.eq(name, p.getName())) {
+				if (StringUtil.eq(name, p.getName()) && p.isMyOrganization(access)) {
 					return p;
 				}
 			}

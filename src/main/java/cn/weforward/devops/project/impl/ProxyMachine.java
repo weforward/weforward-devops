@@ -88,8 +88,6 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 	/** ssh操作客户端 */
 	protected JSch m_JSch;
 
-	private HttpInvoker m_Invoker;
-
 	protected ProxyMachine(ProjectDi di) {
 		super(di);
 	}
@@ -101,13 +99,6 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 		m_Root = root;
 		m_Password = password;
 		markPersistenceUpdate();
-	}
-
-	private HttpInvoker getInvoker() throws IOException {
-		if (null == m_Invoker) {
-			m_Invoker = new HttpInvoker(3, 10);
-		}
-		return m_Invoker;
 	}
 
 	/**
@@ -238,8 +229,10 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 		org.apache.http.HttpResponse response = null;
 		try {
 			processor(processor, "开始导出项目文件");
+			String accessId = getAccessId(running);
+			String accessKey = getAccessKey(running);
 			HttpGet get = new HttpGet(url + "/file.zip");
-			response = getInvoker().execute(get);
+			response = getInvoker(accessId, accessKey).execute(get);
 			StatusLine status = response.getStatusLine();
 			if (status.getStatusCode() != HttpStatus.SC_OK) {
 				throw new IOException("响应码异常" + status);

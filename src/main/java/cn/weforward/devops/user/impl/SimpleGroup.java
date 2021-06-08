@@ -23,7 +23,7 @@ import cn.weforward.data.annotation.ResourceExt;
 import cn.weforward.data.persister.Persister;
 import cn.weforward.data.persister.Reloadable;
 import cn.weforward.data.persister.support.AbstractPersistent;
-import cn.weforward.devops.project.Group;
+import cn.weforward.devops.user.Group;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.devops.user.di.GroupDi;
 import cn.weforward.protocol.ops.User;

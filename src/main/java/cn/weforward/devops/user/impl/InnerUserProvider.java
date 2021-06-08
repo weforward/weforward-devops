@@ -10,8 +10,6 @@
  */
 package cn.weforward.devops.user.impl;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -20,11 +18,11 @@ import cn.weforward.common.crypto.Hex;
 import cn.weforward.common.util.ResultPageHelper;
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.devops.user.OrganizationProvider;
+import cn.weforward.devops.user.RoleProvider;
 import cn.weforward.devops.user.UserAccess;
 import cn.weforward.devops.user.UserProvider;
 import cn.weforward.framework.ApiException;
 import cn.weforward.protocol.AccessLoader;
-import cn.weforward.protocol.ops.Right;
 import cn.weforward.protocol.ops.User;
 import cn.weforward.util.UserAuth;
 
@@ -35,9 +33,6 @@ import cn.weforward.util.UserAuth;
  *
  */
 public class InnerUserProvider implements UserProvider, UserAuth, AccessLoader {
-	/** 所有权限 */
-	final static List<Right> ALLRIGHTS = Arrays.asList(new SimpleRight(Right.RULE_ALLOW, "/devops/**"),
-			new SimpleRight(Right.RULE_ALLOW, "/user/**"));
 	/** 会话缓存 */
 	private Map<String, SimpleUserAccess> m_Access;
 	/** 超级管理员 */
@@ -45,11 +40,12 @@ public class InnerUserProvider implements UserProvider, UserAuth, AccessLoader {
 	/** 用于生成AccessKey的密钥。 */
 	private byte[] m_SecretKey;
 
-	public InnerUserProvider(String id, String name, String password, String secretKey,
+	public InnerUserProvider(String id, String name, String password, String secretKey, RoleProvider roleProvider,
 			OrganizationProvider organizationProvider) {
 		m_Access = new ConcurrentHashMap<String, SimpleUserAccess>();
-		m_Sa = new SimpleOrganizationUser(id, name, ALLRIGHTS);
+		m_Sa = new SimpleOrganizationUser(id, name);
 		m_Sa.setOrganizationProvider(organizationProvider);
+		m_Sa.setRoleProvider(roleProvider);
 		m_Sa.setPassword(password);
 		m_Sa.setInner(true);
 		setSecretKeyHex(secretKey);

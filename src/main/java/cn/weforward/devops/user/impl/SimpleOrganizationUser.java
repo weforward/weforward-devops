@@ -10,13 +10,13 @@
  */
 package cn.weforward.devops.user.impl;
 
-import java.util.Collections;
 import java.util.List;
 
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.devops.user.OrganizationProvider;
 import cn.weforward.devops.user.OrganizationUser;
+import cn.weforward.devops.user.RoleProvider;
 import cn.weforward.framework.ApiException;
 import cn.weforward.protocol.ops.Right;
 import cn.weforward.protocol.ops.Role;
@@ -35,7 +35,11 @@ public class SimpleOrganizationUser implements OrganizationUser {
 
 	protected String m_Password;
 
-	protected List<Right> m_Right;
+	protected List<Role> m_Roles;
+
+	protected List<Right> m_Rights;
+
+	protected RoleProvider m_RoleProvider;
 
 	protected Organization m_Organization;
 
@@ -43,10 +47,9 @@ public class SimpleOrganizationUser implements OrganizationUser {
 
 	protected boolean m_Inner;
 
-	public SimpleOrganizationUser(String id, String name, List<Right> right) {
+	public SimpleOrganizationUser(String id, String name) {
 		m_Id = id;
 		m_Name = name;
-		m_Right = right;
 	}
 
 	void setInner(boolean inner) {
@@ -97,14 +100,21 @@ public class SimpleOrganizationUser implements OrganizationUser {
 
 	@Override
 	public List<Right> getRights() {
-		return m_Right;
+		if (null == m_Rights) {
+			m_Rights = m_RoleProvider.getRights(this);
+		}
+		return m_Rights;
 	}
 
 	@Override
 	public List<Role> getRoles() {
-		return Collections.emptyList();
+		if (null == m_Roles) {
+			m_Roles = m_RoleProvider.getRoles(this);
+		}
+		return m_Roles;
 	}
 
+	@Override
 	public Organization getOrganization() {
 		if (null == m_Organization) {
 			m_Organization = m_OrganizationProvier.get(this);
@@ -114,6 +124,10 @@ public class SimpleOrganizationUser implements OrganizationUser {
 
 	public void setOrganizationProvider(OrganizationProvider organizationProvider) {
 		m_OrganizationProvier = organizationProvider;
+	}
+
+	public void setRoleProvider(RoleProvider roleProvider) {
+		m_RoleProvider = roleProvider;
 	}
 
 }

@@ -17,10 +17,10 @@ import cn.weforward.common.util.StringUtil;
 import cn.weforward.common.util.TransList;
 import cn.weforward.devops.project.Bind;
 import cn.weforward.devops.project.Env;
-import cn.weforward.devops.project.GroupRight;
 import cn.weforward.devops.project.Project;
 import cn.weforward.devops.project.impl.HtmlProject;
 import cn.weforward.devops.project.impl.JavaProject;
+import cn.weforward.devops.user.GroupRight;
 import cn.weforward.protocol.doc.annotation.DocAttribute;
 import cn.weforward.protocol.doc.annotation.DocObject;
 

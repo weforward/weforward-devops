@@ -15,6 +15,7 @@ import java.util.List;
 import cn.weforward.common.NameItem;
 import cn.weforward.common.NameItems;
 import cn.weforward.common.ResultPage;
+import cn.weforward.devops.user.Group;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.framework.ApiException;
 
@@ -185,9 +186,10 @@ public interface ProjectService {
 	/**
 	 * 查找机器
 	 * 
+	 * @param accessid
 	 * @param name
 	 * @return
 	 */
-	Machine findMachine(String name);
+	Machine findMachine(String accessId, String name);
 
 }

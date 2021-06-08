@@ -12,7 +12,6 @@ package cn.weforward.devops.user;
 
 import java.util.List;
 
-import cn.weforward.data.persister.Persistent;
 import cn.weforward.protocol.ops.User;
 
 /**
@@ -21,7 +20,14 @@ import cn.weforward.protocol.ops.User;
  * @author daibo
  *
  */
-public interface Group extends Persistent {
+public interface Group {
+	/**
+	 * 获取id
+	 * 
+	 * @return
+	 */
+	String getId();
+
 	/**
 	 * 设置名称
 	 * 
@@ -78,4 +84,5 @@ public interface Group extends Persistent {
 	 * @return
 	 */
 	List<User> getUsers();
+
 }
