@@ -16,6 +16,8 @@ fi
 echo "Version "$VERSION
 
 if [ $# -lt  2 ] ; then
+	read -p "Input Docker HUB:" DOCKER_HUB
+	echo $DOCKER_HUB
 	read -p "Input Docker User:" DOCKERUSER
 	echo $DOCKERUSER
 	read -s -p "Input Docker Password:" DOCKERPASSWORD
@@ -23,8 +25,6 @@ else
 	DOCKERUSER=$1
 	DOCKERPASSWORD=$2
 fi 
-
-DOCKER_HUB=git.navboy.com:5000
 
 docker tag $IMAGE_NAME $DOCKER_HUB/$IMAGE_NAME:$VERSION
 
