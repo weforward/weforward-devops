@@ -4,11 +4,13 @@ NAME=${0%/*}
 NAME=${NAME%/*}
 NAME=${NAME##*/}
 
+read -p "input DockerHub" DOCKER_HUB
+
 read -p "Input Version:" VERSION
 
 cd `dirname $0`;
 
-IMAGE_NAME=$NAME:$VERSION
+IMAGE_NAME=$DOCKER_HUB/$NAME:$VERSION
 
 docker pull $IMAGE_NAME
 
