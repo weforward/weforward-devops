@@ -33,7 +33,7 @@ _term() {
  
 trap _term TERM
 
-DEFAULT_JAVA_OPTIONS="-Dweforward.serverid=$SERVER_ID -Drlog.url=$RLOG_URL -Dlog.path=$LOG_PATH -Dproject_name=$NAME"
+DEFAULT_JAVA_OPTIONS="-Dweforward.serverid=$SERVER_ID -Dweforward.apiUrl=$WF_GATEWAY_URL -Dweforward.service.accessId=$WF_SERVICE_ACCESSID -Dweforward.service.accessKey=$WF_SERVICE_ACCESSKEY -Dweforward.host=$WF_HOST -Dweforward.port=$WF_PORT -Drlog.url=$RLOG_URL -Dlog.path=$LOG_PATH -Dproject_name=$NAME"
 
 if   [ -n "$WF_JAVA_OPTIONS" ] ;
 then 
