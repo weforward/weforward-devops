@@ -20,7 +20,7 @@ if [ $# -lt  2 ] ; then
 	echo $DOCKERUSER
 	read -s -p "Input Docker Password:" DOCKERPASSWORD
 	echo ''
-	read -p "Input Docker HUB:" DOCKER_HUB
+	read -p "Input Docker Hub:" DOCKER_HUB
 	echo $DOCKER_HUB
 else
 	DOCKERUSER=$1
