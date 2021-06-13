@@ -4,7 +4,7 @@ NAME=${0%/*}
 NAME=${NAME%/*}
 NAME=${NAME##*/}
 
-IMAGE_NAME=$NAME
+IMAGE_NAME=weforward/devops
 
 cd `dirname $0`;
 

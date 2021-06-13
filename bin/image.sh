@@ -4,7 +4,7 @@ NAME=${0%/*}
 NAME=${NAME%/*}
 NAME=${NAME##*/}
 
-IMAGE_NAME=$NAME
+IMAGE_NAME=weforward/devops
 
 VERSION=`docker exec $NAME java VersionUtil $NAME.jar`
 
@@ -16,17 +16,26 @@ fi
 echo "Version "$VERSION
 
 if [ $# -lt  2 ] ; then
-	read -p "Input Docker HUB:" DOCKER_HUB
-	echo $DOCKER_HUB
 	read -p "Input Docker User:" DOCKERUSER
 	echo $DOCKERUSER
 	read -s -p "Input Docker Password:" DOCKERPASSWORD
+	echo ''
+	read -p "Input Docker HUB:" DOCKER_HUB
+	echo $DOCKER_HUB
 else
 	DOCKERUSER=$1
 	DOCKERPASSWORD=$2
+	DOCKER_HUB=$3
 fi 
 
-docker tag $IMAGE_NAME $DOCKER_HUB/$IMAGE_NAME:$VERSION
+if   [ $DOCKER_HUB ] ;
+then 
+	TAG_NAME=$DOCKER_HUB/$IMAGE_NAME:$VERSION
+else 
+	TAG_NAME=$IMAGE_NAME:$VERSION
+fi
+
+docker tag $IMAGE_NAME $TAG_NAME
 
 docker login -u $DOCKERUSER -p $DOCKERPASSWORD $DOCKER_HUB 
 
@@ -35,13 +44,13 @@ if [ $? -ne 0 ] ; then
 	exit 1
 fi
 
-docker push $DOCKER_HUB/$IMAGE_NAME:$VERSION
+docker push $TAG_NAME
 
 docker logout $DOCKER_HUB
 if [ $? -ne 0 ] ; then 
-	echo "上传$DOCKER_HUB/$IMAGE_NAME:$VERSION失败"
+	echo "上传$TAG_NAME失败"
 else
-	echo "成功上传$DOCKER_HUB/$IMAGE_NAME:$VERSION"
+	echo "成功上传$TAG_NAME"
 fi
 
   
