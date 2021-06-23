@@ -20,6 +20,9 @@ import cn.weforward.framework.WeforwardMethod;
 import cn.weforward.framework.WeforwardMethods;
 import cn.weforward.protocol.datatype.DtBase;
 import cn.weforward.protocol.datatype.DtObject;
+import cn.weforward.protocol.doc.annotation.DocAttribute;
+import cn.weforward.protocol.doc.annotation.DocMethod;
+import cn.weforward.protocol.doc.annotation.DocParameter;
 import cn.weforward.protocol.support.CommonServiceCodes;
 import cn.weforward.protocol.support.datatype.FriendlyObject;
 import cn.weforward.protocol.support.datatype.SimpleDtObject;
@@ -29,6 +32,9 @@ public class AuthMethods {
 	@Resource
 	protected UserProvider m_UserProvider;
 
+	@DocMethod(description = "登录")
+	@DocParameter({ @DocAttribute(name = "user_name", type = String.class),
+			@DocAttribute(name = "password", type = String.class) })
 	@WeforwardMethod
 	public DtBase login(FriendlyObject params) throws ApiException {
 		String userName = params.getString("user_name");
@@ -43,15 +49,8 @@ public class AuthMethods {
 		return toBase(access);
 	}
 
-	private static DtObject toBase(UserAccess access) {
-		SimpleDtObject content = new SimpleDtObject();
-		content.put("access_id", access.getAccessId());
-		content.put("access_key", access.getAccessKeyBase64());
-		content.put("access_expire", access.getAccessExpire());
-		content.put("session_id", access.getSessionId());
-		return content;
-	}
-
+	@DocMethod(description = "登出")
+	@DocParameter({ @DocAttribute(name = "access_id", type = String.class) })
 	@WeforwardMethod
 	public void logout(FriendlyObject params) {
 		String accessId = params.getString("access_id");
@@ -60,6 +59,9 @@ public class AuthMethods {
 		}
 	}
 
+	@DocMethod(description = "刷新凭证")
+	@DocParameter({ @DocAttribute(name = "access_id", type = String.class),
+			@DocAttribute(name = "access_key", type = String.class) })
 	@WeforwardMethod
 	public DtBase refreshAccess(FriendlyObject params) throws ApiException {
 		String accessId = params.getString("access_id");
@@ -69,6 +71,15 @@ public class AuthMethods {
 			throw new ApiException(CommonServiceCodes.ILLEGAL_ARGUMENT.code, "刷新后access为空");
 		}
 		return toBase(access);
+	}
+
+	private static DtObject toBase(UserAccess access) {
+		SimpleDtObject content = new SimpleDtObject();
+		content.put("access_id", access.getAccessId());
+		content.put("access_key", access.getAccessKeyBase64());
+		content.put("access_expire", access.getAccessExpire());
+		content.put("session_id", access.getSessionId());
+		return content;
 	}
 
 }
