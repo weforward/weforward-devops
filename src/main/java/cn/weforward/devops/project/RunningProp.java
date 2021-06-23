@@ -25,7 +25,7 @@ import cn.weforward.data.annotation.Inherited;
  */
 @Inherited
 public class RunningProp extends Prop {
-
+	public static final String WEFORWARD_GATEWAYURL = "weforward.gatewayUrl";
 	public static final String WEFORWARD_APIURL = "weforward.apiUrl";
 	public static final String WEFORWARD_HOST = "weforward.host";
 	public static final String WEFORWARD_PORT = "weforward.port";

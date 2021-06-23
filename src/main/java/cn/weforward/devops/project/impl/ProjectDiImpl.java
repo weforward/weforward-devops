@@ -90,6 +90,8 @@ public abstract class ProjectDiImpl implements ProjectDi {
 	protected String m_RlogUrl;
 	/** 资源链接 */
 	protected String m_ResourceUrl;
+	/** 网关链接 */
+	protected String m_GatewayUrl;
 	/** 云链接 */
 	protected String m_ApiUrl;
 	/** docker机器 */
@@ -327,6 +329,15 @@ public abstract class ProjectDiImpl implements ProjectDi {
 	@Override
 	public String getApiUrl() {
 		return m_ApiUrl;
+	}
+
+	public void setGatewayUrl(String url) {
+		m_GatewayUrl = url;
+	}
+
+	@Override
+	public String getGatewayUrl() {
+		return m_GatewayUrl;
 	}
 
 	public synchronized void setTaskExecutor(TaskExecutor exe) {

@@ -44,12 +44,12 @@
 		<dependency>
 			<groupId>cn.weforward</groupId>
 			<artifactId>weforward-framework</artifactId>
-			<version>1.2.1.219954</version>
+			<version>1.2.2</version>
 		</dependency>
 		<dependency>
 			<groupId>cn.weforward</groupId>
 			<artifactId>weforward-data-mongodb</artifactId>
-			<version>1.2.1.215922</version>
+			<version>1.2.2</version>
 		</dependency>
 		<dependency>
 			<groupId>ch.qos.logback</groupId>

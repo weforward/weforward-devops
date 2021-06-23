@@ -823,13 +823,16 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 				sb.append(DEFAULT_INITIATINGHEAPOCCUPANCYPERCENT);
 			}
 		}
+		String gatewayUrl = getBusinessDi().getGatewayUrl();
 		String apiUrl = getBusinessDi().getApiUrl();
 		String host = getHost();
 		String accessId = null;
 		String accessKey = null;
 		List<RunningProp> runningprops = running.getProps();
 		for (RunningProp prop : runningprops) {
-			if (StringUtil.eq(RunningProp.WEFORWARD_APIURL, prop.getKey())) {
+			if (StringUtil.eq(RunningProp.WEFORWARD_GATEWAYURL, prop.getKey())) {
+				apiUrl = prop.getValue();
+			} else if (StringUtil.eq(RunningProp.WEFORWARD_APIURL, prop.getKey())) {
 				apiUrl = prop.getValue();
 			} else if (StringUtil.eq(RunningProp.WEFORWARD_HOST, prop.getKey())) {
 				host = prop.getValue();
@@ -839,6 +842,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 				accessKey = prop.getValue();
 			}
 		}
+		sb.append(" -D").append(RunningProp.WEFORWARD_GATEWAYURL).append("=").append(gatewayUrl);
 		sb.append(" -D").append(RunningProp.WEFORWARD_APIURL).append("=").append(apiUrl);
 		sb.append(" -D").append(RunningProp.WEFORWARD_HOST).append("=").append(host);
 		if (null != accessId) {

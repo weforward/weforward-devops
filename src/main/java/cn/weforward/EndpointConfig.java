@@ -54,6 +54,9 @@ public class EndpointConfig {
 	@Value("${weforward.port:15000}")
 	protected int m_DevopsPort;
 	/** 服务网关地址 */
+	@Value("${weforward.gatewayUrl:}")
+	protected String m_GatewayUrl;
+	/** 服务网关地址 */
 	@Value("${weforward.apiUrl:}")
 	protected String m_ApiUrl;
 	/** 服务访问id */
@@ -88,7 +91,6 @@ public class EndpointConfig {
 		String d = "/devops/";
 		WeforwardService s = new WeforwardService(m_DevopsName, m_DevopsHost, m_DevopsPort, d);
 		s.setDebugEnabled(m_DebugEnabled);
-		s.setServicesUrl(m_ApiUrl);
 		s.setAccessId(m_ServiceAccessId);
 		s.setAccessKey(m_ServiceAccessKey);
 		s.setNo(m_ServerId);
@@ -96,6 +98,7 @@ public class EndpointConfig {
 		s.setStatusCodeClassName(CommonServiceCodes.class.getName());
 		s.setMeterRegistry(meterRegistry);
 		s.setTraceRegister(traceRegistry);
+		s.setGatewayUrl(m_GatewayUrl);
 		UserAuthorizer a = new UserAuthorizer();
 		a.setUserService(m_UserService);
 		a.setIgnoreUris(Arrays.asList(d + "_cuser", d + "_version", d + "auth/*"));

@@ -100,11 +100,18 @@ public interface ProjectDi extends BusinessDi {
 	ResultPage<JavaProject> getJavaProjects(Organization org);
 
 	/**
-	 * 网关链接
+	 * 调用网关链接
 	 * 
 	 * @return
 	 */
 	String getApiUrl();
+
+	/**
+	 * 网关链接
+	 * 
+	 * @return
+	 */
+	String getGatewayUrl();
 
 	/**
 	 * 获取服务配置

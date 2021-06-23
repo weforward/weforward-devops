@@ -79,9 +79,12 @@ public class DevopsConfig {
 	/** 日志url */
 	@Value("${rlog.url}")
 	protected String m_RlogUrl;
-	/** 服务网关地址 */
+	/** 调整服务网关地址 */
 	@Value("${weforward.apiUrl:}")
 	protected String m_ApiUrl;
+	/** 注册服务网关地址 */
+	@Value("${weforward.gatewayUrl:}")
+	protected String m_GatewayUrl;
 	/** 服务访问id */
 	@Value("${weforward.service.accessId:}")
 	protected String m_ServiceAccessId;
@@ -212,6 +215,7 @@ public class DevopsConfig {
 		p.setDownloadUrl(m_DownloadUrl);
 		p.setResourceUrl(m_ResourceUrl);
 		p.setRlogUrl(m_RlogUrl);
+		p.setApiUrl(m_GatewayUrl);
 		p.setApiUrl(m_ApiUrl);
 		p.setTaskExecutor(taskExecutor);
 		p.setUserService(userProvider);
