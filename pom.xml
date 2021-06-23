@@ -5,7 +5,7 @@
 
 	<groupId>cn.weforward</groupId>
 	<artifactId>weforward-devops</artifactId>
-	<version>1.1.6.991480</version>
+	<version>1.1.0.20210620</version>
 
 	<name>weforward-devops</name>
 	<url>http://weforward.cn</url>
@@ -30,8 +30,8 @@
 	</properties>
 
 	<scm>
-		<url>https://codeup.aliyun.com/5faca4d322a8c7ff39350b14/weforward/weforward-devops.git</url>
-		<tag>https://codeup.aliyun.com/5faca4d322a8c7ff39350b14/weforward/weforward-devops.git</tag>
+		<url>https://github.com/weforward/weforward-devops.git</url>
+		<tag>https://github.com/weforward/weforward-devops.git</tag>
 	</scm>
 
 	<dependencies>
@@ -69,12 +69,12 @@
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
-			<version>4.5.5</version>
+			<version>4.5.13</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpmime</artifactId>
-			<version>4.5.5</version>
+			<version>4.5.13</version>
 		</dependency>
 		<dependency>
 			<groupId>org.json</groupId>
@@ -114,7 +114,7 @@
 					<plugin>
 						<groupId>cn.weforward</groupId>
 						<artifactId>build-maven-plugin</artifactId>
-						<version>1.1.1</version>
+						<version>1.2.0</version>
 						<configuration>
 							<mainVersion>1.1</mainVersion>
 							<outputDirectory>bin</outputDirectory>

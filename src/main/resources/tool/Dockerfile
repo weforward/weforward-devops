@@ -16,7 +16,7 @@ USER boot
 
 RUN wget --user=${USER} --password=${PASS} ${JAR_FILE}
 
-RUN wget ${RES_URL}boot.sh
+RUN wget --user=${USER} --password=${PASS} ${RES_URL}boot.sh
 
 RUN ["chmod","u+x","boot.sh"]
 

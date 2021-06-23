@@ -1030,7 +1030,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			return false;
 		}
 		long rate = (info.getMemoryUsable() * 100) / info.getMemoryTotal();
-		return rate >= 90;
+		return rate <= 10;
 	}
 
 	/* 添加环境变量 */
