@@ -125,7 +125,8 @@ public class GatewayMethods {
 			return ResultPageHelper.empty();
 		}
 		String name = params.getString("name");
-		return m_Keeper.listServiceName(name);
+		String group = getMyOrganization().getId();
+		return m_Keeper.listServiceName(name, group);
 	}
 
 	@DocMethod(description = "列举已注册的微服务实例")
@@ -136,7 +137,8 @@ public class GatewayMethods {
 			return Collections.emptyList();
 		}
 		String name = params.getString("name");
-		ResultPage<ServiceExt> rp = m_Keeper.listService(name);
+		String group = getMyOrganization().getId();
+		ResultPage<ServiceExt> rp = m_Keeper.listService(name, group);
 		rp.setPageSize(rp.getCount());
 		rp.gotoPage(1);
 		List<ServiceInfoView> list = new ArrayList<>();
@@ -149,6 +151,10 @@ public class GatewayMethods {
 	@WeforwardMethod
 	public RightTableInfoView right(FriendlyObject params) {
 		String name = params.getString("name");
+		String group = getMyOrganization().getId();
+		if (!m_Keeper.isExistService(name, group)) {
+			return null;
+		}
 		String op = params.getString("op");
 		RightTable info;
 		if ("append".equals(op)) {
@@ -196,6 +202,10 @@ public class GatewayMethods {
 	public TrafficTableInfoView traffic(FriendlyObject params) {
 		String name = params.getString("name");
 		String op = params.getString("op");
+		String group = getMyOrganization().getId();
+		if (!m_Keeper.isExistService(name, group)) {
+			return null;
+		}
 		TrafficTable info;
 		if ("append".equals(op)) {
 			FriendlyObject m = new FriendlyObject(params.getObject("item"));
@@ -265,7 +275,8 @@ public class GatewayMethods {
 		if (null == m_Keeper) {
 			return ResultPageHelper.empty();
 		}
-		ResultPage<ServiceSummary> summarys = m_Keeper.listServiceSummary(params.getString("name"));
+		String group = getMyOrganization().getId();
+		ResultPage<ServiceSummary> summarys = m_Keeper.listServiceSummary(params.getString("name"), group);
 		return summarys;
 	}
 
