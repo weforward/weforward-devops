@@ -215,7 +215,7 @@ public class DevopsConfig {
 		p.setDownloadUrl(m_DownloadUrl);
 		p.setResourceUrl(m_ResourceUrl);
 		p.setRlogUrl(m_RlogUrl);
-		p.setApiUrl(m_GatewayUrl);
+		p.setGatewayUrl(m_GatewayUrl);
 		p.setApiUrl(m_ApiUrl);
 		p.setTaskExecutor(taskExecutor);
 		p.setUserService(userProvider);
