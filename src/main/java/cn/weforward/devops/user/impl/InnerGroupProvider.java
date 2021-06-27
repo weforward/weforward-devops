@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.weforward.common.ResultPage;
+import cn.weforward.common.UniteId;
 import cn.weforward.common.util.ResultPageHelper;
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.data.persister.Persistent;
@@ -54,6 +55,9 @@ public class InnerGroupProvider implements GroupProvider, GroupDi {
 
 	@Override
 	public Group getGroup(Organization org, String id) {
+		if (!StringUtil.eq(UniteId.getType(id), UniteId.getType(SimpleGroup.class))) {
+			return null;
+		}
 		SimpleGroup group = m_PsSimpleGroup.get(id);
 		if (null == group || !group.isMyOrganization(org)) {
 			return null;
