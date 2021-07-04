@@ -51,6 +51,9 @@ public class JavaProject extends AbstractProject {
 		checkDouble(ports);
 		ResultPage<JavaProject> rp = getBusinessDi().getJavaProjects(getOrganization());
 		for (JavaProject project : ResultPageHelper.toForeach(rp)) {
+			if (null == project) {
+				continue;
+			}
 			if (project.equals(this)) {
 				continue;
 			}
