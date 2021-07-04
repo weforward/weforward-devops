@@ -13,11 +13,15 @@ package cn.weforward.devops.user.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cn.weforward.common.ResultPage;
 import cn.weforward.common.sys.GcCleaner;
 import cn.weforward.common.util.LruCache;
 import cn.weforward.common.util.ResultPageHelper;
 import cn.weforward.common.util.StringUtil;
+import cn.weforward.devops.project.impl.ProjectDiImpl;
 import cn.weforward.devops.user.Group;
 import cn.weforward.devops.user.GroupProvider;
 import cn.weforward.devops.user.Organization;
@@ -43,6 +47,8 @@ import cn.weforward.protocol.support.datatype.SimpleDtObject;
  *
  */
 public class MicroserviceGroupProvider implements GroupProvider {
+	/** 日志 */
+	static final Logger _Logger = LoggerFactory.getLogger(ProjectDiImpl.class);
 	/** 服务地址 */
 	protected String m_ApiUrl;
 	/** 服务访问id */
@@ -123,14 +129,19 @@ public class MicroserviceGroupProvider implements GroupProvider {
 		SimpleDtObject params = new SimpleDtObject();
 		params.put("org", orgId);
 		params.put("id", id);
-		Response response = invoker.invoke(method, params);
-		GatewayException.checkException(response);
-		FriendlyObject result = FriendlyObject.valueOf(response.getServiceResult());
-		MicroserviceException.checkException(result);
-		if (result.isNull()) {
+		try {
+			Response response = invoker.invoke(method, params);
+			GatewayException.checkException(response);
+			FriendlyObject result = FriendlyObject.valueOf(response.getServiceResult());
+			MicroserviceException.checkException(result);
+			if (result.isNull()) {
+				return null;
+			}
+			return toGroup(result.getFriendlyObject("content"));
+		} catch (Throwable e) {
+			_Logger.warn("忽略获取异常", e);
 			return null;
 		}
-		return toGroup(result.getFriendlyObject("content"));
 	}
 
 	@Override
