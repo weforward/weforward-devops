@@ -275,6 +275,9 @@ public class ProjectServiceImpl extends ProjectDiImpl implements ProjectService 
 			ResultPage<JavaProject> rp = getJavaProjects(org);
 			boolean use = false;
 			for (JavaProject project : ResultPageHelper.toForeach(rp)) {
+				if (null == project) {
+					continue;
+				}
 				for (Integer v : project.getServerPorts()) {
 					if (v.equals(i)) {
 						use = true;
@@ -481,7 +484,5 @@ public class ProjectServiceImpl extends ProjectDiImpl implements ProjectService 
 	private boolean isMatch(NameItem type, Running r) {
 		return isMatch(type, r.getProject());
 	}
-
-	
 
 }

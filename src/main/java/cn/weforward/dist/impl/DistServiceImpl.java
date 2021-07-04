@@ -132,6 +132,9 @@ public class DistServiceImpl implements RestfulService, DistService {
 					}
 				}
 			}
+		} else if (path.startsWith("/upload/")) {
+			// TODO
+			throw new UnsupportedOperationException("实现中");
 		} else if (path.startsWith("/download/")) {
 			HttpAccessAuth auth = m_AccessAuth;
 			if (null != auth) {
@@ -188,7 +191,9 @@ public class DistServiceImpl implements RestfulService, DistService {
 				response.openOutput().close();
 			}
 		} else if (path.startsWith("/dist/")) {
-			dist(path, request, response);
+			dist(path.substring("/dist/".length()), request, response);
+		} else if (path.startsWith("/upload/")) {
+			dist(path.substring("/upload/".length()), request, response);
 		} else if (path.startsWith("/download/")) {
 			download(path, request, response);
 		} else {
@@ -199,7 +204,6 @@ public class DistServiceImpl implements RestfulService, DistService {
 	}
 
 	private void dist(String path, RestfulRequest request, RestfulResponse response) throws IOException {
-		path = path.substring("/dist/".length());
 		String arr[] = path.split("/");
 		PathView view = new PathView(arr);
 		String org = checkPath(view.org);
