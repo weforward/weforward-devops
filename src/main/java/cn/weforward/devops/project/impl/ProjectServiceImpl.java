@@ -117,13 +117,17 @@ public class ProjectServiceImpl extends ProjectDiImpl implements ProjectService 
 			ResultPage<? extends AbstractMachine> rp = ps
 					.search(ConditionUtil.eq(ConditionUtil.field("m_Organization"), org.getId()));
 			for (AbstractMachine p : ResultPageHelper.toForeach(rp)) {
-				if (null == p || !p.isRight(Machine.RIGHT_READ)) {
-					continue;
+				try {
+					if (null == p || !p.isRight(Machine.RIGHT_READ)) {
+						continue;
+					}
+					if (!isMatch(keywords, p)) {
+						continue;
+					}
+					list.add(p);
+				} catch (Throwable e) {
+					_Logger.warn("忽略" + p + "异常", e);
 				}
-				if (!isMatch(keywords, p)) {
-					continue;
-				}
-				list.add(p);
 			}
 		}
 		return ResultPageHelper.toResultPage(list);
