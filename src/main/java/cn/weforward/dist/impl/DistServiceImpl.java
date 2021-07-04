@@ -47,7 +47,9 @@ import cn.weforward.framework.web.upload.WebForm;
 import cn.weforward.protocol.ops.AccessExt;
 import cn.weforward.protocol.ops.User;
 import cn.weforward.util.CaUtil;
+import cn.weforward.util.DevopsMember;
 import cn.weforward.util.HttpAccessAuth;
+import cn.weforward.util.HttpDevopsKeyAuth;
 import cn.weforward.util.HttpUserAuth;
 
 /**
@@ -68,6 +70,9 @@ public class DistServiceImpl implements RestfulService, DistService {
 	protected HttpUserAuth m_UserAuth;
 
 	protected HttpAccessAuth m_AccessAuth;
+
+	protected HttpDevopsKeyAuth m_DevopsKeyAuth;
+
 	/** 临时文件计数 */
 	private AtomicLong m_TempCount = new AtomicLong();
 
@@ -87,6 +92,10 @@ public class DistServiceImpl implements RestfulService, DistService {
 
 	public void setAccessAuth(HttpAccessAuth auth) {
 		m_AccessAuth = auth;
+	}
+
+	public void setDevopsKeyAuth(HttpDevopsKeyAuth auth) {
+		m_DevopsKeyAuth = auth;
 	}
 
 	@Override
@@ -133,8 +142,25 @@ public class DistServiceImpl implements RestfulService, DistService {
 				}
 			}
 		} else if (path.startsWith("/upload/")) {
-			// TODO
-			throw new UnsupportedOperationException("实现中");
+			HttpDevopsKeyAuth auth = m_DevopsKeyAuth;
+			if (null == auth) {
+				response.setStatus(RestfulResponse.STATUS_NOT_FOUND);
+				response.openOutput().close();
+				return;
+			}
+			DevopsMember member = auth.auth(request, response);
+			if (null == member) {
+				response.setStatus(RestfulResponse.STATUS_UNAUTHORIZED);
+				response.openOutput().close();
+				return;
+			}
+			// 检查组织用户的权限
+			String org = member.getOrganizationId();
+			if (!path.startsWith("/upload/" + org + "/")) {
+				response.setStatus(RestfulResponse.STATUS_FORBIDDEN);
+				response.openOutput().close();
+				return;
+			}
 		} else if (path.startsWith("/download/")) {
 			HttpAccessAuth auth = m_AccessAuth;
 			if (null != auth) {
@@ -553,4 +579,5 @@ public class DistServiceImpl implements RestfulService, DistService {
 			name = arr[4];
 		}
 	}
+
 }

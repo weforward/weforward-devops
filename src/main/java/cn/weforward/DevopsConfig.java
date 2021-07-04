@@ -52,6 +52,7 @@ import cn.weforward.devops.user.impl.MultipleRoleProvider;
 import cn.weforward.devops.user.impl.MultipleUserProvider;
 import cn.weforward.protocol.gateway.Keeper;
 import cn.weforward.protocol.gateway.http.HttpKeeper;
+import cn.weforward.util.HttpDevopsKeyAuth;
 import cn.weforward.util.nexus.NexusRepositoryClear;
 
 /**
@@ -151,6 +152,11 @@ public class DevopsConfig {
 	@Value("${weforward.user.methodGroup:}")
 	protected String m_UserMethodGroup;
 
+	@Value("${weforward.devopskey.serviceName:}")
+	protected String m_DevopsKeyServiceName;
+	@Value("${weforward.devopskey.methodGroup:}")
+	protected String m_DevopsKeyMethodGroup;
+
 	/** 任务执行器 */
 	@Resource
 	protected TaskExecutor taskExecutor;
@@ -198,6 +204,16 @@ public class DevopsConfig {
 	@Bean
 	AccessKeeper accessKeeper(Keeper keeper) {
 		return null == keeper ? null : new AccessKeeper(keeper);
+	}
+
+	@Bean
+	HttpDevopsKeyAuth devopsKeyAuth() {
+		if (StringUtil.isEmpty(m_DevopsKeyServiceName)) {
+			return null;
+		} else {
+			return new HttpDevopsKeyAuth(m_ApiUrl, m_ServiceAccessId, m_ServiceAccessKey, m_DevopsKeyServiceName,
+					m_DevopsKeyMethodGroup);
+		}
 	}
 
 	/** 项目服务 */

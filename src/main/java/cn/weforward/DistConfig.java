@@ -12,6 +12,7 @@ package cn.weforward;
 
 import javax.annotation.Resource;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 
@@ -24,6 +25,7 @@ import cn.weforward.protocol.aio.http.RestfulServer;
 import cn.weforward.protocol.aio.netty.NettyHttpServer;
 import cn.weforward.util.FileClear;
 import cn.weforward.util.HttpAccessAuth;
+import cn.weforward.util.HttpDevopsKeyAuth;
 import cn.weforward.util.HttpUserAuth;
 import cn.weforward.util.UserAuth;
 
@@ -53,11 +55,15 @@ public class DistConfig {
 	@Resource
 	protected AccessKeeper m_AccessKeeper;
 
+	@Autowired(required = false)
+	protected HttpDevopsKeyAuth m_DevopsKeyAuth;
+
 	@Bean
 	DistService distService() {
 		DistServiceImpl s = new DistServiceImpl(m_DistPath);
 		s.setUserAuth(new HttpUserAuth(m_UserAuth));
 		s.setAccessAuth(new HttpAccessAuth(m_AccessKeeper));
+		s.setDevopsKeyAuth(m_DevopsKeyAuth);
 		return s;
 	}
 
