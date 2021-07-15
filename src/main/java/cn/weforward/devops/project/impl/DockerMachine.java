@@ -845,6 +845,10 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		sb.append(" -D").append(RunningProp.WEFORWARD_GATEWAYURL).append("=").append(gatewayUrl);
 		sb.append(" -D").append(RunningProp.WEFORWARD_APIURL).append("=").append(apiUrl);
 		sb.append(" -D").append(RunningProp.WEFORWARD_HOST).append("=").append(host);
+		Organization org = project.getOrganization();
+		if (null != org) {
+			sb.append(" -D").append("weforward.namespace").append("=").append(org.getId() + ".");
+		}
 		if (null != accessId) {
 			sb.append(" -D").append(RunningProp.WEFORWARD_SERVICE_ACCESS_ID).append("=").append(accessId.trim());
 		}
