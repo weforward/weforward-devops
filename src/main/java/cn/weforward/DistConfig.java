@@ -48,6 +48,8 @@ public class DistConfig {
 	/** 最大历史 */
 	@Value("${dist.maxHistory}")
 	protected int m_MaxHistory;
+	@Value("${dist.toolpath:}")
+	protected String m_ToolPath;
 	/** 用户验证器 */
 	@Resource
 	protected UserAuth m_UserAuth;
@@ -64,6 +66,7 @@ public class DistConfig {
 		s.setUserAuth(new HttpUserAuth(m_UserAuth));
 		s.setAccessAuth(new HttpAccessAuth(m_AccessKeeper));
 		s.setDevopsKeyAuth(m_DevopsKeyAuth);
+		s.setToolPath(m_ToolPath);
 		return s;
 	}
 
