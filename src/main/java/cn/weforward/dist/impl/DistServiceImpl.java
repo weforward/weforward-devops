@@ -106,6 +106,7 @@ public class DistServiceImpl implements RestfulService, DistService {
 
 	@Override
 	public void precheck(RestfulRequest request, RestfulResponse response) throws IOException {
+		response.setHeader("WF-Biz", "dist");
 		String verb = request.getVerb();
 		if ("OPTIONS".equals(verb)) {
 			/*

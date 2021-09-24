@@ -468,6 +468,7 @@ public class RemoteLogServiceImpl implements RestfulService, RemoteLogService, D
 
 	@Override
 	public void service(RestfulRequest request, RestfulResponse response) throws IOException {
+		response.setHeader("WF-Biz", "rlog");
 		AccessExt access;
 		try {
 			access = m_Auth.auth(request, response);

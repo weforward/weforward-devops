@@ -104,6 +104,7 @@ public class VueSiteServiceImpl implements RestfulService, SiteService {
 
 	@Override
 	public void service(RestfulRequest request, RestfulResponse response) throws IOException {
+		response.setHeader("WF-Biz", "site");
 		String path = request.getUri();
 		int index = path.lastIndexOf('.');
 		Resource file = null;
