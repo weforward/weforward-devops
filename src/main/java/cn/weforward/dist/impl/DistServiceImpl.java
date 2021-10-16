@@ -76,6 +76,8 @@ public class DistServiceImpl implements RestfulService, DistService {
 	/** 临时文件计数 */
 	private AtomicLong m_TempCount = new AtomicLong();
 
+	private String m_ToolPath;
+
 	public DistServiceImpl(String distPath) {
 		String path = FileUtil.getAbsolutePath(distPath, null);
 		m_DistPath = path.endsWith(File.separator) ? path : path + File.separator;
@@ -98,8 +100,13 @@ public class DistServiceImpl implements RestfulService, DistService {
 		m_DevopsKeyAuth = auth;
 	}
 
+	public void setToolPath(String toolPath) {
+		m_ToolPath = toolPath;
+	}
+
 	@Override
 	public void precheck(RestfulRequest request, RestfulResponse response) throws IOException {
+		response.setHeader("WF-Biz", "dist");
 		String verb = request.getVerb();
 		if ("OPTIONS".equals(verb)) {
 			/*
@@ -449,56 +456,74 @@ public class DistServiceImpl implements RestfulService, DistService {
 	private void tool(int offset, String path, RestfulRequest request, RestfulResponse response) throws IOException {
 		// 内部工具类
 		String name = path.substring(offset);
-		String jar = null;
-		try {
-			// 看看是不是基本springboot的fatjar
-			CodeSource cs = Class.forName("org.springframework.boot.loader.JarLauncher").getProtectionDomain()
-					.getCodeSource();
-			if (null != cs) {
-				URL url = cs.getLocation();
-				if (null != url) {
-					jar = UrlUtil.decodeUrl(url.getFile());
-				}
-			}
-		} catch (SecurityException e) {
-		} catch (ClassNotFoundException e) {
-		}
-		if (StringUtil.isEmpty(jar)) {
-			URL url = getDefaultClassLoader().getResource("tool/" + name);
-			if (null != url) {
-				File file = FileResources.get(url.getFile());
-				if (file.exists()) {
-					response.setStatus(RestfulResponse.STATUS_OK);
-					try (InputStream in = new FileInputStream(file); OutputStream out = response.openOutput()) {
-						byte[] bs = new byte[1024];
-						int l;
-						while (-1 != (l = in.read(bs))) {
-							out.write(bs, 0, l);
-						}
+		String toolPath = m_ToolPath;
+		if (StringUtil.isEmpty(toolPath)) {
+			String jar = null;
+			try {
+				// 看看是不是基本springboot的fatjar
+				CodeSource cs = Class.forName("org.springframework.boot.loader.JarLauncher").getProtectionDomain()
+						.getCodeSource();
+				if (null != cs) {
+					URL url = cs.getLocation();
+					if (null != url) {
+						jar = UrlUtil.decodeUrl(url.getFile());
 					}
+				}
+			} catch (SecurityException e) {
+			} catch (ClassNotFoundException e) {
+			}
+			if (StringUtil.isEmpty(jar)) {
+				URL url = getDefaultClassLoader().getResource("tool/" + name);
+				if (null != url) {
+					File file = FileResources.get(url.getFile());
+					if (file.exists()) {
+						response.setStatus(RestfulResponse.STATUS_OK);
+						try (InputStream in = new FileInputStream(file); OutputStream out = response.openOutput()) {
+							byte[] bs = new byte[1024];
+							int l;
+							while (-1 != (l = in.read(bs))) {
+								out.write(bs, 0, l);
+							}
+						}
+						return;
+					}
+				}
+			} else {
+				JarFile file = JarResources.get(jar);
+				JarEntry entry = file.getJarEntry("BOOT-INF/classes/tool/" + name);
+				if (null == entry) {
+					response.setStatus(RestfulResponse.STATUS_NOT_FOUND);
+					response.openOutput().close();
 					return;
 				}
-			}
-		} else {
-			JarFile file = JarResources.get(jar);
-			JarEntry entry = file.getJarEntry("BOOT-INF/classes/tool/" + name);
-			if (null == entry) {
-				response.setStatus(RestfulResponse.STATUS_NOT_FOUND);
-				response.openOutput().close();
+				response.setStatus(RestfulResponse.STATUS_OK);
+				try (InputStream in = file.getInputStream(entry); OutputStream out = response.openOutput()) {
+					byte[] bs = new byte[1024];
+					int l;
+					while (-1 != (l = in.read(bs))) {
+						out.write(bs, 0, l);
+					}
+				}
 				return;
 			}
-			response.setStatus(RestfulResponse.STATUS_OK);
-			try (InputStream in = file.getInputStream(entry); OutputStream out = response.openOutput()) {
-				byte[] bs = new byte[1024];
-				int l;
-				while (-1 != (l = in.read(bs))) {
-					out.write(bs, 0, l);
+			response.setStatus(RestfulResponse.STATUS_NOT_FOUND);
+			response.openOutput().close();
+		} else {
+			File file = FileResources.get(m_ToolPath + name);
+			if (file.exists()) {
+				response.setStatus(RestfulResponse.STATUS_OK);
+				try (InputStream in = new FileInputStream(file); OutputStream out = response.openOutput()) {
+					byte[] bs = new byte[1024];
+					int l;
+					while (-1 != (l = in.read(bs))) {
+						out.write(bs, 0, l);
+					}
 				}
+				return;
 			}
-			return;
+			response.setStatus(RestfulResponse.STATUS_NOT_FOUND);
+			response.openOutput().close();
 		}
-		response.setStatus(RestfulResponse.STATUS_NOT_FOUND);
-		response.openOutput().close();
 		return;
 	}
 

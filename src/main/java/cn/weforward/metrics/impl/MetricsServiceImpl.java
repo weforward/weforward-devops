@@ -144,6 +144,7 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 
 	@Override
 	public void service(RestfulRequest request, RestfulResponse response) throws IOException {
+		response.setHeader("WF-Biz", "metrics");
 		AccessExt access;
 		try {
 			access = m_Auth.auth(request, response);
