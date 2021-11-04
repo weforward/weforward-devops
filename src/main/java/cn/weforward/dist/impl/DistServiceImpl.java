@@ -78,6 +78,10 @@ public class DistServiceImpl implements RestfulService, DistService {
 
 	private String m_ToolPath;
 
+	protected boolean m_OpenUpload;
+
+	protected boolean m_OpenDownload;
+
 	public DistServiceImpl(String distPath) {
 		String path = FileUtil.getAbsolutePath(distPath, null);
 		m_DistPath = path.endsWith(File.separator) ? path : path + File.separator;
@@ -102,6 +106,14 @@ public class DistServiceImpl implements RestfulService, DistService {
 
 	public void setToolPath(String toolPath) {
 		m_ToolPath = toolPath;
+	}
+
+	public void setOpenUpload(boolean open) {
+		m_OpenUpload = open;
+	}
+
+	public void setOpenDownload(boolean open) {
+		m_OpenDownload = open;
 	}
 
 	@Override
@@ -149,6 +161,9 @@ public class DistServiceImpl implements RestfulService, DistService {
 				}
 			}
 		} else if (path.startsWith("/upload/")) {
+			if (m_OpenUpload) {
+				return;
+			}
 			HttpDevopsKeyAuth auth = m_DevopsKeyAuth;
 			if (null == auth) {
 				response.setStatus(RestfulResponse.STATUS_NOT_FOUND);
@@ -169,6 +184,9 @@ public class DistServiceImpl implements RestfulService, DistService {
 				return;
 			}
 		} else if (path.startsWith("/download/")) {
+			if (m_OpenDownload) {
+				return;
+			}
 			HttpAccessAuth auth = m_AccessAuth;
 			if (null != auth) {
 				AccessExt access = auth.auth(request, response);
