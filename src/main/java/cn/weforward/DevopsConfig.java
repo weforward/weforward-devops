@@ -53,7 +53,6 @@ import cn.weforward.devops.user.impl.MultipleUserProvider;
 import cn.weforward.protocol.gateway.Keeper;
 import cn.weforward.protocol.gateway.http.HttpKeeper;
 import cn.weforward.util.HttpDevopsKeyAuth;
-import cn.weforward.util.nexus.NexusRepositoryClear;
 
 /**
  * devops配置
@@ -92,33 +91,6 @@ public class DevopsConfig {
 	/** 服务访问key */
 	@Value("${weforward.service.accessKey:}")
 	protected String m_ServiceAccessKey;
-
-	/** dockerHub地址 */
-	@Value("${dockerHubUrl:}")
-	protected String m_DockerHubUrl;
-	/** dockerHub https地址 */
-	@Value("${dockerHubHttpsUrl:}")
-	protected String m_DockerHubHttpsUrl;
-	/** dockerHub用户名 */
-	@Value("${dockerHubUsername:}")
-	protected String m_DockerHubUsername;
-	/** dockerHub密码 */
-	@Value("${dockerHubPassword:}")
-	protected String m_DockerHubPassword;
-	/** dockerHub邮箱 */
-	@Value("${dockerHubEmail:}")
-	protected String m_DockerHubEmail;
-
-	@Value("${nexus.url:}")
-	protected String m_NexusUrl;
-	@Value("${nexus.username:}")
-	protected String m_NexusUsername;
-	@Value("${nexus.password:}")
-	protected String m_NexusPassword;
-	@Value("${nexus.repository:}")
-	protected String m_NexusRepository;
-	@Value("${nexus.repository.keepnum:10}")
-	protected int m_NexusRepositoryKeepnum;
 
 	@Value("${weforward.organization.id:default}")
 	protected String m_Organizationid;
@@ -223,11 +195,6 @@ public class DevopsConfig {
 			GroupProvider groupProvider, OrganizationProvider organizationProvider, AccessKeeper accessKeeper) {
 		ProjectServiceImpl p = new ProjectServiceImpl(persisterFactroy, searcherFactory, labelSetFactory,
 				loggerFactory);
-		p.setDockerHubUrl(m_DockerHubUrl);
-		p.setDockerHubHttpsUrl(m_DockerHubHttpsUrl);
-		p.setDockerHubUsername(m_DockerHubUsername);
-		p.setDockerHubPassword(m_DockerHubPassword);
-		p.setDockerHubEmail(m_DockerHubEmail);
 		p.setDownloadUrl(m_DownloadUrl);
 		p.setResourceUrl(m_ResourceUrl);
 		p.setRlogUrl(m_RlogUrl);
@@ -294,18 +261,6 @@ public class DevopsConfig {
 		InnerUserProvider ip = new InnerUserProvider(m_UserId, m_UserName, m_UserPassword, m_UserSecretKey,
 				roleProvider, organizationProvider);
 		return new MultipleUserProvider(ip, mp);
-	}
-
-	@Bean
-	NexusRepositoryClear repositoryClear(TaskExecutor taskExecutor) {
-		if (StringUtil.isEmpty(m_NexusUrl) || StringUtil.isEmpty(m_NexusRepository)) {
-			return null;
-		}
-		NexusRepositoryClear c = new NexusRepositoryClear(m_NexusUrl, m_NexusUsername, m_NexusPassword,
-				m_NexusRepository);
-		c.setKeepNum(m_NexusRepositoryKeepnum);
-		c.setTaskExecutor(taskExecutor);
-		return c;
 	}
 
 }
