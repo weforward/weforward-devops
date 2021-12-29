@@ -1,5 +1,7 @@
 FROM openjdk:8
 
+ENV TZ=Asia/Shanghai
+
 RUN groupadd boot -g 1008 && useradd boot -g boot -u 1008 -m
 
 WORKDIR /home/boot/
