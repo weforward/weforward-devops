@@ -32,7 +32,8 @@
 		</layout>
 	</appender>
 		
-	<root level="INFO">
+	<root>
+		<level value="INFO" />
 		<appender-ref ref="file" />
 		<appender-ref ref="remote" />
 	</root>
