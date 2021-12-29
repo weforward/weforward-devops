@@ -10,6 +10,8 @@ ADD --chown=boot:boot *.class .
 
 ADD --chown=boot:boot boot.sh .
 
+COPY --chown=boot:boot site/ ./site/
+
 USER boot
 
 RUN ["chmod","u+x","boot.sh"]
