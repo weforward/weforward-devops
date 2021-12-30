@@ -10,7 +10,7 @@ RUN groupadd boot -g 1008 && useradd boot -g boot -u 1008 -m
 
 WORKDIR /home/boot/
 
-ADD --chown=boot:boot *.xml .
+ADD --chown=boot:boot logback-docker.xml ./logback.xml
 
 ADD --chown=boot:boot *.class .
 

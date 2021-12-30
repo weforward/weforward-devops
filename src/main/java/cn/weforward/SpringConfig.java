@@ -92,6 +92,7 @@ public class SpringConfig {
 				setDefaultIfNeed(prop, "weforward.gatewayUrl", apiUrl);
 				String internalAccessSecret = System.getProperty("internalAccess.secret");
 				if (!StringUtil.isEmpty(internalAccessSecret)) {
+					_Logger.info("默认网关地址:" + apiUrl);
 					String accessId = prop.getProperty(WEFORWARD_SERVICE_ACCESSID_KEY);
 					String accessKey = prop.getProperty(WEFORWARD_SERVICE_ACCESSKEY_KEY);
 					if (StringUtil.isEmpty(accessId) || StringUtil.isEmpty(accessKey)) {

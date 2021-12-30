@@ -64,6 +64,6 @@ fi
 
 VERSION=`java VersionUtil $NAME.jar`
 
-docker run --restart=unless-stopped -d $V_OPT $EVN_OPT --env PROJECT_VERSION=$VERSION --net host --name $NAME $IMAGE_NAME
+docker run --log-opt max-size=100m --restart=unless-stopped -d $V_OPT $EVN_OPT --env PROJECT_VERSION=$VERSION --net host --name $NAME $IMAGE_NAME
 
 exit 0
