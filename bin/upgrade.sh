@@ -33,7 +33,7 @@ docker rename $NAME $NAME-old
 V_OPT=""
 
 if [ -d $CONF_DIR ]; then
-	V_OPT=" -v $CONF_DIR:/home/boot/conf/"
+	V_OPT=$V_OPT" -v $CONF_DIR:/home/boot/conf/"
 fi
 
 if [ -d $SCRIPT_DIR ]; then
@@ -64,6 +64,6 @@ fi
 
 VERSION=`java VersionUtil $NAME.jar`
 
-docker run --restart=unless-stopped -d $V_OPT -v /etc/localtime:/etc/localtime:ro --env PROJECT_VERSION=$VERSION $EVN_OPT --net host --name $NAME $IMAGE_NAME
+docker run --restart=unless-stopped -d $V_OPT $EVN_OPT --env PROJECT_VERSION=$VERSION --net host --name $NAME $IMAGE_NAME
 
 exit 0

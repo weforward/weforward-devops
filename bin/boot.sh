@@ -63,7 +63,7 @@ _term() {
  
 trap _term TERM
 
-DEFAULT_JAVA_OPTIONS="-Dweforward.serverid=$SERVER_ID -Dweforward.apiUrl=$WF_GATEWAY_URL -Dweforward.service.accessId=$WF_SERVICE_ACCESSID -Dweforward.service.accessKey=$WF_SERVICE_ACCESSKEY -Dweforward.host=$WF_HOST -Dweforward.port=$WF_PORT -DinternalAccess.secret=$INTERNAL_ACCESS_SECRET -DaccessKey.secret=$ACCESSKEY_SECRET -Drlog.url=$RLOG_URL -Dlog.path=$LOG_PATH -Dproject_name=$NAME  -Dhttp.maxConnections=100 -Xms$Xms -Xmx$Xmx -XX:MaxDirectMemorySize=$MAX_DIRECT_MEMORY_SIZE -Xss256k -XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=75 -XX:G1ReservePercent=5"
+DEFAULT_JAVA_OPTIONS="-Dweforward.serverid=$SERVER_ID -Dweforward.apiUrl=$WF_GATEWAY_URL -Dweforward.service.accessId=$WF_SERVICE_ACCESSID -Dweforward.service.accessKey=$WF_SERVICE_ACCESSKEY -Dweforward.host=$WF_HOST -Dweforward.port=$WF_PORT -DinternalAccess.secret=$INTERNAL_ACCESS_SECRET -DaccessKey.secret=$ACCESSKEY_SECRET -Drlog.url=$RLOG_URL -Dlog.path=$LOG_PATH -Dlogback.configurationFile=./logback.xml -Dproject_name=$NAME  -Dhttp.maxConnections=100 -Xms$Xms -Xmx$Xmx -XX:MaxDirectMemorySize=$MAX_DIRECT_MEMORY_SIZE -Xss256k -XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=75 -XX:G1ReservePercent=5"
 
 if   [ -n "$WF_JAVA_OPTIONS" ] ;
 then 
