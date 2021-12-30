@@ -58,8 +58,8 @@ fi
 
 EVN_OPT=""
 
-if [ -f ./my.env ]; then
-   EVN_OPT="--env-file ./my.env"
+if [ -f ./docker.env ]; then
+   EVN_OPT="--env-file ./docker.env"
 fi
 
 VERSION=`java VersionUtil $NAME.jar`
