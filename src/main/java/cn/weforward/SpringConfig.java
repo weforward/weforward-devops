@@ -16,6 +16,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Properties;
 
 import org.slf4j.Logger;
@@ -26,9 +27,12 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.Appender;
 import cn.weforward.boot.CloudPropertyPlaceholderConfigurer;
 import cn.weforward.common.ResultPage;
 import cn.weforward.common.crypto.Hex;
+import cn.weforward.common.log.DelayRemoteAppender;
 import cn.weforward.common.util.BackgroundExecutor;
 import cn.weforward.common.util.ListUtil;
 import cn.weforward.common.util.ResultPageHelper;
@@ -110,14 +114,30 @@ public class SpringConfig {
 						} catch (NoSuchAlgorithmException e) {
 							throw new RuntimeException("算法异常", e);
 						}
+
 						AccessExt access = init(keeper);
 						if (StringUtil.isEmpty(accessId)) {
 							prop.put(WEFORWARD_SERVICE_ACCESSID_KEY, access.getAccessId());
 						}
 						if (StringUtil.isEmpty(accessKey)) {
-							prop.put(WEFORWARD_SERVICE_ACCESSKEY_KEY, access.getAccessKeyBase64());
+							prop.put(WEFORWARD_SERVICE_ACCESSKEY_KEY, access.getAccessKeyHex());
 						}
-
+						Logger logger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+						if (logger instanceof ch.qos.logback.classic.Logger) {
+							Iterator<Appender<ILoggingEvent>> appends = ((ch.qos.logback.classic.Logger) logger)
+									.iteratorForAppenders();
+							while (appends.hasNext()) {
+								Appender<ILoggingEvent> a = appends.next();
+								if (a instanceof DelayRemoteAppender) {
+									if (StringUtil.isEmpty(accessId)) {
+										((DelayRemoteAppender) a).setUserName(access.getAccessId());
+									}
+									if (StringUtil.isEmpty(accessKey)) {
+										((DelayRemoteAppender) a).setPassword(access.getAccessKeyHex());
+									}
+								}
+							}
+						}
 					}
 				}
 				return prop;
