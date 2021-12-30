@@ -11,7 +11,11 @@
 package cn.weforward;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Enumeration;
 import java.util.Properties;
 
 import org.slf4j.Logger;
@@ -35,7 +39,6 @@ import cn.weforward.data.persister.PersisterSet;
 import cn.weforward.data.persister.support.SimplePersisterSet;
 import cn.weforward.data.util.DelayFlusher;
 import cn.weforward.data.util.Flusher;
-import cn.weforward.framework.util.HostUtil;
 import cn.weforward.protocol.Access;
 import cn.weforward.protocol.ServiceName;
 import cn.weforward.protocol.gateway.Keeper;
@@ -87,12 +90,18 @@ public class SpringConfig {
 					}
 					setDefaultIfNeed(prop, "weforward.user.secretKey", accessKeySecret);
 				}
-				String defaultGateWayUrl = "http://" + HostUtil.getServiceIp(null) + ":5661/";
+				String host = System.getProperty("weforward.host");
+				if (StringUtil.isEmpty(host)) {
+					host = getServiceIp(null);
+					_Logger.info("自动获取的HostIP:" + host);
+				}
+				host = setDefaultIfNeed(prop, "weforward.host", host);
+				_Logger.info("最终的HostIP:" + host);
+				String defaultGateWayUrl = "http://" + host + ":5661/";
 				String apiUrl = setDefaultIfNeed(prop, "weforward.apiUrl", defaultGateWayUrl);
 				setDefaultIfNeed(prop, "weforward.gatewayUrl", apiUrl);
 				String internalAccessSecret = System.getProperty("internalAccess.secret");
 				if (!StringUtil.isEmpty(internalAccessSecret)) {
-					_Logger.info("默认网关地址:" + apiUrl);
 					String accessId = prop.getProperty(WEFORWARD_SERVICE_ACCESSID_KEY);
 					String accessKey = prop.getProperty(WEFORWARD_SERVICE_ACCESSKEY_KEY);
 					if (StringUtil.isEmpty(accessId) || StringUtil.isEmpty(accessKey)) {
@@ -135,6 +144,62 @@ public class SpringConfig {
 		}
 
 		return c;
+	}
+
+	public static String getServiceIp(String prefix) {
+		InetAddress best = null;
+		Enumeration<NetworkInterface> ifs;
+		try {
+			ifs = NetworkInterface.getNetworkInterfaces();
+			loop_ifs: while (ifs.hasMoreElements()) {
+				NetworkInterface ni = ifs.nextElement();
+				if (StringUtil.toString(ni.getName()).startsWith("docker")) {
+					continue;// 忽略docker的网段
+				}
+				Enumeration<InetAddress> ias = ni.getInetAddresses();
+				while (ias.hasMoreElements()) {
+					InetAddress ip = ias.nextElement();
+					// 找到一个非loopback地址
+					if (!ip.isLoopbackAddress() && !ip.isLinkLocalAddress()
+							&& StringUtil.toString(ip.getHostAddress()).indexOf(":") == -1) {
+						if (null != prefix && ip.getHostAddress().startsWith(prefix)) {
+							best = ip;
+							break loop_ifs;
+						}
+						byte[] adds = ip.getAddress();
+						// 只找IPV4
+						if (null == adds || adds.length < 4) {
+							continue;
+						}
+						byte[] bestAddrs = (null == best) ? null : best.getAddress();
+						if (-64 == adds[0] && -88 == adds[1]) {
+							// 192.168.x.x
+							if (null == bestAddrs) {
+								best = ip;
+							}
+						} else if (-84 == adds[0] && adds[1] >= 16 && adds[1] <= 31) {
+							// 172.16~31.x.x段，优先于192.168.x.x
+							if (null == bestAddrs || (-64 == bestAddrs[0] && -88 == bestAddrs[1])) {
+								best = ip;
+							}
+						} else if (10 == adds[0]) {
+							// 10.x.x.x段，优先于172.x.x.x
+							if (null == bestAddrs || (-64 == bestAddrs[0] && -88 == bestAddrs[1])
+									|| -84 == adds[0] && adds[1] >= 16 && adds[1] <= 31) {
+								best = ip;
+							}
+						} else {
+							// 外网IP
+							best = ip;
+							break loop_ifs;
+						}
+					}
+				}
+			}
+		} catch (SocketException e) {
+			throw new IllegalStateException("获取IP异常", e);
+		}
+		return (null == best) ? null : best.getHostAddress();
 	}
 
 	static AccessExt init(Keeper keeper) {
