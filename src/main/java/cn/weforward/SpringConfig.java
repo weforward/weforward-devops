@@ -96,7 +96,6 @@ public class SpringConfig {
 					_Logger.info("自动获取的HostIP:" + host);
 				}
 				host = setDefaultIfNeed(prop, "weforward.host", host);
-				_Logger.info("最终的HostIP:" + host);
 				String defaultGateWayUrl = "http://" + host + ":5661/";
 				String apiUrl = setDefaultIfNeed(prop, "weforward.apiUrl", defaultGateWayUrl);
 				setDefaultIfNeed(prop, "weforward.gatewayUrl", apiUrl);

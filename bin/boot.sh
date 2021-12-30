@@ -82,7 +82,7 @@ fi
 
 if   [ $WF_SERVICE_ACCESSKEY ] ;
 then 
-	DEFAULT_JAVA_OPTIONS=$DEFAULT_JAVA_OPTIONS"-Dweforward.service.accessId=-Dweforward.service.accessKey=$WF_SERVICE_ACCESSKEY "
+	DEFAULT_JAVA_OPTIONS=$DEFAULT_JAVA_OPTIONS"-Dweforward.service.accessKey=$WF_SERVICE_ACCESSKEY "
 fi
 
 if   [ $WF_HOST ] ;
