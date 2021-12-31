@@ -1,10 +1,10 @@
 FROM openjdk:8
 
-ENV TZ=${TZ}
+ENV TZ=${MY_TZ}
 
-RUN ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime
+RUN ln -sf /usr/share/zoneinfo/${MY_TZ} /etc/localtime
 
-RUN echo ${TZ} >/etc/timezone
+RUN echo ${MY_TZ} >/etc/timezone
 
 RUN groupadd boot -g 1008 && useradd boot -g boot -u 1008 -m
 
