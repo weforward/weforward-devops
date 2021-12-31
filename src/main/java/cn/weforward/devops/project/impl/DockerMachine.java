@@ -194,7 +194,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		String remote = resurl + "Dockerfile";
 		Map<String, String> buildargs = new HashMap<>();
 		String url = genUrl(project);
-		buildargs.put("MY_TZ", DEFAULT_TZ);
+		buildargs.put("TZ", DEFAULT_TZ);
 		buildargs.put("JAR_FILE",
 				url + version + "/" + cname + ".jar?t=" + (time.getTime() / 1000) + " -O " + cname + ".jar");
 		buildargs.put("USER", getAccessId(running));
