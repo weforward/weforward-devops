@@ -8,6 +8,10 @@ RUN echo 'Asia/Shanghai' >/etc/timezone
 
 RUN groupadd boot -g 1008 && useradd boot -g boot -u 1008 -m
 
+VOLUME /home/boot/data/
+
+VOLUME /home/boot/log/
+
 WORKDIR /home/boot/
 
 ADD --chown=boot:boot docker-logback.xml ./logback.xml
