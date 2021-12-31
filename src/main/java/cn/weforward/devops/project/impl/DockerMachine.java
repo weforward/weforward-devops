@@ -84,10 +84,10 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	/** 默认时区 */
 	private static final String DEFAULT_TZ = System.getProperty("cn.weforward.devops.tz",
 			TimeZone.getDefault().getID());
-	/** localtime目录 */
-	private static final String LOCALTIME_PATH = System.getProperty("cn.weforward.devops.localtime", "/etc/localtime");
-	/** timezone目录 */
-	private static final String TIMEZONE_PATH = System.getProperty("cn.weforward.devops.timezone", "/etc/timezone");
+//	/** localtime目录 */
+//	private static final String LOCALTIME_PATH = System.getProperty("cn.weforward.devops.localtime", "/etc/localtime");
+//	/** timezone目录 */
+//	private static final String TIMEZONE_PATH = System.getProperty("cn.weforward.devops.timezone", "/etc/timezone");
 	/** 项目版本key */
 	private static final String PROJECT_VERSION_KEY = "PROJECT_VERSION";
 	/** 项目修订版本标签 */
@@ -194,6 +194,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		String remote = resurl + "Dockerfile";
 		Map<String, String> buildargs = new HashMap<>();
 		String url = genUrl(project);
+		buildargs.put("TZ", DEFAULT_TZ);
 		buildargs.put("JAR_FILE",
 				url + version + "/" + cname + ".jar?t=" + (time.getTime() / 1000) + " -O " + cname + ".jar");
 		buildargs.put("USER", getAccessId(running));
@@ -710,7 +711,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	private List<Env> getDefaultEnvs(Running running) {
 		Project project = running.getProject();
 		List<Env> list = new ArrayList<>();
-		list.add(new Env("TZ", DEFAULT_TZ));// 解决时区问题
+		// list.add(new Env("TZ", DEFAULT_TZ));// 解决时区问题
 		list.add(new Env("PROJECT_NAME", project.getName()));
 		list.add(new Env("RUNNING_ID", running.getPersistenceId().getId()));
 		String myJavaOption = findEnvValue(project.getEnvs(), "MY_JAVA_OPTIONS", "");
@@ -824,8 +825,8 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	/* 默认绑定 */
 	private List<String> getDefaultBinds(Project project) {
 		List<String> list = new ArrayList<>();
-		list.add(LOCALTIME_PATH + ":/etc/localtime:ro"); // 解决时区问题
-		list.add(TIMEZONE_PATH + ":/etc/timezone:ro"); // 解决时区问题
+//		list.add(LOCALTIME_PATH + ":/etc/localtime:ro"); // 解决时区问题
+//		list.add(TIMEZONE_PATH + ":/etc/timezone:ro"); // 解决时区问题
 		list.add(WORKSPACE + project.getName() + "/conf/:" + USER_DIR + "conf/:ro");
 		list.add(WORKSPACE + project.getName() + "/script/:" + USER_DIR + "script/:ro");
 		list.add(WORKSPACE + project.getName() + "/res/:" + USER_DIR + "res/:ro");
