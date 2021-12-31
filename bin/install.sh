@@ -49,4 +49,6 @@ echo '开始安装devops.'
 docker run --log-opt max-size=100m --restart=unless-stopped -v /var/log/weforward-devops/:/home/boot/log/ -v /data/:/home/boot/data/ -d  -e WEFORWARD_PASSWORD=$PASSWORD --net host --name weforward-devops weforward/devops
 echo '安装devops完成.'
 
-echo '安装完成.输入http://127.0.0.1:1400/devops/访问控制台'
+echo '安装完成.'
+
+echo '浏览器打开http://127.0.0.1:1400/devops/访问控制台,帐号:admin,密码为开始输入的自定义密码'
