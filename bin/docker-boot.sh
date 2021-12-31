@@ -6,7 +6,7 @@ if   [ $SERVER_ID ] ;
 then 
 	SERVER_ID=$SERVER_ID;
 else 
-	SERVER_ID="x00ff"
+	SERVER_ID="x0001"
 fi
 
 PROJECT_NAME=weforward-devops
