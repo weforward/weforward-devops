@@ -32,8 +32,12 @@ import java.util.zip.ZipFile;
 import javax.annotation.Resource;
 
 import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.message.BasicHeader;
+import org.springframework.util.CollectionUtils;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelSftp;
@@ -85,6 +89,9 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 	/** 密码 */
 	@Resource
 	protected String m_Password;
+	@ResourceExt(component = String.class)
+	protected List<String> m_Urls;
+
 	/** ssh操作客户端 */
 	protected JSch m_JSch;
 
@@ -106,15 +113,20 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 	 * 
 	 * @param url user@host:port
 	 */
-	public void setUrl(String urls) {
-		if (StringUtil.isEmpty(urls)) {
+	public void setUrl(String urlsFormat) {
+		if (StringUtil.isEmpty(urlsFormat)) {
 			m_Hosts = Collections.emptyList();
 			markPersistenceUpdate();
 			return;
 		}
-		String[] arr = urls.split("\\;");
+		String[] arr = urlsFormat.split("\\;");
 		List<Host> hosts = new ArrayList<>(arr.length);
+		List<String> urls = new ArrayList<>(arr.length);
 		for (String url : arr) {
+			if (url.startsWith("http")) {
+				urls.add(url);
+				continue;
+			}
 			String user = "";
 			String host = "";
 			int port = 22;
@@ -134,6 +146,7 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 			hosts.add(new Host(user, host, port));
 		}
 		m_Hosts = hosts;
+		m_Urls = urls;
 		markPersistenceUpdate();
 
 	}
@@ -191,6 +204,10 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 		return m_Hosts;
 	}
 
+	public List<String> getUrls() {
+		return m_Urls;
+	}
+
 	@Override
 	public List<Prop> getProps() {
 		List<Prop> prop = new ArrayList<>();
@@ -218,6 +235,55 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 	public void upgrade(Running running, List<Env> userenvs, List<Bind> userbinds, String version,
 			OpProcessor processor) {
 		version = VersionInfo.getVersion(version);
+		if (!CollectionUtils.isEmpty(getUrls())) {
+			httpUpgrade(running, userenvs, userbinds, version, processor);
+		}
+		if (!CollectionUtils.isEmpty(getHosts())) {
+			sshUpgrade(running, userenvs, userbinds, version, processor);
+		}
+
+	}
+
+	private void httpUpgrade(Running running, List<Env> userenvs, List<Bind> userbinds, String version,
+			OpProcessor processor) {
+		Project project = running.getProject();
+		String cname = project.getName();
+		processor(processor, "开始升级项目" + cname + "/" + version);
+		String fileUrl = genUrl(project) + version + "/file.zip";
+		for (String url : getUrls()) {
+			org.apache.http.HttpResponse response = null;
+			try {
+				processor(processor, "目标地址:" + url + "，开始执行升级命令");
+				URIBuilder builder = new URIBuilder(url + "/upgrade");
+				List<NameValuePair> param = new ArrayList<>();
+				param.add(new BasicHeader("url", fileUrl));
+				param.add(new BasicHeader("project", cname));
+				param.add(new BasicHeader("version", version));
+				String accessId = getAccessId(running);
+				String accessKey = getAccessKey(running);
+				HttpGet get = new HttpGet(builder.build());
+				response = getInvoker(accessId, accessKey).execute(get);
+				StatusLine status = response.getStatusLine();
+				if (status.getStatusCode() != HttpStatus.SC_OK) {
+					throw new IOException("响应码异常" + status);
+				}
+				processor(processor, "升级成功");
+			} catch (Exception e) {
+				processor(processor, "升级异常：" + e.toString());
+				_Logger.error("升级异常", e);
+				return;
+			} finally {
+				try {
+					HttpInvoker.consume(response);
+				} catch (IOException e) {
+					_Logger.error("忽略关闭异常", e);
+				}
+			}
+		}
+	}
+
+	private void sshUpgrade(Running running, List<Env> userenvs, List<Bind> userbinds, String version,
+			OpProcessor processor) {
 		Project project = running.getProject();
 		String cname = project.getName();
 		processor(processor, "开始升级项目" + cname + "/" + version);
@@ -297,87 +363,55 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 				}
 			}
 		}
-	}
 
-	/**
-	 * 解压文件到指定目录 解压后的文件名，和之前一致
-	 * 
-	 * @param zipFile 待解压的zip文件
-	 * @param descDir 指定目录
-	 */
-	public static void unZipFiles(File file, String descDir) throws IOException {
-		ZipFile zip = null;
-		try {
-			zip = new ZipFile(file);
-			File pathFile = new File(descDir);
-			if (!pathFile.exists()) {
-				pathFile.mkdirs();
-			}
-			Enumeration<? extends ZipEntry> entries = zip.entries();
-			while (entries.hasMoreElements()) {
-				ZipEntry entry = (ZipEntry) entries.nextElement();
-				String zipEntryName = entry.getName();
-				String outPath = (pathFile.getAbsolutePath() + File.separator + zipEntryName);
-				File outFile = new File(outPath);
-				if (entry.isDirectory()) {
-					outFile.mkdirs();
-				} else {
-					File parent = outFile.getParentFile();
-					if (!parent.exists()) {
-						parent.mkdirs();
-					}
-					InputStream in = zip.getInputStream(entry);
-					FileOutputStream out = new FileOutputStream(outPath);
-					byte[] bs = new byte[1024];
-					int len;
-					while ((len = in.read(bs)) > 0) {
-						out.write(bs, 0, len);
-					}
-					in.close();
-					out.close();
-				}
-			}
-		} finally {
-			if (null != zip) {
-				zip.close();
-			}
-		}
-	}
-
-	private void saveFile(File file, InputStream in) throws IOException {
-		if (file.exists()) {
-			file.delete();
-		} else {
-			File dir = file.getParentFile();
-			dir.mkdirs();
-		}
-		FileOutputStream out = null;
-		try {
-			out = new FileOutputStream(file);
-			byte[] bs = new byte[1024];
-			int l;
-			while ((l = in.read(bs)) != -1) {
-				out.write(bs, 0, l);
-			}
-		} finally {
-			try {
-				if (null != out) {
-					out.close();
-				}
-			} catch (Throwable e) {
-			}
-		}
-	}
-
-	private static String fixIfNeed(String cname) {
-		if (cname.startsWith("hy-") || cname.startsWith("wf-")) {
-			return cname.substring(3);
-		}
-		return cname;
 	}
 
 	@Override
-	public void rollback(Project project, OpProcessor processor) {
+	public void rollback(Running running, OpProcessor processor) {
+		if (!CollectionUtils.isEmpty(getUrls())) {
+			httpRollback(running, processor);
+		}
+		if (!CollectionUtils.isEmpty(getHosts())) {
+			sshRollback(running, processor);
+		}
+
+	}
+
+	private void httpRollback(Running running, OpProcessor processor) {
+		String project = running.getProject().getName();
+		for (String url : getUrls()) {
+			org.apache.http.HttpResponse response = null;
+			try {
+				processor(processor, "目标地址:" + url + "，开始执行回滚命令");
+				URIBuilder builder = new URIBuilder(url + "/rollback");
+				List<NameValuePair> param = new ArrayList<>();
+				param.add(new BasicHeader("project", project));
+				param.add(new BasicHeader("version", "none"));
+				String accessId = getAccessId(running);
+				String accessKey = getAccessKey(running);
+				HttpGet get = new HttpGet(builder.build());
+				response = getInvoker(accessId, accessKey).execute(get);
+				StatusLine status = response.getStatusLine();
+				if (status.getStatusCode() != HttpStatus.SC_OK) {
+					throw new IOException("响应码异常" + status);
+				}
+				processor(processor, "回滚成功");
+			} catch (Exception e) {
+				processor(processor, "回滚异常：" + e.toString());
+				_Logger.error("回滚异常", e);
+				return;
+			} finally {
+				try {
+					HttpInvoker.consume(response);
+				} catch (IOException e) {
+					_Logger.error("忽略关闭异常", e);
+				}
+			}
+		}
+	}
+
+	private void sshRollback(Running running, OpProcessor processor) {
+		Project project = running.getProject();
 		List<Session> sessions = Collections.emptyList();
 		try {
 			processor(processor, "开始链接服务器");
@@ -418,7 +452,6 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 				}
 			}
 		}
-
 	}
 
 	@Override
@@ -600,15 +633,8 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 		}
 	}
 
-	/* 移除 */
 	private void lnIfExists(ChannelSftp sftp, ChannelShell shell, String oldpath, String newpath, OpProcessor processor)
 			throws SftpException, IOException {
-//		SftpATTRS attrs = null;
-//		try {
-//			attrs = sftp.stat(oldpath);
-//		} catch (Exception e) {
-//		}
-//		if (attrs != null) {
 		OutputStream outstream = shell.getOutputStream();
 		InputStream instream = shell.getInputStream();
 		String cmd = "ln -s " + oldpath + " " + newpath + "\n";
@@ -638,7 +664,6 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 				}
 			}
 		}
-		// }
 	}
 
 	private static String read(InputStream instream) throws IOException {
@@ -708,7 +733,6 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 		} else {
 			String srcfile = file.getAbsolutePath();
 			String destfile = dest + "/" + file.getName();
-			// processor(processor, "upload " + srcfile + " to " + destfile);
 			c.put(srcfile, destfile, ChannelSftp.OVERWRITE);
 		}
 
@@ -802,6 +826,83 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 		}
 	};
 
+	/**
+	 * 解压文件到指定目录 解压后的文件名，和之前一致
+	 * 
+	 * @param zipFile 待解压的zip文件
+	 * @param descDir 指定目录
+	 */
+	public static void unZipFiles(File file, String descDir) throws IOException {
+		ZipFile zip = null;
+		try {
+			zip = new ZipFile(file);
+			File pathFile = new File(descDir);
+			if (!pathFile.exists()) {
+				pathFile.mkdirs();
+			}
+			Enumeration<? extends ZipEntry> entries = zip.entries();
+			while (entries.hasMoreElements()) {
+				ZipEntry entry = (ZipEntry) entries.nextElement();
+				String zipEntryName = entry.getName();
+				String outPath = (pathFile.getAbsolutePath() + File.separator + zipEntryName);
+				File outFile = new File(outPath);
+				if (entry.isDirectory()) {
+					outFile.mkdirs();
+				} else {
+					File parent = outFile.getParentFile();
+					if (!parent.exists()) {
+						parent.mkdirs();
+					}
+					InputStream in = zip.getInputStream(entry);
+					FileOutputStream out = new FileOutputStream(outPath);
+					byte[] bs = new byte[1024];
+					int len;
+					while ((len = in.read(bs)) > 0) {
+						out.write(bs, 0, len);
+					}
+					in.close();
+					out.close();
+				}
+			}
+		} finally {
+			if (null != zip) {
+				zip.close();
+			}
+		}
+	}
+
+	private void saveFile(File file, InputStream in) throws IOException {
+		if (file.exists()) {
+			file.delete();
+		} else {
+			File dir = file.getParentFile();
+			dir.mkdirs();
+		}
+		FileOutputStream out = null;
+		try {
+			out = new FileOutputStream(file);
+			byte[] bs = new byte[1024];
+			int l;
+			while ((l = in.read(bs)) != -1) {
+				out.write(bs, 0, l);
+			}
+		} finally {
+			try {
+				if (null != out) {
+					out.close();
+				}
+			} catch (Throwable e) {
+			}
+		}
+	}
+
+	private static String fixIfNeed(String cname) {
+		if (cname.startsWith("hy-") || cname.startsWith("wf-")) {
+			return cname.substring(3);
+		}
+		return cname;
+	}
+
 	@Override
 	public boolean onReloadAccepted(Persister<ProxyMachine> persister, ProxyMachine other) {
 		m_Name = other.m_Name;
@@ -810,6 +911,7 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 		m_Owner = other.m_Owner;
 		m_GroupRights = other.m_GroupRights;
 		m_Hosts = other.m_Hosts;
+		m_Urls = other.m_Urls;
 		m_Root = other.m_Root;
 		m_Password = other.m_Password;
 		return true;

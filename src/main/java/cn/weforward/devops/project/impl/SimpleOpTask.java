@@ -134,7 +134,7 @@ public class SimpleOpTask extends AbstractPersistent<ProjectDi> implements OpTas
 			}
 			break;
 		case ACTION_ROLLBACK:
-			m.rollback(p, this);
+			m.rollback(getRunning(), this);
 			break;
 		case ACTION_UPGRADE:
 			m.upgrade(getRunning(), m_Version, this);

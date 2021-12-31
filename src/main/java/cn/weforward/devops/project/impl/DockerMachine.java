@@ -338,7 +338,8 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	}
 
 	@Override
-	public void rollback(Project project, OpProcessor processor) {
+	public void rollback(Running running, OpProcessor processor) {
+		Project project = running.getProject();
 		String cname = project.getName();
 		processor(processor, "开始回滚项目" + cname);
 		DockerClient client;

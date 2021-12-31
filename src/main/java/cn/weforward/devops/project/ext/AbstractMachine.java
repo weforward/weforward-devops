@@ -263,7 +263,7 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 	 * @param project
 	 * @param processor
 	 */
-	public abstract void rollback(Project project, OpProcessor processor);
+	public abstract void rollback(Running running, OpProcessor processor);
 
 	public abstract NameItem queryState(Project project);
 
@@ -276,7 +276,7 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 	public abstract VersionInfo queryCurrentVersion(Running running);
 
 	protected HttpInvoker getInvoker(String accessId, String accessKey) throws IOException {
-		HttpInvoker invoker = new HttpInvoker(1, 3);
+		HttpInvoker invoker = new HttpInvoker(1, 30);
 		invoker.setUserName(accessId);
 		invoker.setPassword(accessKey);
 		return invoker;
