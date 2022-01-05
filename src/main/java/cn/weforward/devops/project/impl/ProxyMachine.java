@@ -81,7 +81,7 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 
 	/** 主机 */
 	@ResourceExt(component = Host.class)
-	protected List<Host> m_Hosts;
+	protected List<Host> m_Hosts = Collections.emptyList();
 	/** 页面目录 */
 	@Resource
 	protected String m_Root;
@@ -89,7 +89,7 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 	@Resource
 	protected String m_Password;
 	@ResourceExt(component = String.class)
-	protected List<String> m_Urls;
+	protected List<String> m_Urls = Collections.emptyList();
 
 	/** ssh操作客户端 */
 	protected JSch m_JSch;
