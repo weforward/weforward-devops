@@ -222,30 +222,33 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 	public List<Prop> getProps() {
 		List<Prop> prop = new ArrayList<>();
 		List<String> urls = getUrls();
-		if (urls.size() == 1) {
-			prop.add(new Prop("url", urls.get(0).toString()));
-		} else {
-			StringBuilder sb = new StringBuilder();
-			sb.append(urls.get(0));
-			for (int i = 1; i < urls.size(); i++) {
-				sb.append(";");
-				sb.append(urls.get(i));
-			}
-			prop.add(new Prop("url", sb.toString()));
-		}
 		List<Host> hosts = getHosts();
-		if (hosts.size() == 0) {
-			prop.add(new Prop("url", ""));
-		} else if (hosts.size() == 1) {
-			prop.add(new Prop("url", hosts.get(0).toString()));
-		} else {
-			StringBuilder sb = new StringBuilder();
-			sb.append(hosts.get(0));
-			for (int i = 1; i < hosts.size(); i++) {
-				sb.append(";");
-				sb.append(hosts.get(i));
+		if (!CollectionUtils.isEmpty(urls)) {
+			if (urls.size() == 1) {
+				prop.add(new Prop("url", urls.get(0).toString()));
+			} else if (urls.size() > 1) {
+				StringBuilder sb = new StringBuilder();
+				sb.append(urls.get(0));
+				for (int i = 1; i < urls.size(); i++) {
+					sb.append(";");
+					sb.append(urls.get(i));
+				}
+				prop.add(new Prop("url", sb.toString()));
 			}
-			prop.add(new Prop("url", sb.toString()));
+		} else if (!CollectionUtils.isEmpty(hosts)) {
+			if (hosts.size() == 1) {
+				prop.add(new Prop("url", hosts.get(0).toString()));
+			} else if (hosts.size() > 1) {
+				StringBuilder sb = new StringBuilder();
+				sb.append(hosts.get(0));
+				for (int i = 1; i < hosts.size(); i++) {
+					sb.append(";");
+					sb.append(hosts.get(i));
+				}
+				prop.add(new Prop("url", sb.toString()));
+			}
+		} else {
+			prop.add(new Prop("url", ""));
 		}
 		if (!StringUtil.isEmpty(m_Root)) {
 			prop.add(new Prop("root", m_Root));
