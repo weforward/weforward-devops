@@ -222,9 +222,7 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 	public List<Prop> getProps() {
 		List<Prop> prop = new ArrayList<>();
 		List<String> urls = getUrls();
-		if (urls.size() == 0) {
-			prop.add(new Prop("url", ""));
-		} else if (urls.size() == 1) {
+		if (urls.size() == 1) {
 			prop.add(new Prop("url", urls.get(0).toString()));
 		} else {
 			StringBuilder sb = new StringBuilder();
