@@ -32,11 +32,10 @@ import java.util.zip.ZipFile;
 import javax.annotation.Resource;
 
 import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.message.BasicHeader;
+import org.apache.http.util.EntityUtils;
 import org.springframework.util.CollectionUtils;
 
 import com.jcraft.jsch.Channel;
@@ -95,6 +94,10 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 	/** ssh操作客户端 */
 	protected JSch m_JSch;
 
+	protected SshStategy ssh = new SshStategy();
+
+	protected HttpStrategy http = new HttpStrategy();
+
 	protected ProxyMachine(ProjectDi di) {
 		super(di);
 	}
@@ -106,6 +109,13 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 		m_Root = root;
 		m_Password = password;
 		markPersistenceUpdate();
+	}
+
+	private Strategy getStategy() {
+		if (!CollectionUtils.isEmpty(getUrls())) {
+			return http;
+		}
+		return ssh;
 	}
 
 	/**
@@ -211,6 +221,20 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 	@Override
 	public List<Prop> getProps() {
 		List<Prop> prop = new ArrayList<>();
+		List<String> urls = getUrls();
+		if (urls.size() == 0) {
+			prop.add(new Prop("url", ""));
+		} else if (urls.size() == 1) {
+			prop.add(new Prop("url", urls.get(0).toString()));
+		} else {
+			StringBuilder sb = new StringBuilder();
+			sb.append(urls.get(0));
+			for (int i = 1; i < urls.size(); i++) {
+				sb.append(";");
+				sb.append(urls.get(i));
+			}
+			prop.add(new Prop("url", sb.toString()));
+		}
 		List<Host> hosts = getHosts();
 		if (hosts.size() == 0) {
 			prop.add(new Prop("url", ""));
@@ -235,223 +259,14 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 	public void upgrade(Running running, List<Env> userenvs, List<Bind> userbinds, String version,
 			OpProcessor processor) {
 		version = VersionInfo.getVersion(version);
-		if (!CollectionUtils.isEmpty(getUrls())) {
-			httpUpgrade(running, userenvs, userbinds, version, processor);
-		}
-		if (!CollectionUtils.isEmpty(getHosts())) {
-			sshUpgrade(running, userenvs, userbinds, version, processor);
-		}
-
-	}
-
-	private void httpUpgrade(Running running, List<Env> userenvs, List<Bind> userbinds, String version,
-			OpProcessor processor) {
-		Project project = running.getProject();
-		String cname = project.getName();
-		processor(processor, "开始升级项目" + cname + "/" + version);
-		String fileUrl = genUrl(project) + version + "/file.zip";
-		for (String url : getUrls()) {
-			org.apache.http.HttpResponse response = null;
-			try {
-				processor(processor, "目标地址:" + url + "，开始执行升级命令");
-				URIBuilder builder = new URIBuilder(url + "/upgrade");
-				List<NameValuePair> param = new ArrayList<>();
-				param.add(new BasicHeader("url", fileUrl));
-				param.add(new BasicHeader("project", cname));
-				param.add(new BasicHeader("version", version));
-				String accessId = getAccessId(running);
-				String accessKey = getAccessKey(running);
-				HttpGet get = new HttpGet(builder.build());
-				response = getInvoker(accessId, accessKey).execute(get);
-				StatusLine status = response.getStatusLine();
-				if (status.getStatusCode() != HttpStatus.SC_OK) {
-					throw new IOException("响应码异常" + status);
-				}
-				processor(processor, "升级成功");
-			} catch (Exception e) {
-				processor(processor, "升级异常：" + e.toString());
-				_Logger.error("升级异常", e);
-				return;
-			} finally {
-				try {
-					HttpInvoker.consume(response);
-				} catch (IOException e) {
-					_Logger.error("忽略关闭异常", e);
-				}
-			}
-		}
-	}
-
-	private void sshUpgrade(Running running, List<Env> userenvs, List<Bind> userbinds, String version,
-			OpProcessor processor) {
-		Project project = running.getProject();
-		String cname = project.getName();
-		processor(processor, "开始升级项目" + cname + "/" + version);
-		String url = genUrl(project) + version;
-		File dstPath = new File(System.getProperty("java.io.tmpdir") + "/devops-" + cname + "-" + version);
-		if (!dstPath.exists()) {
-			dstPath.mkdir();
-		}
-		org.apache.http.HttpResponse response = null;
-		try {
-			processor(processor, "开始导出项目文件");
-			String accessId = getAccessId(running);
-			String accessKey = getAccessKey(running);
-			HttpGet get = new HttpGet(url + "/file.zip");
-			response = getInvoker(accessId, accessKey).execute(get);
-			StatusLine status = response.getStatusLine();
-			if (status.getStatusCode() != HttpStatus.SC_OK) {
-				throw new IOException("响应码异常" + status);
-			}
-			File file = new File(dstPath.getAbsolutePath() + File.separator + "file.zip");
-			saveFile(file, response.getEntity().getContent());
-			unZipFiles(file, dstPath.getAbsolutePath());
-			file.delete();
-			processor(processor, "成功导出项目文件");
-		} catch (Exception e) {
-			processor(processor, "升级异常，拉取文件出错，" + e.toString());
-			_Logger.error("升级异常", e);
-			return;
-		} finally {
-			try {
-				HttpInvoker.consume(response);
-			} catch (IOException e) {
-				_Logger.error("忽略关闭异常", e);
-			}
-		}
-		List<Session> sessions = Collections.emptyList();
-		try {
-			processor(processor, "开始链接服务器");
-			sessions = openSessions();
-			for (Session session : sessions) {
-				session.connect(10000);
-			}
-			processor(processor, "成功链接服务器");
-			for (int i = 0; i < sessions.size(); i++) {
-				Session session = sessions.get(i);
-				processor(processor, "上传项目文件到session" + (i + 1));
-				Channel channel = session.openChannel("sftp");
-				channel.connect(10000);
-				ChannelSftp sftp = (ChannelSftp) channel;
-				channel = session.openChannel("shell");
-				channel.connect(10000);
-				ChannelShell shell = (ChannelShell) channel;
-				String projectdir = m_Root + "/" + fixIfNeed(cname);
-				mkdirIfNoExists(sftp, projectdir);
-				String currentProjectDir = projectdir + "/" + version;
-				mkdirIfNoExists(sftp, currentProjectDir);
-				for (File src : dstPath.listFiles()) {
-					upload(sftp, src.getAbsolutePath(), currentProjectDir, processor);
-				}
-				processor(processor, "成功上传项目文件到session" + (i + 1));
-				String latest = projectdir + "/latest";
-				String olddir = projectdir + "/old";
-				rmdirIfExists(sftp, shell, olddir, processor);
-				renameIfExists(sftp, latest, olddir, processor);
-				lnIfExists(sftp, shell, "./" + version, latest, processor);
-			}
-			processor(processor, "项目升级成功");
-		} catch (JSchException | SftpException | IOException e) {
-			processor(processor, "升级异常，上传文件到服务器出错，" + e.toString());
-			_Logger.error("升级异常", e);
-			return;
-		} finally {
-			dstPath.deleteOnExit();
-			for (Session s : sessions) {
-				if (s.isConnected()) {
-					s.disconnect();
-				}
-			}
-		}
+		getStategy().upgrade(running, userenvs, userbinds, version, processor);
 
 	}
 
 	@Override
 	public void rollback(Running running, OpProcessor processor) {
-		if (!CollectionUtils.isEmpty(getUrls())) {
-			httpRollback(running, processor);
-		}
-		if (!CollectionUtils.isEmpty(getHosts())) {
-			sshRollback(running, processor);
-		}
+		getStategy().rollback(running, processor);
 
-	}
-
-	private void httpRollback(Running running, OpProcessor processor) {
-		String project = running.getProject().getName();
-		for (String url : getUrls()) {
-			org.apache.http.HttpResponse response = null;
-			try {
-				processor(processor, "目标地址:" + url + "，开始执行回滚命令");
-				URIBuilder builder = new URIBuilder(url + "/rollback");
-				List<NameValuePair> param = new ArrayList<>();
-				param.add(new BasicHeader("project", project));
-				param.add(new BasicHeader("version", "none"));
-				String accessId = getAccessId(running);
-				String accessKey = getAccessKey(running);
-				HttpGet get = new HttpGet(builder.build());
-				response = getInvoker(accessId, accessKey).execute(get);
-				StatusLine status = response.getStatusLine();
-				if (status.getStatusCode() != HttpStatus.SC_OK) {
-					throw new IOException("响应码异常" + status);
-				}
-				processor(processor, "回滚成功");
-			} catch (Exception e) {
-				processor(processor, "回滚异常：" + e.toString());
-				_Logger.error("回滚异常", e);
-				return;
-			} finally {
-				try {
-					HttpInvoker.consume(response);
-				} catch (IOException e) {
-					_Logger.error("忽略关闭异常", e);
-				}
-			}
-		}
-	}
-
-	private void sshRollback(Running running, OpProcessor processor) {
-		Project project = running.getProject();
-		List<Session> sessions = Collections.emptyList();
-		try {
-			processor(processor, "开始链接服务器");
-			sessions = openSessions();
-			for (Session session : sessions) {
-				session.connect(10000);
-			}
-			processor(processor, "成功链接服务器");
-			String cname = project.getName();
-			String projectdir = m_Root + "/" + fixIfNeed(cname);
-			String latest = projectdir + "/latest";
-			String olddir = projectdir + "/old";
-			String bakdir = projectdir + "/bak";
-			for (Session session : sessions) {
-				Channel channel = session.openChannel("sftp");
-				channel.connect(10000);
-				ChannelSftp sftp = (ChannelSftp) channel;
-				channel = session.openChannel("shell");
-				channel.connect(10000);
-				ChannelShell shell = (ChannelShell) channel;
-				if (!exists(sftp, olddir)) {
-					processor(processor, "回滚异常，不存在old目录");
-					return;
-				}
-				rmdirIfExists(sftp, shell, bakdir, processor);
-				renameIfExists(sftp, latest, bakdir, processor);
-				renameIfExists(sftp, olddir, latest, processor);
-			}
-			processor(processor, "项目回滚成功");
-		} catch (JSchException | SftpException | IOException e) {
-			processor(processor, "升级异常，上传文件到服务器出错，" + e.toString());
-			_Logger.error("升级异常", e);
-			return;
-		} finally {
-			for (Session s : sessions) {
-				if (s.isConnected()) {
-					s.disconnect();
-				}
-			}
-		}
 	}
 
 	@Override
@@ -489,37 +304,13 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 					}
 				}
 			}
-
 		}
 		return Running.STATE_UNKNOWN;
 	}
 
 	@Override
 	public VersionInfo queryCurrentVersion(Running running) {
-		ChannelSftp sftp;
-		List<Session> sessions = Collections.emptyList();
-		Project project = running.getProject();
-		try {
-			sessions = openSessions();
-			for (Session session : sessions) {
-				session.connect();
-				sftp = (ChannelSftp) session.openChannel("sftp");
-				sftp.connect();
-				String projectdir = m_Root + "/" + fixIfNeed(project.getName()) + "/latest";
-				String v = sftp.realpath(projectdir);
-				return new VersionInfo(v.substring(v.lastIndexOf("/") + 1));
-			}
-			return new VersionInfo("no version");
-		} catch (JSchException | SftpException e) {
-			return new VersionInfo("error:" + e.getMessage());
-		} finally {
-			for (Session s : sessions) {
-				if (s.isConnected()) {
-					s.disconnect();
-				}
-			}
-		}
-
+		return getStategy().queryCurrentVersion(running);
 	}
 
 	@Override
@@ -528,67 +319,8 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 	}
 
 	@Override
-	public void clear(Project project, int maxHistory) {
-		List<Session> sessions = Collections.emptyList();
-		try {
-			sessions = openSessions();
-			for (Session session : sessions) {
-				session.connect(10000);
-			}
-		} catch (Exception e) {
-			throw new RuntimeException("链接服务器异常", e);
-		}
-		try {
-			String cname = project.getName();
-			String projectdir = m_Root + "/" + fixIfNeed(cname);
-			for (int i = 0; i < sessions.size(); i++) {
-				Session session = sessions.get(i);
-				Channel channel = session.openChannel("sftp");
-				channel.connect(10000);
-				ChannelSftp sftp = (ChannelSftp) channel;
-				@SuppressWarnings("unchecked")
-				Vector<ChannelSftp.LsEntry> vs = (Vector<ChannelSftp.LsEntry>) sftp.ls(projectdir);
-				List<ChannelSftp.LsEntry> list = new ArrayList<>();
-
-				for (ChannelSftp.LsEntry l : vs) {
-					String[] arr = l.getFilename().split("\\.");
-					boolean isVersion;
-					if (arr.length > 0) {
-						isVersion = true;
-						for (String v : arr) {
-							if (!NumberUtil.isNumber(v)) {
-								isVersion = false;
-								break;
-							}
-						}
-					} else {
-						isVersion = false;
-					}
-					if (isVersion) {
-						list.add(l);
-					}
-				}
-				Collections.sort(list, _BY_REVEISION);
-				if (list.size() <= maxHistory) {
-					continue;
-				}
-				channel = session.openChannel("shell");
-				channel.connect(10000);
-				ChannelShell shell = (ChannelShell) channel;
-				for (ChannelSftp.LsEntry e : list.subList(maxHistory, list.size())) {
-					String path = projectdir + "/" + e.getFilename();
-					rmdirIfExists(sftp, shell, path, null);
-				}
-			}
-		} catch (Exception e) {
-			throw new RuntimeException("执行命令服务器异常", e);
-		} finally {
-			for (Session s : sessions) {
-				if (s.isConnected()) {
-					s.disconnect();
-				}
-			}
-		}
+	public void clear(Running running, int maxHistory) {
+		getStategy().clear(running, maxHistory);
 
 	}
 
@@ -803,12 +535,12 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 	};
 
 	/** 版本排序 */
-	public final static Comparator<ChannelSftp.LsEntry> _BY_REVEISION = new Comparator<ChannelSftp.LsEntry>() {
+	public final static Comparator<String> _BY_REVEISION = new Comparator<String>() {
 
 		@Override
-		public int compare(ChannelSftp.LsEntry o1, ChannelSftp.LsEntry o2) {
-			String[] arr1 = o1.getFilename().split("\\.");
-			String[] arr2 = o2.getFilename().split("\\.");
+		public int compare(String o1, String o2) {
+			String[] arr1 = o1.split("\\.");
+			String[] arr2 = o2.split("\\.");
 			int l = Math.min(arr1.length, arr2.length);
 			for (int i = 0; i < l; i++) {
 				int v = NumberUtil.toInt(arr2[i], 0) - NumberUtil.toInt(arr1[i], 0);
@@ -819,8 +551,7 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 			}
 			int v = arr2.length - arr1.length;
 			if (v == 0) {
-
-				return o2.getFilename().compareTo(o1.getFilename());
+				return o2.compareTo(o1);
 			}
 			return v;
 		}
@@ -915,5 +646,413 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 		m_Root = other.m_Root;
 		m_Password = other.m_Password;
 		return true;
+	}
+
+	public interface Strategy {
+		void upgrade(Running running, List<Env> userenvs, List<Bind> userbinds, String version, OpProcessor processor);
+
+		VersionInfo queryCurrentVersion(Running running);
+
+		void rollback(Running running, OpProcessor processor);
+
+		void clear(Running running, int maxHistory);
+	}
+
+	public class SshStategy implements Strategy {
+
+		@Override
+		public void upgrade(Running running, List<Env> userenvs, List<Bind> userbinds, String version,
+				OpProcessor processor) {
+			Project project = running.getProject();
+			String cname = project.getName();
+			processor(processor, "开始升级项目" + cname + "/" + version);
+			String url = genUrl(project) + version;
+			File dstPath = new File(System.getProperty("java.io.tmpdir") + "/devops-" + cname + "-" + version);
+			if (!dstPath.exists()) {
+				dstPath.mkdir();
+			}
+			org.apache.http.HttpResponse response = null;
+			try {
+				processor(processor, "开始导出项目文件");
+				String accessId = getAccessId(running);
+				String accessKey = getAccessKey(running);
+				HttpGet get = new HttpGet(url + "/file.zip");
+				response = getInvoker(accessId, accessKey).execute(get);
+				StatusLine status = response.getStatusLine();
+				if (status.getStatusCode() != HttpStatus.SC_OK) {
+					throw new IOException("响应码异常" + status);
+				}
+				File file = new File(dstPath.getAbsolutePath() + File.separator + "file.zip");
+				saveFile(file, response.getEntity().getContent());
+				unZipFiles(file, dstPath.getAbsolutePath());
+				file.delete();
+				processor(processor, "成功导出项目文件");
+			} catch (Exception e) {
+				processor(processor, "升级异常，拉取文件出错，" + e.toString());
+				_Logger.error("升级异常", e);
+				return;
+			} finally {
+				try {
+					HttpInvoker.consume(response);
+				} catch (IOException e) {
+					_Logger.error("忽略关闭异常", e);
+				}
+			}
+			List<Session> sessions = Collections.emptyList();
+			try {
+				processor(processor, "开始链接服务器");
+				sessions = openSessions();
+				for (Session session : sessions) {
+					session.connect(10000);
+				}
+				processor(processor, "成功链接服务器");
+				for (int i = 0; i < sessions.size(); i++) {
+					Session session = sessions.get(i);
+					processor(processor, "上传项目文件到session" + (i + 1));
+					Channel channel = session.openChannel("sftp");
+					channel.connect(10000);
+					ChannelSftp sftp = (ChannelSftp) channel;
+					channel = session.openChannel("shell");
+					channel.connect(10000);
+					ChannelShell shell = (ChannelShell) channel;
+					String projectdir = m_Root + "/" + fixIfNeed(cname);
+					mkdirIfNoExists(sftp, projectdir);
+					String currentProjectDir = projectdir + "/" + version;
+					mkdirIfNoExists(sftp, currentProjectDir);
+					for (File src : dstPath.listFiles()) {
+						upload(sftp, src.getAbsolutePath(), currentProjectDir, processor);
+					}
+					processor(processor, "成功上传项目文件到session" + (i + 1));
+					String latest = projectdir + "/latest";
+					String olddir = projectdir + "/old";
+					rmdirIfExists(sftp, shell, olddir, processor);
+					renameIfExists(sftp, latest, olddir, processor);
+					lnIfExists(sftp, shell, "./" + version, latest, processor);
+				}
+				processor(processor, "项目升级成功");
+			} catch (JSchException | SftpException | IOException e) {
+				processor(processor, "升级异常，上传文件到服务器出错，" + e.toString());
+				_Logger.error("升级异常", e);
+				return;
+			} finally {
+				dstPath.deleteOnExit();
+				for (Session s : sessions) {
+					if (s.isConnected()) {
+						s.disconnect();
+					}
+				}
+			}
+
+		}
+
+		@Override
+		public void rollback(Running running, OpProcessor processor) {
+			Project project = running.getProject();
+			List<Session> sessions = Collections.emptyList();
+			try {
+				processor(processor, "开始链接服务器");
+				sessions = openSessions();
+				for (Session session : sessions) {
+					session.connect(10000);
+				}
+				processor(processor, "成功链接服务器");
+				String cname = project.getName();
+				String projectdir = m_Root + "/" + fixIfNeed(cname);
+				String latest = projectdir + "/latest";
+				String olddir = projectdir + "/old";
+				String bakdir = projectdir + "/bak";
+				for (Session session : sessions) {
+					Channel channel = session.openChannel("sftp");
+					channel.connect(10000);
+					ChannelSftp sftp = (ChannelSftp) channel;
+					channel = session.openChannel("shell");
+					channel.connect(10000);
+					ChannelShell shell = (ChannelShell) channel;
+					if (!exists(sftp, olddir)) {
+						processor(processor, "回滚异常，不存在old目录");
+						return;
+					}
+					rmdirIfExists(sftp, shell, bakdir, processor);
+					renameIfExists(sftp, latest, bakdir, processor);
+					renameIfExists(sftp, olddir, latest, processor);
+				}
+				processor(processor, "项目回滚成功");
+			} catch (JSchException | SftpException | IOException e) {
+				processor(processor, "升级异常，上传文件到服务器出错，" + e.toString());
+				_Logger.error("升级异常", e);
+				return;
+			} finally {
+				for (Session s : sessions) {
+					if (s.isConnected()) {
+						s.disconnect();
+					}
+				}
+			}
+		}
+
+		@Override
+		public VersionInfo queryCurrentVersion(Running running) {
+			ChannelSftp sftp;
+			List<Session> sessions = Collections.emptyList();
+			Project project = running.getProject();
+			try {
+				sessions = openSessions();
+				for (Session session : sessions) {
+					session.connect();
+					sftp = (ChannelSftp) session.openChannel("sftp");
+					sftp.connect();
+					String projectdir = m_Root + "/" + fixIfNeed(project.getName()) + "/latest";
+					String v = sftp.realpath(projectdir);
+					return new VersionInfo(v.substring(v.lastIndexOf("/") + 1));
+				}
+				return new VersionInfo("no version");
+			} catch (JSchException | SftpException e) {
+				return new VersionInfo("error:" + e.getMessage());
+			} finally {
+				for (Session s : sessions) {
+					if (s.isConnected()) {
+						s.disconnect();
+					}
+				}
+			}
+		}
+
+		@Override
+		public void clear(Running running, int maxHistory) {
+			List<Session> sessions = Collections.emptyList();
+			try {
+				sessions = openSessions();
+				for (Session session : sessions) {
+					session.connect(10000);
+				}
+			} catch (Exception e) {
+				throw new RuntimeException("链接服务器异常", e);
+			}
+			try {
+				String cname = running.getProject().getName();
+				String projectdir = m_Root + "/" + fixIfNeed(cname);
+				for (int i = 0; i < sessions.size(); i++) {
+					Session session = sessions.get(i);
+					Channel channel = session.openChannel("sftp");
+					channel.connect(10000);
+					ChannelSftp sftp = (ChannelSftp) channel;
+					@SuppressWarnings("unchecked")
+					Vector<ChannelSftp.LsEntry> vs = (Vector<ChannelSftp.LsEntry>) sftp.ls(projectdir);
+					List<String> list = new ArrayList<>();
+
+					for (ChannelSftp.LsEntry l : vs) {
+						String[] arr = l.getFilename().split("\\.");
+						boolean isVersion;
+						if (arr.length > 0) {
+							isVersion = true;
+							for (String v : arr) {
+								if (!NumberUtil.isNumber(v)) {
+									isVersion = false;
+									break;
+								}
+							}
+						} else {
+							isVersion = false;
+						}
+						if (isVersion) {
+							list.add(l.getFilename());
+						}
+					}
+					Collections.sort(list, _BY_REVEISION);
+					if (list.size() <= maxHistory) {
+						continue;
+					}
+					channel = session.openChannel("shell");
+					channel.connect(10000);
+					ChannelShell shell = (ChannelShell) channel;
+					for (String e : list.subList(maxHistory, list.size())) {
+						String path = projectdir + "/" + e;
+						rmdirIfExists(sftp, shell, path, null);
+					}
+				}
+			} catch (Exception e) {
+				throw new RuntimeException("执行命令服务器异常", e);
+			} finally {
+				for (Session s : sessions) {
+					if (s.isConnected()) {
+						s.disconnect();
+					}
+				}
+			}
+		}
+	}
+
+	class HttpStrategy implements Strategy {
+
+		@Override
+		public void upgrade(Running running, List<Env> userenvs, List<Bind> userbinds, String version,
+				OpProcessor processor) {
+			Project project = running.getProject();
+			String cname = project.getName();
+			processor(processor, "开始升级项目" + cname + "/" + version);
+			String fileUrl = genUrl(project) + version + "/file.zip";
+			for (String url : getUrls()) {
+				org.apache.http.HttpResponse response = null;
+				try {
+					processor(processor, "目标地址:" + url + "，开始执行升级命令");
+					URIBuilder builder = new URIBuilder(url + "/upgrade");
+					builder.addParameter("url", fileUrl);
+					builder.addParameter("project", cname);
+					builder.addParameter("version", version);
+					String accessId = getAccessId(running);
+					String accessKey = getAccessKey(running);
+					HttpGet get = new HttpGet(builder.build());
+					response = getInvoker(accessId, accessKey).execute(get);
+					StatusLine status = response.getStatusLine();
+					if (status.getStatusCode() != HttpStatus.SC_OK) {
+						throw new IOException("响应码异常" + status);
+					}
+					processor(processor, "升级成功");
+				} catch (Exception e) {
+					processor(processor, "升级异常：" + e.toString());
+					_Logger.error("升级异常", e);
+					return;
+				} finally {
+					try {
+						HttpInvoker.consume(response);
+					} catch (IOException e) {
+						_Logger.error("忽略关闭异常", e);
+					}
+				}
+			}
+
+		}
+
+		@Override
+		public void rollback(Running running, OpProcessor processor) {
+			String project = running.getProject().getName();
+			for (String url : getUrls()) {
+				org.apache.http.HttpResponse response = null;
+				try {
+					processor(processor, "目标地址:" + url + "，开始执行回滚命令");
+					URIBuilder builder = new URIBuilder(url + "/rollback");
+					builder.addParameter("project", project);
+					builder.addParameter("version", "none");
+					String accessId = getAccessId(running);
+					String accessKey = getAccessKey(running);
+					HttpGet get = new HttpGet(builder.build());
+					response = getInvoker(accessId, accessKey).execute(get);
+					StatusLine status = response.getStatusLine();
+					if (status.getStatusCode() != HttpStatus.SC_OK) {
+						throw new IOException("响应码异常" + status);
+					}
+					processor(processor, "回滚成功");
+				} catch (Exception e) {
+					processor(processor, "回滚异常：" + e.toString());
+					_Logger.error("回滚异常", e);
+					return;
+				} finally {
+					try {
+						HttpInvoker.consume(response);
+					} catch (IOException e) {
+						_Logger.error("忽略关闭异常", e);
+					}
+				}
+			}
+		}
+
+		@Override
+		public VersionInfo queryCurrentVersion(Running running) {
+			String project = running.getProject().getName();
+			for (String url : getUrls()) {
+				org.apache.http.HttpResponse response = null;
+				try {
+					URIBuilder builder = new URIBuilder(url + "/queryCurrentVersion");
+					builder.addParameter("project", project);
+					builder.addParameter("version", "none");
+					String accessId = getAccessId(running);
+					String accessKey = getAccessKey(running);
+					HttpGet get = new HttpGet(builder.build());
+					response = getInvoker(accessId, accessKey).execute(get);
+					StatusLine status = response.getStatusLine();
+					if (status.getStatusCode() != HttpStatus.SC_OK) {
+						throw new IOException("响应码异常" + status);
+					}
+					String content = EntityUtils.toString(response.getEntity());
+					return new VersionInfo(VersionInfo.getVersion(content), VersionInfo.getTime(content));
+				} catch (Exception e) {
+					return new VersionInfo("error:" + e.getMessage());
+				} finally {
+					try {
+						HttpInvoker.consume(response);
+					} catch (IOException e) {
+						_Logger.error("忽略关闭异常", e);
+					}
+				}
+			}
+			return new VersionInfo("no version");
+		}
+
+		@Override
+		public void clear(Running running, int maxHistory) {
+			String projectName = running.getProject().getName();
+			for (String url : getUrls()) {
+				org.apache.http.HttpResponse response = null;
+				try {
+					URIBuilder builder = new URIBuilder(url + "/queryCurrentVersion");
+					builder.addParameter("project", projectName);
+					builder.addParameter("version", "none");
+					String accessId = getAccessId(running);
+					String accessKey = getAccessKey(running);
+					HttpGet get = new HttpGet(builder.build());
+					response = getInvoker(accessId, accessKey).execute(get);
+					StatusLine status = response.getStatusLine();
+					if (status.getStatusCode() != HttpStatus.SC_OK) {
+						throw new IOException("响应码异常" + status);
+					}
+					String content = EntityUtils.toString(response.getEntity());
+					String[] versionArray = content.split("\\;");
+					List<String> list = new ArrayList<>();
+					for (String l : versionArray) {
+						String[] arr = l.split("\\.");
+						boolean isVersion;
+						if (arr.length > 0) {
+							isVersion = true;
+							for (String v : arr) {
+								if (!NumberUtil.isNumber(v)) {
+									isVersion = false;
+									break;
+								}
+							}
+						} else {
+							isVersion = false;
+						}
+						if (isVersion) {
+							list.add(l);
+						}
+					}
+					Collections.sort(list, _BY_REVEISION);
+					if (list.size() <= maxHistory) {
+						continue;
+					}
+					for (String version : list.subList(maxHistory, list.size())) {
+						URIBuilder rmbuilder = new URIBuilder(url + "/remove");
+						rmbuilder.addParameter("project", projectName);
+						rmbuilder.addParameter("version", version);
+						HttpGet reGet = new HttpGet(rmbuilder.build());
+						response = getInvoker(accessId, accessKey).execute(reGet);
+						status = response.getStatusLine();
+						if (status.getStatusCode() != HttpStatus.SC_OK) {
+							throw new IOException("响应码异常" + status);
+						}
+					}
+				} catch (Exception e) {
+					_Logger.warn("忽略清空异常", e);
+				} finally {
+					try {
+						HttpInvoker.consume(response);
+					} catch (IOException e) {
+						_Logger.error("忽略关闭异常", e);
+					}
+				}
+			}
+
+		}
+
 	}
 }

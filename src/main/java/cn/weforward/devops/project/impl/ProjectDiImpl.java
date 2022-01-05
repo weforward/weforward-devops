@@ -363,7 +363,7 @@ public abstract class ProjectDiImpl implements ProjectDi {
 		for (int i = 1; rp.gotoPage(i); i++) {
 			for (SimpleRunning r : rp) {
 				try {
-					r.getMachine().clear(r.getProject(), h);
+					r.getMachine().clear(r, h);
 				} catch (Throwable e) {
 					_Logger.warn("忽略清理出错", e);
 				}

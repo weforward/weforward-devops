@@ -865,7 +865,8 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	}
 
 	@Override
-	public void clear(Project project, int maxHistory) {
+	public void clear(Running running, int maxHistory) {
+		Project project = running.getProject();
 		DockerClient client;
 		try {
 			client = getClient();

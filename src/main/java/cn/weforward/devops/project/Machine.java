@@ -134,9 +134,9 @@ public interface Machine extends Nameable, Persistent {
 	/**
 	 * 清理
 	 * 
-	 * @param project    项目
+	 * @param running    实例
 	 * @param maxHistory 最大历史数
 	 */
-	void clear(Project project, int maxHistory);
+	void clear(Running running, int maxHistory);
 
 }
