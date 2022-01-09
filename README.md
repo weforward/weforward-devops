@@ -1,7 +1,7 @@
 # weforward-devops
 weforward控制台项目
 
-#安装
+# 安装
 
 ## 两键安装
 wget https://gitee.com/weforward/weforward-devops/raw/main/bin/install.sh 
