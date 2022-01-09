@@ -56,9 +56,6 @@ public class EndpointConfig {
 	/** 服务网关地址 */
 	@Value("${weforward.gatewayUrl:}")
 	protected String m_GatewayUrl;
-	/** 服务网关地址 */
-	@Value("${weforward.apiUrl:}")
-	protected String m_ApiUrl;
 	/** 服务访问id */
 	@Value("${weforward.service.accessId:}")
 	protected String m_ServiceAccessId;

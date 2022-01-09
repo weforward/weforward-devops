@@ -10,6 +10,7 @@
  */
 package cn.weforward.metrics.impl;
 
+import java.net.ConnectException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,6 +20,7 @@ import java.util.StringJoiner;
 
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
+import org.influxdb.InfluxDBIOException;
 import org.influxdb.dto.Point;
 import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
@@ -97,7 +99,6 @@ public class InfluxdbMetricsCollector implements MetricsCollector {
 
 	@Override
 	public void collect(String org, Id id, Iterable<Measurement> measure) {
-		InfluxDB db = getDb();
 		String conventionName = getConventionName(org, id);
 		Point.Builder build = Point.measurement(conventionName);
 		// String help = StringUtil.toString(id.getDescription());
@@ -108,7 +109,17 @@ public class InfluxdbMetricsCollector implements MetricsCollector {
 			Statistic stat = m.getStatistic();
 			build.addField(stat.name(), m.getValue());
 		}
-		db.write(m_DBName, m_RetentionPolicy, build.build());
+		try {
+			getDb().write(m_DBName, m_RetentionPolicy, build.build());
+		} catch (InfluxDBIOException e) {
+			if (e.getCause() instanceof ConnectException) {
+				if (_Logger.isTraceEnabled()) {
+					_Logger.trace("忽略异常", e);
+				}
+			} else {
+				throw e;
+			}
+		}
 	}
 
 	@Override
@@ -246,8 +257,19 @@ public class InfluxdbMetricsCollector implements MetricsCollector {
 	}
 
 	private Series query(String command) {
-		InfluxDB db = getDb();
-		QueryResult result = db.query(new Query(command, m_DBName));
+		QueryResult result;
+		try {
+			result = getDb().query(new Query(command, m_DBName));
+		} catch (InfluxDBIOException e) {
+			if (e.getCause() instanceof ConnectException) {
+				if (_Logger.isTraceEnabled()) {
+					_Logger.trace("忽略异常", e);
+				}
+				return null;
+			} else {
+				throw e;
+			}
+		}
 		String error = result.getError();
 		if (!StringUtil.isEmpty(error)) {
 			throw new IllegalArgumentException("查询出错:" + error);

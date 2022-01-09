@@ -36,21 +36,6 @@ import cn.weforward.protocol.ops.User;
  */
 public interface ProjectDi extends BusinessDi {
 
-	/** docker仓库地址 */
-	String getDockerHubUrl();
-
-	/** docker仓库地址 */
-	String getDockerHubHttpsUrl();
-
-	/** dockerHub用户名 */
-	String getDockerHubUsername();
-
-	/** dockerHub用户密码 */
-	String getDockerHubPassword();
-
-	/** dockerHub用户邮箱 */
-	String getDockerHubEmail();
-
 	/** 任务执行器 */
 	TaskExecutor getTaskExecutor();
 

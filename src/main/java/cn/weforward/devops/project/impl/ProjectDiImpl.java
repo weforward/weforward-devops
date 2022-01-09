@@ -70,22 +70,8 @@ public abstract class ProjectDiImpl implements ProjectDi {
 	protected PersisterFactory m_PsFactroy;
 	/** 标签工厂 */
 	protected LabelSet<ServiceProperties> m_PropLabel;
-	/** dockerHub地址 */
-	protected String m_DockerHubUrl;
-	/** dockerHub地址 */
-	protected String m_DockerHubHttpsUrl;
-	/** dockerHub用户名 */
-	protected String m_DockerHubUsername;
-	/** dockerHub用户密码 */
-	protected String m_DockerHubPassword;
-	/** dockerHub用户邮箱 */
-	protected String m_DockerHubEmail;
 	/** 下载地址 */
 	protected String m_DownloadUrl;
-	/** svn用户名 */
-	protected String m_SvnUsername;
-	/** svn密码 */
-	protected String m_SvnPassword;
 	/** 远程日志 */
 	protected String m_RlogUrl;
 	/** 资源链接 */
@@ -248,51 +234,6 @@ public abstract class ProjectDiImpl implements ProjectDi {
 	@Override
 	public void saveServiceProperties(String label, ServiceProperties ele) {
 		m_PropLabel.put(label, ele);
-	}
-
-	public void setDockerHubUrl(String v) {
-		m_DockerHubUrl = v;
-	}
-
-	@Override
-	public String getDockerHubUrl() {
-		return m_DockerHubUrl;
-	}
-
-	public void setDockerHubHttpsUrl(String url) {
-		m_DockerHubHttpsUrl = url;
-	}
-
-	@Override
-	public String getDockerHubHttpsUrl() {
-		return m_DockerHubHttpsUrl;
-	}
-
-	public void setDockerHubUsername(String v) {
-		m_DockerHubUsername = v;
-	}
-
-	@Override
-	public String getDockerHubUsername() {
-		return m_DockerHubUsername;
-	}
-
-	public void setDockerHubPassword(String v) {
-		m_DockerHubPassword = v;
-	}
-
-	@Override
-	public String getDockerHubPassword() {
-		return m_DockerHubPassword;
-	}
-
-	public void setDockerHubEmail(String v) {
-		m_DockerHubEmail = v;
-	}
-
-	@Override
-	public String getDockerHubEmail() {
-		return m_DockerHubEmail;
 	}
 
 	public void setDownloadUrl(String v) {

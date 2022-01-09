@@ -59,6 +59,11 @@ public class DistConfig {
 
 	@Autowired(required = false)
 	protected HttpDevopsKeyAuth m_DevopsKeyAuth;
+	
+	@Value("${dist.openupload:false}")
+	protected boolean m_OpenUpload;
+	@Value("${dist.opendownload:false}")
+	protected boolean m_OpenDownload;
 
 	@Bean
 	DistService distService() {
@@ -67,6 +72,8 @@ public class DistConfig {
 		s.setAccessAuth(new HttpAccessAuth(m_AccessKeeper));
 		s.setDevopsKeyAuth(m_DevopsKeyAuth);
 		s.setToolPath(m_ToolPath);
+		s.setOpenUpload(m_OpenUpload);
+		s.setOpenDownload(m_OpenDownload);
 		return s;
 	}
 

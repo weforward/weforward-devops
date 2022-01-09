@@ -9,17 +9,26 @@
 <!-- -->
 <!DOCTYPE configuration>
 <configuration>
+
+	<!-- 控制台 -->
+	<appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<Pattern>%d{HH:mm:ss.SSS}[%thread]%-5level %logger{50} %msg%n</Pattern>
+		</encoder>
+	</appender>
+	
+	<!-- 本地文件 -->
 	<appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
 			<FileNamePattern>./log/%d{yyyyMMdd}.log</FileNamePattern>
 			<MaxHistory>30</MaxHistory>
 		</rollingPolicy>
 		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-			<pattern>%d{yyyyMMdd HH:mm:ss.SSS}[%thread]%-5level %logger{50} %msg%n
-			</pattern>
+			<pattern>%d{yyyyMMdd HH:mm:ss.SSS}[%thread]%-5level %logger{50} %msg%n</pattern>
 		</encoder>
 	</appender>
 	
+	<!-- 远程文件 -->
 	<appender name="remote" class="cn.weforward.common.log.DelayRemoteAppender">
 		<url>${rlog.url}</url>
 		<projectName>${project_name}</projectName>
@@ -27,13 +36,13 @@
 		<userName>${weforward.service.accessId}</userName>
 		<password>${weforward.service.accessKey}</password>
 		<layout class="ch.qos.logback.classic.PatternLayout">
-			<pattern>%d{HH:mm:ss.SSS}[%thread]%-5level %logger{50} %msg%n
-			</pattern>
+			<pattern>%d{HH:mm:ss.SSS}[%thread]%-5level %logger{50} %msg%n</pattern>
 		</layout>
 	</appender>
 		
 	<root>
 		<level value="INFO" />
+		<appender-ref ref="stdout"/>
 		<appender-ref ref="file" />
 		<appender-ref ref="remote" />
 	</root>

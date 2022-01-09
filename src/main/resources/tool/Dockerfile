@@ -1,5 +1,13 @@
 FROM openjdk:8
 
+ARG TZ
+
+ENV TZ=${TZ}
+
+RUN ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime
+
+RUN echo ${TZ} >/etc/timezone
+
 RUN groupadd boot -g 1008 && useradd boot -g boot -u 1008 -m
 
 WORKDIR /home/boot/

@@ -10,6 +10,7 @@
  */
 package cn.weforward.devops.user.impl;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,6 +23,7 @@ import cn.weforward.devops.user.RoleProvider;
 import cn.weforward.devops.user.UserAccess;
 import cn.weforward.devops.user.UserProvider;
 import cn.weforward.framework.ApiException;
+import cn.weforward.protocol.Access;
 import cn.weforward.protocol.AccessLoader;
 import cn.weforward.protocol.ops.User;
 import cn.weforward.util.UserAuth;
@@ -56,10 +58,16 @@ public class InnerUserProvider implements UserProvider, UserAuth, AccessLoader {
 			m_SecretKey = null;
 			return;
 		}
-		if (32 != key.length() && 64 != key.length()) {
-			throw new IllegalArgumentException("密钥应为128或256位");
+		if (key.length() != 64) {
+			try {
+				m_SecretKey = Access.Helper.secretToAccessKey(key);
+			} catch (NoSuchAlgorithmException e) {
+				throw new RuntimeException("算法异常", e);
+			}
+		} else {
+			m_SecretKey = Hex.decode(key);
 		}
-		m_SecretKey = Hex.decode(key);
+
 	}
 
 	public byte[] getSecretKey() {
@@ -70,7 +78,7 @@ public class InnerUserProvider implements UserProvider, UserAuth, AccessLoader {
 	public UserAccess login(String userName, String password) throws ApiException {
 		byte[] masterKey = getSecretKey();
 		if (null == masterKey) {
-			throw new ApiException(ApiException.CODE_INTERNAL_ERROR, "未设置weforward.group.secretKey");
+			throw new ApiException(ApiException.CODE_INTERNAL_ERROR, "未设置weforward.user.secretKey");
 		}
 		if (StringUtil.eq(m_Sa.getName(), userName) && m_Sa.checkPassword(password)) {
 			SimpleSession session = new SimpleSession(m_Sa);

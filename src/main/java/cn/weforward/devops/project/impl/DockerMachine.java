@@ -55,7 +55,6 @@ import cn.weforward.devops.project.di.ProjectDi;
 import cn.weforward.devops.project.ext.AbstractMachine;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.util.CaUtil;
-import cn.weforward.util.docker.AuthInfo;
 import cn.weforward.util.docker.DockerBuildProgesser;
 import cn.weforward.util.docker.DockerClient;
 import cn.weforward.util.docker.DockerContainer;
@@ -66,12 +65,9 @@ import cn.weforward.util.docker.DockerInspect;
 import cn.weforward.util.docker.DockerInspect.InspectConfig;
 import cn.weforward.util.docker.DockerInspect.InspectState;
 import cn.weforward.util.docker.DockerLog;
-import cn.weforward.util.docker.DockerPullProgesser;
-import cn.weforward.util.docker.DockerPushProgesser;
 import cn.weforward.util.docker.DockerRun;
 import cn.weforward.util.docker.DockerRun.HostConfigurantion;
 import cn.weforward.util.docker.DockerRun.RestartPolicyConfigurantion;
-import cn.weforward.util.docker.exception.NoSuchImageException;
 
 /**
  * 基于docker的机器
@@ -88,10 +84,10 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	/** 默认时区 */
 	private static final String DEFAULT_TZ = System.getProperty("cn.weforward.devops.tz",
 			TimeZone.getDefault().getID());
-	/** localtime目录 */
-	private static final String LOCALTIME_PATH = System.getProperty("cn.weforward.devops.localtime", "/etc/localtime");
-	/** timezone目录 */
-	private static final String TIMEZONE_PATH = System.getProperty("cn.weforward.devops.timezone", "/etc/timezone");
+//	/** localtime目录 */
+//	private static final String LOCALTIME_PATH = System.getProperty("cn.weforward.devops.localtime", "/etc/localtime");
+//	/** timezone目录 */
+//	private static final String TIMEZONE_PATH = System.getProperty("cn.weforward.devops.timezone", "/etc/timezone");
 	/** 项目版本key */
 	private static final String PROJECT_VERSION_KEY = "PROJECT_VERSION";
 	/** 项目修订版本标签 */
@@ -193,26 +189,12 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			_Logger.error("构建异常", e);
 			return false;
 		}
-		String huburl;
-		if (m_Url.startsWith("https")) {
-			huburl = getBusinessDi().getDockerHubHttpsUrl();
-		} else {
-			huburl = getBusinessDi().getDockerHubUrl();
-		}
-		String t;
-		if (!StringUtil.isEmpty(huburl)) {
-			AuthInfo info = new AuthInfo(huburl, getBusinessDi().getDockerHubUsername(),
-					getBusinessDi().getDockerHubPassword(), getBusinessDi().getDockerHubEmail());
-			List<AuthInfo> infos = Collections.singletonList(info);
-			client.setAuthInfos(infos);
-			t = huburl + "/" + cname + ":" + version;
-		} else {
-			t = cname + ":" + version;
-		}
+		String t = cname + ":" + version;
 		String resurl = getBusinessDi().getResourceUrl();
 		String remote = resurl + "Dockerfile";
 		Map<String, String> buildargs = new HashMap<>();
 		String url = genUrl(project);
+		buildargs.put("TZ", DEFAULT_TZ);
 		buildargs.put("JAR_FILE",
 				url + version + "/" + cname + ".jar?t=" + (time.getTime() / 1000) + " -O " + cname + ".jar");
 		buildargs.put("USER", getAccessId(running));
@@ -226,15 +208,6 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			processor(processor, "构建异常，build出错，" + e.toString());
 			_Logger.error("构建异常", e);
 			return false;
-		}
-		if (!StringUtil.isEmpty(huburl)) {
-			try {
-				client.push(huburl + "/" + cname, version, new DockerPushProgesserWrap(processor));
-			} catch (DockerException e) {
-				processor(processor, "构建异常，push出错，" + e.toString());
-				_Logger.error("构建异常", e);
-				return false;
-			}
 		}
 		processor(processor, "构建完成");
 		return true;
@@ -259,23 +232,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			_Logger.error("升级异常", e);
 			return;
 		}
-		String huburl;
-		if (m_Url.startsWith("https")) {
-			huburl = getBusinessDi().getDockerHubHttpsUrl();
-		} else {
-			huburl = getBusinessDi().getDockerHubUrl();
-		}
-		String image;
-		if (!StringUtil.isEmpty(huburl)) {
-			AuthInfo info = new AuthInfo(huburl, getBusinessDi().getDockerHubUsername(),
-					getBusinessDi().getDockerHubPassword(), getBusinessDi().getDockerHubEmail());
-			List<AuthInfo> infos = Collections.singletonList(info);
-			client.setAuthInfos(infos);
-			image = huburl + "/" + cname + ":" + version;
-		} else {
-			image = cname + ":" + version;
-		}
-
+		String image = cname + ":" + version;
 		// 先看看自己有没有
 		DockerImageInspect inspect;
 		try {
@@ -286,28 +243,8 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			return;
 		}
 		if (null == inspect || !StringUtil.eq(inspect.getLabel(REVEISION_LABEL), revieson)) {
-			boolean needbuild;
-			if (StringUtil.isEmpty(huburl)) {
-				needbuild = true;
-			} else {
-				try {
-					// 没有重新拉取
-					client.pull(image, new DockerPullProgesserWrap(processor));
-					// 有拉取到，重复检查一下
-					inspect = client.image(image);
-					needbuild = (null == inspect || !StringUtil.eq(inspect.getLabel(REVEISION_LABEL), revieson));
-				} catch (NoSuchImageException e) {
-					needbuild = true;
-				} catch (DockerException e) {
-					processor(processor, "升级异常，拉取镜像出错，" + e.toString());
-					_Logger.error("升级异常", e);
-					return;
-				}
-			}
-			if (needbuild) {
-				if (!build(running, revieson, processor)) {
-					return;
-				}
+			if (!build(running, revieson, processor)) {
+				return;
 			}
 		}
 		try {
@@ -774,7 +711,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	private List<Env> getDefaultEnvs(Running running) {
 		Project project = running.getProject();
 		List<Env> list = new ArrayList<>();
-		list.add(new Env("TZ", DEFAULT_TZ));// 解决时区问题
+		// list.add(new Env("TZ", DEFAULT_TZ));// 解决时区问题
 		list.add(new Env("PROJECT_NAME", project.getName()));
 		list.add(new Env("RUNNING_ID", running.getPersistenceId().getId()));
 		String myJavaOption = findEnvValue(project.getEnvs(), "MY_JAVA_OPTIONS", "");
@@ -888,8 +825,8 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	/* 默认绑定 */
 	private List<String> getDefaultBinds(Project project) {
 		List<String> list = new ArrayList<>();
-		list.add(LOCALTIME_PATH + ":/etc/localtime:ro"); // 解决时区问题
-		list.add(TIMEZONE_PATH + ":/etc/timezone:ro"); // 解决时区问题
+//		list.add(LOCALTIME_PATH + ":/etc/localtime:ro"); // 解决时区问题
+//		list.add(TIMEZONE_PATH + ":/etc/timezone:ro"); // 解决时区问题
 		list.add(WORKSPACE + project.getName() + "/conf/:" + USER_DIR + "conf/:ro");
 		list.add(WORKSPACE + project.getName() + "/script/:" + USER_DIR + "script/:ro");
 		list.add(WORKSPACE + project.getName() + "/res/:" + USER_DIR + "res/:ro");
@@ -910,22 +847,6 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		return null;
 	}
 
-	private static class DockerPullProgesserWrap implements DockerPullProgesser {
-		OpProcessor m_Processor;
-
-		public DockerPullProgesserWrap(OpProcessor p) {
-			m_Processor = p;
-		}
-
-		@Override
-		public void progesser(PullStatus status) {
-			if (null != m_Processor) {
-				m_Processor.progesser(new Status("pull-" + status.getId(), status.toString()));
-			}
-		}
-
-	}
-
 	private static class DockerBuildProgesserWrap implements DockerBuildProgesser {
 		OpProcessor m_Processor;
 
@@ -942,22 +863,6 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 
 	}
 
-	private static class DockerPushProgesserWrap implements DockerPushProgesser {
-		OpProcessor m_Processor;
-
-		public DockerPushProgesserWrap(OpProcessor p) {
-			m_Processor = p;
-		}
-
-		@Override
-		public void progesser(PushStatus status) {
-			if (null != m_Processor) {
-				m_Processor.progesser(new Status("push-" + status.getId(), status.toString()));
-			}
-		}
-
-	}
-
 	@Override
 	public void clear(Project project, int maxHistory) {
 		DockerClient client;
@@ -969,14 +874,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		if (null == client) {
 			return;
 		}
-		String cname = project.getName();
-		String huburl;
-		if (m_Url.startsWith("https")) {
-			huburl = getBusinessDi().getDockerHubHttpsUrl();
-		} else {
-			huburl = getBusinessDi().getDockerHubUrl();
-		}
-		String image = huburl + "/" + cname;
+		String image = project.getName();
 		Map<String, String[]> filters = new HashMap<String, String[]>();
 		filters.put("reference", new String[] { image });
 		filters.put("label", new String[] { REVEISION_LABEL });
