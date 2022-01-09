@@ -1,12 +1,14 @@
 # weforward-devops
 weforward控制台项目
 
-# 两键安装
+#安装
+
+## 两键安装
 wget https://gitee.com/weforward/weforward-devops/raw/main/bin/install.sh 
 
 bash install.sh
 
-# 分开运行
+## 分开运行
 
 ### mongodb
 docker run --log-opt max-size=100m --restart=unless-stopped -v /data/mongo:/data/db -d -p 27017:27017 --name mongo mongo:4.4.11-rc1-focal
@@ -19,4 +21,8 @@ docker run  --log-opt max-size=100m --restart=unless-stopped -d -e WEFORWARD_PAS
 
 ### devops
 docker run  --log-opt max-size=100m --restart=unless-stopped -d  -e WEFORWARD_PASSWORD=888888 --net host --name weforward-devops weforward/devops
+
+## 访问
+
+地址: http://127.0.0.1:1400/devops/
 
