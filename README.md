@@ -8,7 +8,7 @@ wget https://gitee.com/weforward/weforward-devops/raw/main/bin/install.sh
 
 bash install.sh
 
-## 分开运行
+## 也可以分开运行
 
 ### mongodb
 docker run --log-opt max-size=100m --restart=unless-stopped -v /data/mongo:/data/db -d -p 27017:27017 --name mongo mongo:4.4.11-rc1-focal
@@ -24,5 +24,5 @@ docker run  --log-opt max-size=100m --restart=unless-stopped -d  -e WEFORWARD_PA
 
 ## 访问
 
-地址: http://127.0.0.1:1400/devops/
+地址： http://127.0.0.1:1400/devops/
 
