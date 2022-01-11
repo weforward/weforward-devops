@@ -292,11 +292,12 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 					continue;
 				}
 				processor(processor, "停止当前容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
-				int t = 5 * 60;
-				client.stop(c.getId(), t);
+				int t = 6 * 60;
+				client.stop(c.getId(), t - 60);
+				DockerInspect d = null;
 				for (int i = 0; i < t; i++) {
 					processor(processor, "等待容器停止" + (t - i) + "s");
-					DockerInspect d = client.inspect(c.getId(), false);
+					d = client.inspect(c.getId(), false);
 					if (!d.getState().isRunning()) {
 						break;
 					}
@@ -307,6 +308,10 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 							break;
 						}
 					}
+				}
+				if (null == d || d.getState().isRunning()) {
+					processor(processor, "升级异常，无法停止并备份旧容器");
+					return;
 				}
 				processor(processor, "备份容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
 				client.rename(c.getId(), cname + "-old");
