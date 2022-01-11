@@ -214,7 +214,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	}
 
 	@Override
-	public void upgrade(Running running, List<Env> userenvs, List<Bind> userbinds, String revieson,
+	public synchronized void upgrade(Running running, List<Env> userenvs, List<Bind> userbinds, String revieson,
 			OpProcessor processor) {
 		if (isOutOfMemory(getInfo())) {
 			processor(processor, "升级失败，服务器内存不足");
@@ -379,7 +379,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	}
 
 	@Override
-	public void rollback(Running running, OpProcessor processor) {
+	public synchronized void rollback(Running running, OpProcessor processor) {
 		Project project = running.getProject();
 		String cname = project.getName();
 		processor(processor, "开始回滚项目" + cname);
@@ -409,9 +409,30 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		}
 		try {
 			Map<String, String[]> filters = Collections.singletonMap("name", new String[] { cname + "-bak" });
-			for (DockerContainer c : client.ps(1, false, false, filters)) {
-				processor(processor, "清理备份容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
-				client.remove(c.getId(), false, false, null);
+			List<DockerContainer> list = client.ps(1, false, false, filters);
+			for (DockerContainer c : list) {
+				processor(processor, "清理旧备份容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
+				client.remove(c.getId(), false, true, null);
+			}
+			int t = 5;
+			for (int i = 0; i < t; i++) {
+				list = client.ps(1, false, false, filters);
+				if (list.isEmpty()) {
+					break;
+				}
+				processor(processor, "等待清理结束" + (t - i) + "s");
+				synchronized (this) {
+					try {
+						this.wait(1000);
+					} catch (InterruptedException e) {
+						break;
+					}
+				}
+			}
+			if (!list.isEmpty()) {
+				processor(processor, "回滚异常，无法清理旧容器");
+			} else {
+				processor(processor, "清理结束 ");
 			}
 		} catch (DockerException e) {
 			processor(processor, "回滚异常，清理旧容器出错，" + e.toString());
@@ -422,7 +443,27 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			Map<String, String[]> filters = Collections.singletonMap("name", new String[] { cname });
 			for (DockerContainer c : client.ps(1, true, false, filters)) {
 				processor(processor, "停止当前容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
-				client.stop(c.getId(), null);
+				int t = 6 * 60;
+				client.stop(c.getId(), t - 60);
+				DockerInspect d = null;
+				for (int i = 0; i < t; i++) {
+					processor(processor, "等待容器停止" + (t - i) + "s");
+					d = client.inspect(c.getId(), false);
+					if (!d.getState().isRunning()) {
+						break;
+					}
+					synchronized (this) {
+						try {
+							this.wait(1000);
+						} catch (InterruptedException e) {
+							break;
+						}
+					}
+				}
+				if (null == d || d.getState().isRunning()) {
+					processor(processor, "回滚异常，无法停止并备份旧容器");
+					return;
+				}
 				processor(processor, "备份容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
 				client.rename(c.getId(), cname + "-bak");
 			}
