@@ -249,9 +249,30 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		}
 		try {
 			Map<String, String[]> filters = Collections.singletonMap("name", new String[] { cname + "-old" });
-			for (DockerContainer c : client.ps(1, false, false, filters)) {
+			List<DockerContainer> list = client.ps(1, false, false, filters);
+			for (DockerContainer c : list) {
 				processor(processor, "清理旧备份容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
-				client.remove(c.getId(), false, false, null);
+				client.remove(c.getId(), false, true, null);
+			}
+			int t = 5;
+			for (int i = 0; i < t; i++) {
+				list = client.ps(1, false, false, filters);
+				if (list.isEmpty()) {
+					break;
+				}
+				processor(processor, "等待清理结束" + (t - i) + "s");
+				synchronized (this) {
+					try {
+						this.wait(1000);
+					} catch (InterruptedException e) {
+						break;
+					}
+				}
+			}
+			if (!list.isEmpty()) {
+				processor(processor, "升级异常，无法清理旧容器");
+			} else {
+				processor(processor, "清理结束 ");
 			}
 		} catch (DockerException e) {
 			processor(processor, "升级异常，清理旧容器出错，" + e.toString());
@@ -271,7 +292,22 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 					continue;
 				}
 				processor(processor, "停止当前容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
-				client.stop(c.getId(), 5 * 60);
+				int t = 5 * 60;
+				client.stop(c.getId(), t);
+				DockerInspect d = client.inspect(c.getId(), false);
+				if (d.getState().isRunning()) {
+					for (int i = 0; i < t; i++) {
+						processor(processor, "等待容器停止" + (t - i) + "s");
+						synchronized (this) {
+							try {
+								this.wait(1000);
+							} catch (InterruptedException e) {
+								break;
+							}
+						}
+						d = client.inspect(c.getId(), false);
+					}
+				}
 				processor(processor, "备份容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
 				client.rename(c.getId(), cname + "-old");
 			}
