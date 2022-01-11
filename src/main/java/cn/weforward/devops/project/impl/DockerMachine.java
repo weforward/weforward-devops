@@ -294,18 +294,18 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 				processor(processor, "停止当前容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
 				int t = 5 * 60;
 				client.stop(c.getId(), t);
-				DockerInspect d = client.inspect(c.getId(), false);
-				if (d.getState().isRunning()) {
-					for (int i = 0; i < t; i++) {
-						processor(processor, "等待容器停止" + (t - i) + "s");
-						synchronized (this) {
-							try {
-								this.wait(1000);
-							} catch (InterruptedException e) {
-								break;
-							}
+				for (int i = 0; i < t; i++) {
+					processor(processor, "等待容器停止" + (t - i) + "s");
+					DockerInspect d = client.inspect(c.getId(), false);
+					if (!d.getState().isRunning()) {
+						break;
+					}
+					synchronized (this) {
+						try {
+							this.wait(1000);
+						} catch (InterruptedException e) {
+							break;
 						}
-						d = client.inspect(c.getId(), false);
 					}
 				}
 				processor(processor, "备份容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
