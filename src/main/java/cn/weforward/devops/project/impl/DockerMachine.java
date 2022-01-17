@@ -254,7 +254,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 				processor(processor, "清理旧备份容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
 				client.remove(c.getId(), false, true, null);
 			}
-			int t = 5;
+			int t = 6 * 60;
 			for (int i = 0; i < t; i++) {
 				list = client.ps(1, false, false, filters);
 				if (list.isEmpty()) {
@@ -271,6 +271,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			}
 			if (!list.isEmpty()) {
 				processor(processor, "升级异常，无法清理旧容器");
+				return;
 			} else {
 				processor(processor, "清理结束 ");
 			}
