@@ -432,6 +432,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			}
 			if (!list.isEmpty()) {
 				processor(processor, "回滚异常，无法清理旧容器");
+				return;
 			} else {
 				processor(processor, "清理结束 ");
 			}

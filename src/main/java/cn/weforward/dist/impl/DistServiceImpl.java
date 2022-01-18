@@ -23,6 +23,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -82,6 +84,8 @@ public class DistServiceImpl implements RestfulService, DistService {
 
 	protected boolean m_OpenDownload;
 
+	protected ConcurrentMap<String, Boolean> m_UploadLoack;
+
 	public DistServiceImpl(String distPath) {
 		String path = FileUtil.getAbsolutePath(distPath, null);
 		m_DistPath = path.endsWith(File.separator) ? path : path + File.separator;
@@ -89,6 +93,7 @@ public class DistServiceImpl implements RestfulService, DistService {
 		if (!distfile.exists()) {
 			distfile.mkdirs();
 		}
+		m_UploadLoack = new ConcurrentHashMap<>();
 
 	}
 
@@ -306,21 +311,32 @@ public class DistServiceImpl implements RestfulService, DistService {
 				outFile(f, response);
 				return;
 			} else if ("POST".equalsIgnoreCase(method)) {
-				InputStream in = request.getContent();
-				File f = getFile(file);
-				WebFileUpload fileUpload = new WebFileUpload(Arrays.asList(SimpleKvPair.valueOf("file", f)));
-				// 处理上传流
-				fileUpload.input(in);
-				WebForm form = fileUpload.getForm("file");
-				if (null == form) {
-					response.setStatus(RestfulResponse.STATUS_BAD_REQUEST);
-					response.openOutput().close();
-					return;
+				if (null != m_UploadLoack.putIfAbsent(file, true)) {
+					response.setStatus(RestfulResponse.STATUS_NOT_ACCEPTABLE);
+					try (OutputStream out = response.openOutput()) {
+						out.write("other user uploading".toString().getBytes());
+					}
 				}
-				// setFile(file, form.getStream());
-				response.setStatus(RestfulResponse.STATUS_OK);
-				response.openOutput().close();
+				try {
+					InputStream in = request.getContent();
+					File f = getFile(file);
+					WebFileUpload fileUpload = new WebFileUpload(Arrays.asList(SimpleKvPair.valueOf("file", f)));
+					// 处理上传流
+					fileUpload.input(in);
+					WebForm form = fileUpload.getForm("file");
+					if (null == form) {
+						response.setStatus(RestfulResponse.STATUS_BAD_REQUEST);
+						response.openOutput().close();
+						return;
+					}
+					// setFile(file, form.getStream());
+					response.setStatus(RestfulResponse.STATUS_OK);
+					response.openOutput().close();
+				} finally {
+					m_UploadLoack.remove(file);
+				}
 				return;
+
 			} else {
 				response.setStatus(RestfulResponse.STATUS_BAD_REQUEST);
 				response.openOutput().close();
