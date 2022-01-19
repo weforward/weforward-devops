@@ -248,15 +248,16 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			}
 		}
 		try {
-			Map<String, String[]> filters = Collections.singletonMap("name", new String[] { cname + "-old" });
-			List<DockerContainer> list = client.ps(1, false, false, filters);
+			String oldName = cname + "-old";
+			Map<String, String[]> filters = Collections.singletonMap("name", new String[] { oldName });
+			List<DockerContainer> list = filter(client.ps(10, false, false, filters), oldName);
 			for (DockerContainer c : list) {
 				processor(processor, "清理旧备份容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
 				client.remove(c.getId(), false, true, null);
 			}
 			int t = 6 * 60;
 			for (int i = 0; i < t; i++) {
-				list = client.ps(1, false, false, filters);
+				list = filter(client.ps(10, false, false, filters), oldName);
 				if (list.isEmpty()) {
 					break;
 				}
@@ -1084,4 +1085,16 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		return true;
 	}
 
+	private static List<DockerContainer> filter(List<DockerContainer> ps, String myName) {
+		List<DockerContainer> list = new ArrayList<>();
+		for (DockerContainer c : ps) {
+			for (String name : c.getNames()) {
+				if (StringUtil.eq(name, "/" + myName)) {
+					list.add(c);
+					break;
+				}
+			}
+		}
+		return list;
+	}
 }
