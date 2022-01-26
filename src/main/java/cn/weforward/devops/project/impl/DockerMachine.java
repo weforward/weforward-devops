@@ -503,9 +503,8 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 				processor(processor, "未找到需要重启的容器");
 				return;
 			}
-			processor(processor, "重启容器" + cname);
 			for (DockerContainer c : list) {
-				processor(processor, "开始重启容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
+				processor(processor, "重启容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
 				int t = DEFAULT_KILL_TIME;
 				client.restart(c.getId(), DEFAULT_KILL_TIME);
 				DockerInspect d = null;
@@ -529,12 +528,12 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 				}
 				processor(processor, "重启容器完成");
 			}
-			processor(processor, "重启容器完成");
 		} catch (DockerException e) {
 			processor(processor, "启动异常，停止并备份容器出错，" + e.toString());
 			_Logger.error("启动异常", e);
 			return;
 		}
+		processor(processor, "重启项目" + cname + "完成");
 	}
 
 	public void start(Project project, OpProcessor processor) {
@@ -560,16 +559,16 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 				return;
 			}
 			for (DockerContainer c : list) {
-				processor(processor, "开始启动容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
+				processor(processor, "启动容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
 				client.start(c.getId(), null);
-				processor(processor, "容器完成");
+				processor(processor, "启动容器完成");
 			}
-			processor(processor, "启动容器完成");
 		} catch (DockerException e) {
 			processor(processor, "启动异常，停止并备份容器出错，" + e.toString());
 			_Logger.error("启动异常", e);
 			return;
 		}
+		processor(processor, "启动项目" + cname + "完成");
 	}
 
 	public void stop(Project project, OpProcessor processor) {
@@ -591,7 +590,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 				return;
 			}
 			for (DockerContainer c : list) {
-				processor(processor, "开始停止容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
+				processor(processor, "停止容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
 				int t = DEFAULT_KILL_TIME;
 				client.stop(c.getId(), t - 60);
 				DockerInspect d = null;
@@ -620,6 +619,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			_Logger.error("停止异常", e);
 			return;
 		}
+		processor(processor, "停止项目" + cname + "完成");
 	}
 
 	@Override
