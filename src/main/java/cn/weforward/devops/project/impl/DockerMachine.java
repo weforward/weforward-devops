@@ -84,10 +84,9 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	/** 默认时区 */
 	private static final String DEFAULT_TZ = System.getProperty("cn.weforward.devops.tz",
 			TimeZone.getDefault().getID());
-//	/** localtime目录 */
-//	private static final String LOCALTIME_PATH = System.getProperty("cn.weforward.devops.localtime", "/etc/localtime");
-//	/** timezone目录 */
-//	private static final String TIMEZONE_PATH = System.getProperty("cn.weforward.devops.timezone", "/etc/timezone");
+
+	private static final int DEFAULT_KILL_TIME = NumberUtil.toInt(System.getProperty("cn.weforward.devops.killtime"),
+			6 * 60);
 	/** 项目版本key */
 	private static final String PROJECT_VERSION_KEY = "PROJECT_VERSION";
 	/** 项目修订版本标签 */
@@ -255,7 +254,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 				processor(processor, "清理旧备份容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
 				client.remove(c.getId(), false, true, null);
 			}
-			int t = 6 * 60;
+			int t = DEFAULT_KILL_TIME;
 			for (int i = 0; i < t; i++) {
 				list = filter(client.ps(10, false, false, filters), oldName);
 				if (list.isEmpty()) {
@@ -294,7 +293,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 					continue;
 				}
 				processor(processor, "停止当前容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
-				int t = 6 * 60;
+				int t = DEFAULT_KILL_TIME;
 				client.stop(c.getId(), t - 60);
 				DockerInspect d = null;
 				for (int i = 0; i < t; i++) {
@@ -446,7 +445,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			Map<String, String[]> filters = Collections.singletonMap("name", new String[] { cname });
 			for (DockerContainer c : client.ps(1, true, false, filters)) {
 				processor(processor, "停止当前容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
-				int t = 6 * 60;
+				int t = DEFAULT_KILL_TIME;
 				client.stop(c.getId(), t - 60);
 				DockerInspect d = null;
 				for (int i = 0; i < t; i++) {
@@ -498,8 +497,38 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			return;
 		}
 		try {
+			Map<String, String[]> filters = Collections.singletonMap("name", new String[] { cname });
+			List<DockerContainer> list = filter(client.ps(100, true, false, filters), cname);
+			if (list.isEmpty()) {
+				processor(processor, "未找到需要重启的容器");
+				return;
+			}
 			processor(processor, "重启容器" + cname);
-			client.restart(cname, 10);
+			for (DockerContainer c : list) {
+				processor(processor, "开始重启容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
+				int t = DEFAULT_KILL_TIME;
+				client.restart(c.getId(), DEFAULT_KILL_TIME);
+				DockerInspect d = null;
+				for (int i = 0; i < t; i++) {
+					processor(processor, "等待容器重启" + (t - i) + "s");
+					d = client.inspect(c.getId(), false);
+					if (d.getState().isRunning()) {
+						break;
+					}
+					synchronized (this) {
+						try {
+							this.wait(1000);
+						} catch (InterruptedException e) {
+							break;
+						}
+					}
+				}
+				if (null == d || !d.getState().isRunning()) {
+					processor(processor, "无法重启容器");
+					continue;
+				}
+				processor(processor, "重启容器完成");
+			}
 			processor(processor, "重启容器完成");
 		} catch (DockerException e) {
 			processor(processor, "启动异常，停止并备份容器出错，" + e.toString());
@@ -524,8 +553,17 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			return;
 		}
 		try {
-			processor(processor, "启动容器" + cname);
-			client.start(cname, null);
+			Map<String, String[]> filters = Collections.singletonMap("name", new String[] { cname });
+			List<DockerContainer> list = filter(client.ps(100, true, false, filters), cname);
+			if (list.isEmpty()) {
+				processor(processor, "未找到需要启动的容器");
+				return;
+			}
+			for (DockerContainer c : list) {
+				processor(processor, "开始启动容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
+				client.start(c.getId(), null);
+				processor(processor, "容器完成");
+			}
 			processor(processor, "启动容器完成");
 		} catch (DockerException e) {
 			processor(processor, "启动异常，停止并备份容器出错，" + e.toString());
@@ -546,11 +584,39 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			return;
 		}
 		try {
-			processor(processor, "停止容器" + cname);
-			client.stop(cname, null);
-			processor(processor, "停止容器完成");
+			Map<String, String[]> filters = Collections.singletonMap("name", new String[] { cname });
+			List<DockerContainer> list = filter(client.ps(100, true, false, filters), cname);
+			if (list.isEmpty()) {
+				processor(processor, "未找到需要停止的容器");
+				return;
+			}
+			for (DockerContainer c : list) {
+				processor(processor, "开始停止容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
+				int t = DEFAULT_KILL_TIME;
+				client.stop(c.getId(), t - 60);
+				DockerInspect d = null;
+				for (int i = 0; i < t; i++) {
+					processor(processor, "等待容器停止" + (t - i) + "s");
+					d = client.inspect(c.getId(), false);
+					if (!d.getState().isRunning()) {
+						break;
+					}
+					synchronized (this) {
+						try {
+							this.wait(1000);
+						} catch (InterruptedException e) {
+							break;
+						}
+					}
+				}
+				if (null == d || d.getState().isRunning()) {
+					processor(processor, "无法停止容器");
+					continue;
+				}
+				processor(processor, "停止容器完成");
+			}
 		} catch (DockerException e) {
-			processor(processor, "停止异常，停止并备份容器出错，" + e.toString());
+			processor(processor, "停止异常，停止容器出错，" + e.toString());
 			_Logger.error("停止异常", e);
 			return;
 		}
