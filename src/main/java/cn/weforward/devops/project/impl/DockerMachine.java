@@ -42,6 +42,7 @@ import cn.weforward.data.persister.Persister;
 import cn.weforward.data.persister.Reloadable;
 import cn.weforward.devops.project.Bind;
 import cn.weforward.devops.project.Env;
+import cn.weforward.devops.project.Machine;
 import cn.weforward.devops.project.MachineInfo;
 import cn.weforward.devops.project.MachineInfo.Dist;
 import cn.weforward.devops.project.OpProcessor;
@@ -81,6 +82,8 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	private static final String WORKSPACE = "/wf/ms/";
 	/** 用户目录 */
 	private static final String USER_DIR = "/home/boot/";
+	/** kill时间键值 */
+	private static final String KILL_TIME_KEY_NAME = "KILL_TIME";
 	/** 默认时区 */
 	private static final String DEFAULT_TZ = System.getProperty("cn.weforward.devops.tz",
 			TimeZone.getDefault().getID());
@@ -254,7 +257,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 				processor(processor, "清理旧备份容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
 				client.remove(c.getId(), false, true, null);
 			}
-			int t = DEFAULT_KILL_TIME;
+			int t = getKillTime(this, project);
 			for (int i = 0; i < t; i++) {
 				list = filter(client.ps(10, false, false, filters), oldName);
 				if (list.isEmpty()) {
@@ -293,7 +296,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 					continue;
 				}
 				processor(processor, "停止当前容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
-				int t = DEFAULT_KILL_TIME;
+				int t = getKillTime(this, project);
 				client.stop(c.getId(), t - 60);
 				DockerInspect d = null;
 				for (int i = 0; i < t; i++) {
@@ -445,7 +448,8 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			Map<String, String[]> filters = Collections.singletonMap("name", new String[] { cname });
 			for (DockerContainer c : client.ps(1, true, false, filters)) {
 				processor(processor, "停止当前容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
-				int t = DEFAULT_KILL_TIME;
+				int t = getKillTime(this, project);
+				;
 				client.stop(c.getId(), t - 60);
 				DockerInspect d = null;
 				for (int i = 0; i < t; i++) {
@@ -505,8 +509,9 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			}
 			for (DockerContainer c : list) {
 				processor(processor, "重启容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
-				int t = DEFAULT_KILL_TIME;
-				client.restart(c.getId(), DEFAULT_KILL_TIME);
+				int t = getKillTime(this, project);
+				;
+				client.restart(c.getId(), t);
 				DockerInspect d = null;
 				for (int i = 0; i < t; i++) {
 					processor(processor, "等待容器重启" + (t - i) + "s");
@@ -591,7 +596,8 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			}
 			for (DockerContainer c : list) {
 				processor(processor, "停止容器" + c.getId() + "/" + Arrays.toString(c.getNames()));
-				int t = DEFAULT_KILL_TIME;
+				int t = getKillTime(this, project);
+				;
 				client.stop(c.getId(), t - 60);
 				DockerInspect d = null;
 				for (int i = 0; i < t; i++) {
@@ -1162,5 +1168,19 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			}
 		}
 		return list;
+	}
+
+	public static int getKillTime(Machine machine, Project project) {
+		for (Env env : project.getEnvs()) {
+			if (StringUtil.eq(KILL_TIME_KEY_NAME, env.getKey())) {
+				return NumberUtil.toInt(env.getValue(), DEFAULT_KILL_TIME);
+			}
+		}
+		for (Env env : machine.getEnvs()) {
+			if (StringUtil.eq(KILL_TIME_KEY_NAME, env.getKey())) {
+				return NumberUtil.toInt(env.getValue(), DEFAULT_KILL_TIME);
+			}
+		}
+		return DEFAULT_KILL_TIME;
 	}
 }
