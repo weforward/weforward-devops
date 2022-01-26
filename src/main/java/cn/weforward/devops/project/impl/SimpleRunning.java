@@ -33,7 +33,7 @@ import cn.weforward.data.search.IndexKeyword;
 import cn.weforward.data.search.SearchableExt;
 import cn.weforward.data.search.util.IndexElementHelper;
 import cn.weforward.data.search.util.IndexKeywordHelper;
-import cn.weforward.devops.project.Env;
+import cn.weforward.devops.project.Envs;
 import cn.weforward.devops.project.Machine;
 import cn.weforward.devops.project.OpTask;
 import cn.weforward.devops.project.Project;
@@ -119,12 +119,7 @@ public class SimpleRunning extends AbstractPersistent<ProjectDi>
 	}
 
 	public String getServerid() {
-		for (Env e : getMachine().getEnvs()) {
-			if (StringUtil.eq(e.getKey(), "SERVER_ID")) {
-				return e.getValue();
-			}
-		}
-		return "";
+		return Envs.getServerid(getMachine());
 	}
 
 	public UniteId getId() {
