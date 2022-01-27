@@ -31,9 +31,9 @@ public class RunningProp extends Prop {
 	public static final String WEFORWARD_PORT = "weforward.port";
 	public static final String WEFORWARD_SERVICE_ACCESS_ID = "weforward.service.accessId";
 	public static final String WEFORWARD_SERVICE_ACCESS_KEY = "weforward.service.accessKey";
-
+	public static final String WEFORWARD_NAMESPACE = "weforward.namespace";
 	private static final List<String> BOOT_START_PROP = Arrays.asList(WEFORWARD_APIURL, WEFORWARD_HOST,
-			WEFORWARD_SERVICE_ACCESS_ID, WEFORWARD_SERVICE_ACCESS_KEY);
+			WEFORWARD_SERVICE_ACCESS_ID, WEFORWARD_SERVICE_ACCESS_KEY, WEFORWARD_NAMESPACE);
 	/** 范围 */
 	@Resource
 	protected int m_Scope;

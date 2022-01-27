@@ -81,8 +81,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	private static final String WORKSPACE = "/wf/ms/";
 	/** 用户目录 */
 	private static final String USER_DIR = "/home/boot/";
-	/** 项目版本key */
-	private static final String PROJECT_VERSION_KEY = "PROJECT_VERSION";
+
 	/** 项目修订版本标签 */
 	private static final String REVEISION_LABEL = "revieson";
 	private static final String DEFAULT_XMS = "128m";
@@ -323,7 +322,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		envs = addEnvIfNoExists(envs, project.getEnvs());
 		envs = addEnvIfNoExists(envs, getEnvs());
 		envs = addEnvIfNoExists(envs, getDefaultEnvs(running));
-		envs = addEnvIfNoExists(envs, Arrays.asList(new Env(PROJECT_VERSION_KEY, version)));
+		envs = addEnvIfNoExists(envs, Collections.singletonList(new Env(Envs.PROJECT_VERSION_KEY, version)));
 		String[] earr = new String[envs.size()];
 		for (int i = 0; i < earr.length; i++) {
 			Env e = envs.get(i);
@@ -686,8 +685,8 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			return new VersionInfo("no version");
 		}
 		for (String v : config.getEnv()) {
-			if (v.startsWith(PROJECT_VERSION_KEY)) {
-				return new VersionInfo(v.substring(PROJECT_VERSION_KEY.length() + 1));
+			if (v.startsWith(Envs.PROJECT_VERSION_KEY)) {
+				return new VersionInfo(v.substring(Envs.PROJECT_VERSION_KEY.length() + 1));
 			}
 		}
 		return new VersionInfo("no version");
@@ -857,9 +856,8 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 	private List<Env> getDefaultEnvs(Running running) {
 		Project project = running.getProject();
 		List<Env> list = new ArrayList<>();
-		// list.add(new Env("TZ", DEFAULT_TZ));// 解决时区问题
-		list.add(new Env("PROJECT_NAME", project.getName()));
-		list.add(new Env("RUNNING_ID", running.getPersistenceId().getId()));
+		list.add(new Env(Envs.PROJECT_NAME_KEY, project.getName()));
+		list.add(new Env(Envs.RUNNING_ID_KEY, running.getPersistenceId().getId()));
 		String myJavaOption = findEnvValue(project.getEnvs(), "MY_JAVA_OPTIONS", "");
 		StringBuilder sb = new StringBuilder();
 		sb.append(myJavaOption);
@@ -930,7 +928,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		sb.append(" -D").append(RunningProp.WEFORWARD_HOST).append("=").append(host);
 		Organization org = project.getOrganization();
 		if (null != org) {
-			sb.append(" -D").append("weforward.namespace").append("=").append(org.getId() + ".");
+			sb.append(" -D").append(RunningProp.WEFORWARD_NAMESPACE).append("=").append(org.getId() + ".");
 		}
 		if (null != accessId) {
 			sb.append(" -D").append(RunningProp.WEFORWARD_SERVICE_ACCESS_ID).append("=").append(accessId.trim());
@@ -954,7 +952,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 				}
 			}
 		}
-		list.add(new Env("WF_JAVA_OPTIONS", sb.toString()));
+		list.add(new Env(Envs.WF_JAVA_OPTIONS_KEY, sb.toString()));
 		return list;
 	}
 
