@@ -40,8 +40,11 @@ docker run  --log-opt max-size=100m --restart=unless-stopped -d  -e WEFORWARD_PA
 
 #### 创建配置文件
 
+- 创建配置目录
+	
+	mkdir -p /wf/gw/conf/
 
-- /wf/gw/conf/gateway.properties
+- 创建文件/wf/gw/conf/gateway.properties
 
 	 gateway.host=[当前网关的ip]
 	 gateway.port=[当前网关的端口]
@@ -49,7 +52,7 @@ docker run  --log-opt max-size=100m --restart=unless-stopped -d  -e WEFORWARD_PA
 	 metrics.meterUrl=http://[控制台ip]:1500/metrics.j
 	 metrics.traceUrl=http://[控制台ip]:1500/trace.j
 
-- /wf/gw/conf/plugin/mongodb.properties
+- 创建文件/wf/gw/conf/plugin/mongodb.properties
 	
 	db.connection=mongodb://[数据库ip]:[端口]/?replicaSet=[副本集名]&readpreference=nearest
 
@@ -63,14 +66,24 @@ docker run  --log-opt max-size=100m --restart=unless-stopped -d -e WEFORWARD_PAS
 ### devops
 需更改配置，步骤如下
 
-#### 创建配置文件
-/wf/ms/weforward-devops/conf/devops.properties
+#### 创建配置文件和数据目录
+
+- 创建配置目录
+
+	mkdir -p /wf/weforward-devops/conf/
+
+- 创建数据目录
+
+	mkdir /data/
+	chown 1008:1008 /data/
+
+- 创建文件/wf/ms/weforward-devops/conf/devops.properties
 
 	mongodb.url=mongodb://[数据库ip]:[端口]/?replicaSet=[副本集名]&readpreference=nearest
 	metrics.influxdb.url=http://[数据库ip]::[端口]
 
 #### 挂载目录文件并指定网关ip
 
-docker run  --log-opt max-size=100m --restart=unless-stopped -d  -e WEFORWARD_PASSWORD=888888 -e WF_GATEWAY_URL=http://[A网关ip]:[A网关端口]/;http://[B网关ip]:[B网关端口]/ -v /wf/ms/weforward-devops/conf:/home/boot/conf --net host --name weforward-devops weforward/devops
+docker run  --log-opt max-size=100m --restart=unless-stopped -d  -e WEFORWARD_PASSWORD=888888 -e WF_GATEWAY_URL=http://[A网关ip]:[A网关端口]/;http://[B网关ip]:[B网关端口]/ -v /wf/ms/weforward-devops/conf:/home/boot/conf -v /data/:/home/boot/data/ --net host --name weforward-devops weforward/devops
 
 **控制台仅用于运维部署，只部署一台服务即可**
