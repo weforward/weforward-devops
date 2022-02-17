@@ -8,7 +8,7 @@ wget https://gitee.com/weforward/weforward-devops/raw/main/bin/install.sh
 
 bash install.sh
 
-## 也可以分开运行
+## 分开运行
 
 ### mongodb
 docker run --log-opt max-size=100m --restart=unless-stopped -v /data/mongo:/data/db -d -p 27017:27017 --name mongo mongo:4.4.11-rc1-focal
@@ -22,12 +22,7 @@ docker run  --log-opt max-size=100m --restart=unless-stopped -d -e WEFORWARD_PAS
 ### devops
 docker run  --log-opt max-size=100m --restart=unless-stopped -d  -e WEFORWARD_PASSWORD=888888 --net host --name weforward-devops weforward/devops
 
-## 访问
-
-地址： http://127.0.0.1:1400/devops/
-
-
-##集群方式
+## 集群方式
 
 ### mongodb
 需调整成副本集方式
@@ -87,3 +82,10 @@ docker run  --log-opt max-size=100m --restart=unless-stopped -d -e WEFORWARD_PAS
 docker run  --log-opt max-size=100m --restart=unless-stopped -d  -e WEFORWARD_PASSWORD=888888 -e WF_GATEWAY_URL=http://[A网关ip]:[A网关端口]/;http://[B网关ip]:[B网关端口]/ -v /wf/ms/weforward-devops/conf:/home/boot/conf -v /data/:/home/boot/data/ --net host --name weforward-devops weforward/devops
 
 **控制台仅用于运维部署，只部署一台服务即可**
+
+## 访问
+
+地址： http://127.0.0.1:1400/devops/
+
+
+
