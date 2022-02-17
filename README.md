@@ -26,3 +26,51 @@ docker run  --log-opt max-size=100m --restart=unless-stopped -d  -e WEFORWARD_PA
 
 地址： http://127.0.0.1:1400/devops/
 
+
+##集群方式
+
+### mongodb
+需调整成副本集方式
+
+### influxdb
+无需调整
+
+### gateway
+需调整成集群方法，步骤如下
+
+#### 创建配置文件
+
+
+- /wf/gw/conf/gateway.properties
+
+	 gateway.host=[当前网关的ip]
+	 gateway.port=[当前网关的端口]
+	 gateway.brothers=[{"id":"x0002","h":"[当前网关的ip]","p":当前网关的端口},{"id":"x0003","h":"[其它网关的ip]","p":[其它网关的端口]}]
+	 metrics.meterUrl=http://[控制台ip]:1500/metrics.j
+	 metrics.traceUrl=http://[控制台ip]:1500/trace.j
+
+- /wf/gw/conf/plugin/mongodb.properties
+	
+	db.connection=mongodb://[数据库ip]:[端口]/?replicaSet=[副本集名]&readpreference=nearest
+
+
+#### 挂载目录文件
+
+docker run  --log-opt max-size=100m --restart=unless-stopped -d -e WEFORWARD_PASSWORD=888888 -v /wf/gw/conf:/home/boot/conf --net host --name weforward-gateway weforward/gateway
+
+**在另一台服务器重复以上操作，注意调整对应ip**
+
+### devops
+需更改配置，步骤如下
+
+#### 创建配置文件
+/wf/ms/weforward-devops/conf/devops.properties
+
+	mongodb.url=mongodb://[数据库ip]:[端口]/?replicaSet=[副本集名]&readpreference=nearest
+	metrics.influxdb.url=http://[数据库ip]::[端口]
+
+#### 挂载目录文件并指定网关ip
+
+docker run  --log-opt max-size=100m --restart=unless-stopped -d  -e WEFORWARD_PASSWORD=888888 -e WF_GATEWAY_URL=http://[A网关ip]:[A网关端口]/;http://[B网关ip]:[B网关端口]/ -v /wf/ms/weforward-devops/conf:/home/boot/conf --net host --name weforward-devops weforward/devops
+
+**控制台仅用于运维部署，只部署一台服务即可**
