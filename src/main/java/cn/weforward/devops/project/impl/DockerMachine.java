@@ -67,6 +67,7 @@ import cn.weforward.util.docker.DockerInspect.InspectState;
 import cn.weforward.util.docker.DockerLog;
 import cn.weforward.util.docker.DockerRun;
 import cn.weforward.util.docker.DockerRun.HostConfigurantion;
+import cn.weforward.util.docker.DockerRun.LogConfigurantion;
 import cn.weforward.util.docker.DockerRun.RestartPolicyConfigurantion;
 
 /**
@@ -351,6 +352,10 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 		config.setBinds(barr);
 		config.setNetworkMode("host");
 		config.setRestartPolicy(RestartPolicyConfigurantion.UNLESS_STOPPED);
+		Map<String, String> defaultLogConfig = new HashMap<>();
+		defaultLogConfig.put("max-size", "100m");
+		LogConfigurantion logConfig = new LogConfigurantion("json-file", defaultLogConfig);
+		config.setLogConfig(logConfig);
 		run.setHostConfig(config);
 		DockerRun.Result r;
 		try {
