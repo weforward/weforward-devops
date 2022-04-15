@@ -919,7 +919,7 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 									+ RunningProp.WEFORWARD_SERVICE_ACCESS_KEY + "是否配置正常");
 						}
 						if (status.getStatusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
-							processor(processor, "请查看weforward-proxy实例错误日志");
+							processor(processor, "详细信息请查看weforward-proxy实例日志");
 						}
 						return;
 					}
