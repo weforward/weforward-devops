@@ -377,7 +377,7 @@ public class DistServiceImpl implements RestfulService, DistService {
 			if (null == f || !f.exists()) {
 				File dir = f.getParentFile();
 				String suffix = getSuffix(name);
-				if (StringUtil.isEmpty(suffix) && dir.exists()) {
+				if (!StringUtil.isEmpty(suffix) && dir.exists()) {
 					for (File loop : dir.listFiles()) {
 						if (loop.getName().endsWith(suffix)) {
 							f = loop;
