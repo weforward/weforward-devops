@@ -295,7 +295,6 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 	 * @return
 	 */
 	public List<VersionInfo> queryUpgradeVersions(Running running) {
-
 		Project project = running.getProject();
 		String url = genUrl(project);
 		String accessId = getAccessId(running);

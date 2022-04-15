@@ -980,6 +980,13 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 					response = getInvoker(accessId, accessKey).execute(get);
 					StatusLine status = response.getStatusLine();
 					if (status.getStatusCode() != HttpStatus.SC_OK) {
+						if (status.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+							return new VersionInfo("error:没权限，请检查" + RunningProp.WEFORWARD_SERVICE_ACCESS_ID + "和"
+									+ RunningProp.WEFORWARD_SERVICE_ACCESS_KEY + "是否配置正常");
+						}
+						if (status.getStatusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+							return new VersionInfo("error:内部错误，请查看weforward-proxy实例错误日志");
+						}
 						throw new IOException("响应码异常" + status);
 					}
 					String content = EntityUtils.toString(response.getEntity());
