@@ -916,7 +916,7 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 						}
 						if (status.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
 							processor(processor, "请检查" + RunningProp.WEFORWARD_SERVICE_ACCESS_ID + "和"
-									+ RunningProp.WEFORWARD_SERVICE_ACCESS_KEY + "是否配置正常");
+									+ RunningProp.WEFORWARD_SERVICE_ACCESS_KEY + "是否与weforward-proxy实例一致");
 						}
 						processor(processor, "详细信息请查看weforward-proxy实例日志");
 						return;
