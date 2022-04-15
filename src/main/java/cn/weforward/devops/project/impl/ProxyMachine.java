@@ -63,6 +63,7 @@ import cn.weforward.devops.project.OpProcessor;
 import cn.weforward.devops.project.Project;
 import cn.weforward.devops.project.Prop;
 import cn.weforward.devops.project.Running;
+import cn.weforward.devops.project.RunningProp;
 import cn.weforward.devops.project.VersionInfo;
 import cn.weforward.devops.project.di.ProjectDi;
 import cn.weforward.devops.project.ext.AbstractMachine;
@@ -906,13 +907,20 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 					response = getInvoker(accessId, accessKey).execute(get);
 					StatusLine status = response.getStatusLine();
 					if (status.getStatusCode() != HttpStatus.SC_OK) {
-						throw new IOException("响应码异常" + status);
+						processor(processor, "升级异常：响应码:" + status);
+						if (status.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+							processor(processor, "请检查" + RunningProp.WEFORWARD_SERVICE_ACCESS_ID + "和"
+									+ RunningProp.WEFORWARD_SERVICE_ACCESS_KEY + "是否配置正常");
+						}
+						if (status.getStatusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+							processor(processor, "请查看weforward-proxy实例错误日志");
+						}
+						return;
 					}
 					processor(processor, "升级成功");
 				} catch (Exception e) {
 					processor(processor, "升级异常：" + e.toString());
 					_Logger.error("升级异常", e);
-					return;
 				} finally {
 					try {
 						HttpInvoker.consume(response);
