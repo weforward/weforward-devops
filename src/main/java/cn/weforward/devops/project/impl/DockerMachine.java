@@ -208,7 +208,7 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 
 	@Override
 	public synchronized void upgrade(Running running, List<Env> userenvs, List<Bind> userbinds, String revieson,
-			OpProcessor processor) {
+			OpProcessor processor, String note) {
 		if (isOutOfMemory(getInfo())) {
 			processor(processor, "升级失败，服务器内存不足");
 			return;
@@ -235,7 +235,8 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 			_Logger.error("升级异常", e);
 			return;
 		}
-		if (null == inspect || !StringUtil.eq(inspect.getLabel(REVEISION_LABEL), revieson)) {
+		boolean needBuild = note.contains("重新构建");
+		if (needBuild || null == inspect || !StringUtil.eq(inspect.getLabel(REVEISION_LABEL), revieson)) {
 			if (!build(running, revieson, processor)) {
 				return;
 			}

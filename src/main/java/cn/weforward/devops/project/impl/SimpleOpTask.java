@@ -51,6 +51,8 @@ public class SimpleOpTask extends AbstractPersistent<ProjectDi> implements OpTas
 	/** 行为 */
 	@Resource
 	protected int m_Action;
+	@Resource
+	protected String m_Note;
 	/** 任务 */
 	private TaskExecutor.Task m_Task;
 
@@ -76,16 +78,17 @@ public class SimpleOpTask extends AbstractPersistent<ProjectDi> implements OpTas
 	}
 
 	public SimpleOpTask(ProjectDi di, Running running, int action) {
-		this(di, running, null, action);
+		this(di, running, null, action, null);
 	}
 
-	public SimpleOpTask(ProjectDi di, Running running, String version, int action) {
+	public SimpleOpTask(ProjectDi di, Running running, String version, int action, String note) {
 		super(di);
 		genPersistenceId();
 		m_Running = running.getPersistenceId();
 		m_Version = version;
 		m_CreateTime = new Date();
 		m_Action = action;
+		m_Note = note;
 		markPersistenceUpdate();
 		start();
 	}
@@ -137,7 +140,7 @@ public class SimpleOpTask extends AbstractPersistent<ProjectDi> implements OpTas
 			m.rollback(getRunning(), this);
 			break;
 		case ACTION_UPGRADE:
-			m.upgrade(getRunning(), m_Version, this);
+			m.upgrade(getRunning(), m_Version, this, StringUtil.toString(m_Note));
 			break;
 		case ACTION_BUILD:
 			if (m instanceof DockerMachine) {

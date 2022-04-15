@@ -260,7 +260,7 @@ public class ProxyMachine extends AbstractMachine implements Reloadable<ProxyMac
 
 	@Override
 	public void upgrade(Running running, List<Env> userenvs, List<Bind> userbinds, String version,
-			OpProcessor processor) {
+			OpProcessor processor, String note) {
 		version = VersionInfo.getVersion(version);
 		getStategy().upgrade(running, userenvs, userbinds, version, processor);
 

@@ -247,8 +247,8 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 		return rights;
 	}
 
-	public void upgrade(Running running, String version, OpProcessor processor) {
-		this.upgrade(running, null, null, version, processor);
+	public void upgrade(Running running, String version, OpProcessor processor, String note) {
+		this.upgrade(running, null, null, version, processor, note);
 	}
 
 	/**
@@ -259,9 +259,10 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 	 * @param binds     绑定
 	 * @param version   版本
 	 * @param processor 进度条
+	 * @param note      备注
 	 */
-	public abstract void upgrade(Running running, List<Env> envs, List<Bind> binds, String version,
-			OpProcessor processor);
+	protected abstract void upgrade(Running running, List<Env> envs, List<Bind> binds, String version,
+			OpProcessor processor, String note);
 
 	/**
 	 * 回滚

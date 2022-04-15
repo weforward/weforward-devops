@@ -199,7 +199,7 @@ public class SimpleRunning extends AbstractPersistent<ProjectDi>
 	public OpTask upgrade(String version, String note) {
 		checkRight(RIGHT_UPGRADE);
 		writeLog("upgrade", "升级系统到" + version + "版本", note);
-		OpTask task = new SimpleOpTask(getBusinessDi(), this, version, SimpleOpTask.ACTION_UPGRADE);
+		OpTask task = new SimpleOpTask(getBusinessDi(), this, version, SimpleOpTask.ACTION_UPGRADE, note);
 		return task;
 	}
 
@@ -294,7 +294,7 @@ public class SimpleRunning extends AbstractPersistent<ProjectDi>
 	@Override
 	public OpTask printStack(String filename) {
 		writeLog("printStack", "打印堆栈", null);
-		OpTask task = new SimpleOpTask(getBusinessDi(), this, filename, SimpleOpTask.ACTION_PRINT_STACK);
+		OpTask task = new SimpleOpTask(getBusinessDi(), this, filename, SimpleOpTask.ACTION_PRINT_STACK, null);
 		return task;
 	}
 
@@ -324,7 +324,7 @@ public class SimpleRunning extends AbstractPersistent<ProjectDi>
 	@Override
 	public OpTask printMemoryMap(String filename) {
 		writeLog("printStack", "打印内存", null);
-		OpTask task = new SimpleOpTask(getBusinessDi(), this, filename, SimpleOpTask.ACTION_PRINT_MEMORYMAP);
+		OpTask task = new SimpleOpTask(getBusinessDi(), this, filename, SimpleOpTask.ACTION_PRINT_MEMORYMAP, null);
 		return task;
 	}
 
