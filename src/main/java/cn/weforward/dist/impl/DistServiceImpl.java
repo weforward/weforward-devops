@@ -374,8 +374,28 @@ public class DistServiceImpl implements RestfulService, DistService {
 			String projectPath = org + File.separator + group + File.separator + project + File.separator;
 			String file = projectPath + tag + File.separator + name;
 			File f = getFile(file);
+			if (null == f || !f.exists()) {
+				File dir = f.getParentFile();
+				String suffix = getSuffix(name);
+				if (StringUtil.isEmpty(suffix) && dir.exists()) {
+					for (File loop : dir.listFiles()) {
+						if (loop.getName().endsWith(suffix)) {
+							f = loop;
+							break;
+						}
+					}
+				}
+			}
 			outFile(f, response);
 		}
+	}
+
+	private static String getSuffix(String name) {
+		int index = name.indexOf(".");
+		if (index > 0) {
+			return name.substring(index);
+		}
+		return null;
 	}
 
 	private static long getLastModified(File f) {

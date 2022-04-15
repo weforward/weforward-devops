@@ -2,19 +2,17 @@ package cn.weforward.devops;
 
 import org.junit.Test;
 
-import cn.weforward.rlog.LogPage;
-import cn.weforward.rlog.impl.RlogResultImpl;
-
 public class FileTest {
 	@Test
 	public void test() {
+		System.out.println(getSuffix("file.zip"));
+	}
 
-		try {
-			LogPage page = RlogResultImpl.valueOf("1.txt");
-			System.out.println(page.get(Integer.MAX_VALUE));
-		} catch (Exception e) {
-			e.printStackTrace();
+	private static String getSuffix(String name) {
+		int index = name.indexOf(".");
+		if (index > 0) {
+			return name.substring(index);
 		}
-
+		return null;
 	}
 }
