@@ -450,7 +450,12 @@ public class HomeMethods implements ResourceHandler {
 				return RunningOpView.valueOf(task);
 			} else if ("get_versions".equals(op)) {
 				p = m_ProjectService.getRunning(getMyOrganization(), params.getString("id"));
-				List<VersionInfo> versions = p.getUpgradeVersions();
+				List<VersionInfo> versions;
+				try {
+					versions = p.getUpgradeVersions();
+				} catch (UnsupportedOperationException e) {
+					throw new ApiException(ApiException.CODE_ILLEGAL_ARGUMENT, e.getMessage());
+				}
 				List<String> array = new ArrayList<>();
 				for (VersionInfo v : versions) {
 					array.add(v.toString());

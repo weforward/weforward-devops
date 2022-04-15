@@ -11,6 +11,7 @@
 package cn.weforward.devops.project.ext;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -18,6 +19,11 @@ import java.util.List;
 
 import javax.annotation.Resource;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -289,23 +295,50 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 	 * @return
 	 */
 	public List<VersionInfo> queryUpgradeVersions(Running running) {
-		try {
-			Project project = running.getProject();
-			String url = genUrl(project);
-			String accessId = getAccessId(running);
-			String accessKey = getAccessKey(running);
-			String json = getInvoker(accessId, accessKey).get(url, null);
-			JSONArray array = new JSONArray(json);
-			List<VersionInfo> list = new ArrayList<>(array.length());
-			for (int i = 0; i < array.length(); i++) {
-				JSONObject o = array.getJSONObject(i);
-				list.add(new VersionInfo(o.optString("name"), TimeUtil.parseDate(o.optString("time"))));
-			}
-			Collections.sort(list, _BY_VERSION);
-			return list;
-		} catch (Throwable e) {
-			throw new IllegalArgumentException("获取版本异常", e);
+
+		Project project = running.getProject();
+		String url = genUrl(project);
+		String accessId = getAccessId(running);
+		if (StringUtil.isEmpty(accessId)) {
+			throw new UnsupportedOperationException("请先配置" + RunningProp.WEFORWARD_SERVICE_ACCESS_ID);
 		}
+		String accessKey = getAccessKey(running);
+		if (StringUtil.isEmpty(accessKey)) {
+			throw new UnsupportedOperationException("请先配置" + RunningProp.WEFORWARD_SERVICE_ACCESS_KEY);
+		}
+
+		HttpGet post = new HttpGet(url);
+		HttpResponse response = null;
+		String json;
+		try {
+			HttpInvoker invoker = getInvoker(accessId, accessKey);
+			response = invoker.execute(post);
+			StatusLine status = response.getStatusLine();
+			if (status.getStatusCode() != HttpStatus.SC_OK) {
+				if (status.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+					throw new UnsupportedOperationException("accessId或accessKey不正确");
+				}
+				throw new IOException("status返回异常状态码:" + status);
+			}
+			json = EntityUtils.toString(response.getEntity(), Charset.defaultCharset());
+		} catch (IOException e) {
+			throw new IllegalArgumentException("获取版本异常", e);
+		} finally {
+			if (null != response) {
+				try {
+					EntityUtils.consume(response.getEntity());
+				} catch (IOException e) {
+				}
+			}
+		}
+		JSONArray array = new JSONArray(json);
+		List<VersionInfo> list = new ArrayList<>(array.length());
+		for (int i = 0; i < array.length(); i++) {
+			JSONObject o = array.getJSONObject(i);
+			list.add(new VersionInfo(o.optString("name"), TimeUtil.parseDate(o.optString("time"))));
+		}
+		Collections.sort(list, _BY_VERSION);
+		return list;
 	}
 
 	protected String genUrl(Project project) {
