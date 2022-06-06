@@ -28,7 +28,7 @@ public class InnerOrganizationProvider implements OrganizationProvider {
 	protected Organization m_Org;
 
 	public InnerOrganizationProvider(String id, String name) {
-		m_Org = new Organization(id, name);
+		m_Org = Organization.valueOf(id, name);
 	}
 
 	@Override

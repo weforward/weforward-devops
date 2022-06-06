@@ -116,10 +116,16 @@ public class SimpleOrganizationUser implements OrganizationUser {
 
 	@Override
 	public Organization getOrganization() {
-		if (null == m_Organization) {
-			m_Organization = m_OrganizationProvier.get(this);
+		Organization org = m_Organization;
+		if (null == org) {
+			org = m_OrganizationProvier.get(this);
+			if (null == org) {
+				// 使用默认组织
+				org = Organization.DEFAULT;
+			}
+			m_Organization = org;
 		}
-		return m_Organization;
+		return org;
 	}
 
 	public void setOrganizationProvider(OrganizationProvider organizationProvider) {

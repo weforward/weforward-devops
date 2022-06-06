@@ -61,4 +61,13 @@ public class Organization {
 		return m_Id + "=" + m_Name;
 	}
 
+	public static Organization DEFAULT = new Organization("default", "默认");
+
+	public static Organization valueOf(String id, String name) {
+		if (DEFAULT.m_Id.equals(id) && DEFAULT.m_Name.equals(name)) {
+			return DEFAULT;
+		}
+		return new Organization(id, name);
+	}
+
 }

@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 import cn.weforward.common.util.StringUtil;
+import cn.weforward.devops.user.Organization;
 import cn.weforward.devops.user.OrganizationUser;
 import cn.weforward.devops.user.RoleProvider;
 import cn.weforward.protocol.Response;
@@ -116,7 +117,10 @@ public class MicroserviceRoleProvider implements RoleProvider {
 		}
 		String orgId = null;
 		if (user instanceof OrganizationUser) {
-			orgId = ((OrganizationUser) user).getOrganization().getId();
+			Organization org = ((OrganizationUser) user).getOrganization();
+			if (null != org) {
+				orgId = org.getId();
+			}
 		}
 		String method = genMethod("getRights");
 		SimpleDtObject params = new SimpleDtObject();
