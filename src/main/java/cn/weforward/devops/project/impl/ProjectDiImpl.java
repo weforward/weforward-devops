@@ -11,10 +11,13 @@
 package cn.weforward.devops.project.impl;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Resource;
 
@@ -45,6 +48,7 @@ import cn.weforward.data.search.util.IndexKeywordHelper;
 import cn.weforward.data.util.FieldMapper;
 import cn.weforward.devops.project.Machine;
 import cn.weforward.devops.project.Project;
+import cn.weforward.devops.project.Running;
 import cn.weforward.devops.project.di.ProjectDi;
 import cn.weforward.devops.project.ext.AbstractMachine;
 import cn.weforward.devops.project.ext.AbstractProject;
@@ -128,6 +132,11 @@ public abstract class ProjectDiImpl implements ProjectDi {
 	protected int m_DefaultProjectRight;
 
 	protected TaskExecutor.Task m_ClearTask;
+
+	/** devops任务执行后调用脚本 */
+	@Value("${devops.taskAfterCmd:}")
+	protected String m_TaskAfterCmd;
+	protected ProcessBuilder m_ProcessBuilder;
 
 	public ProjectDiImpl(PersisterFactory psFactroy, SearcherFactory searcherFactory, LabelSetFactory lsFactory,
 			BusinessLoggerFactory loggerFactory) {
@@ -381,4 +390,53 @@ public abstract class ProjectDiImpl implements ProjectDi {
 		return m_DefaultProjectRight;
 	}
 
+	@Override
+	public void taskCompleted(SimpleOpTask opTask) {
+		if (null == m_TaskAfterCmd || m_TaskAfterCmd.length() == 0) {
+			return;
+		}
+		// 执行外部脚本
+		ProcessBuilder pb = m_ProcessBuilder;
+		if (null == pb) {
+			pb = new ProcessBuilder();
+			pb.command(m_TaskAfterCmd);
+			pb.redirectErrorStream(true);
+			pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+			m_ProcessBuilder = pb;
+		}
+		Map<String, String> ev = pb.environment();
+		ev.put("devops_action", opTask.getActionName());
+		ev.put("devops_version", opTask.getVersion());
+		Running r = opTask.getRunning();
+		if (null != r) {
+			ev.put("devops_running", r.getId().getOrdinal());
+			Machine m = r.getMachine();
+			if (null != m) {
+				ev.put("devops_machine", m.getName());
+			}
+			Project p = r.getProject();
+			if (null != p) {
+				ev.put("devops_project", p.getName());
+			}
+		}
+		Process process;
+		try {
+			process = pb.start();
+//			byte[] tmp = new byte[128];
+//			try (InputStream in = process.getInputStream()) {
+//				while (-1 != in.read(tmp)) {
+//				}
+//			}
+			if (process.waitFor(10, TimeUnit.SECONDS) && !process.isAlive()) {
+				_Logger.info("已运行外部命令，退出值：" + process.exitValue() + "，命令行：" + m_TaskAfterCmd);
+			} else {
+				_Logger.info("外部命令执行超过10秒，命令行：" + m_TaskAfterCmd);
+				process.destroy();
+			}
+			return;
+		} catch (IOException | InterruptedException e) {
+			m_ProcessBuilder = null;
+			_Logger.error(m_TaskAfterCmd, e);
+		}
+	}
 }

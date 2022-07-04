@@ -161,7 +161,8 @@ public class SimpleOpTask extends AbstractPersistent<ProjectDi> implements OpTas
 		synchronized (this) {
 			m_Task = null;
 		}
-
+		// 任务执行完成
+		getBusinessDi().taskCompleted(this);
 	}
 
 	@Override
@@ -200,6 +201,44 @@ public class SimpleOpTask extends AbstractPersistent<ProjectDi> implements OpTas
 	@Override
 	public boolean isDone() {
 		return null == m_Task;
+	}
+
+	public String getVersion() {
+		return m_Version;
+	}
+
+	public String getNote() {
+		return m_Note;
+	}
+
+	public String getActionName() {
+		switch (m_Action) {
+		/** 行为-升级 */
+		case ACTION_UPGRADE:
+			return "upgrade";
+		/** 行为-启动 */
+		case ACTION_START:
+			return "start";
+		/** 行为-停止 */
+		case ACTION_STOP:
+			return "stop";
+		/** 行为-重启 */
+		case ACTION_RESTART:
+			return "restart";
+		/** 行为-回滚 */
+		case ACTION_ROLLBACK:
+			return "rollback";
+		/** 行为-构建 */
+		case ACTION_BUILD:
+			return "build";
+		/** 行为-打印堆栈 */
+		case ACTION_PRINT_STACK:
+			return "jstack";
+		/** 行为-打印内存 */
+		case ACTION_PRINT_MEMORYMAP:
+			return "jmap";
+		}
+		return String.valueOf(m_Action);
 	}
 
 }

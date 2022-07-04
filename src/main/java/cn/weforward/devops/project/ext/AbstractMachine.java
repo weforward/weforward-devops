@@ -117,6 +117,16 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 			return v;
 		}
 	};
+	/** 版本排序 */
+	protected final static Comparator<VersionInfo> _BY_TIME = new Comparator<VersionInfo>() {
+		@Override
+		public int compare(VersionInfo o1, VersionInfo o2) {
+			long t1 = (null == o1.getTime()) ? 0 : o1.getTime().getTime();
+			long v = (null == o2.getTime()) ? 0 : o2.getTime().getTime();
+			v -= t1;
+			return (v > 0) ? 1 : ((v < 0) ? -1 : 0);
+		}
+	};
 
 	protected AbstractMachine(ProjectDi di) {
 		super(di);
@@ -337,7 +347,8 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 			JSONObject o = array.getJSONObject(i);
 			list.add(new VersionInfo(o.optString("name"), TimeUtil.parseDate(o.optString("time"))));
 		}
-		Collections.sort(list, _BY_VERSION);
+//		Collections.sort(list, _BY_VERSION);
+		Collections.sort(list, _BY_TIME);
 		return list;
 	}
 

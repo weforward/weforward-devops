@@ -33,4 +33,8 @@ public class SimpleRight implements Right {
 		return m_UriPattern;
 	}
 
+	@Override
+	public String toString() {
+		return "{rule:" + m_Rule + ",uri:" + m_UriPattern + "}";
+	}
 }

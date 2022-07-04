@@ -23,6 +23,7 @@ import cn.weforward.devops.project.Project;
 import cn.weforward.devops.project.ext.AbstractProject;
 import cn.weforward.devops.project.impl.JavaProject;
 import cn.weforward.devops.project.impl.ServiceProperties;
+import cn.weforward.devops.project.impl.SimpleOpTask;
 import cn.weforward.devops.project.impl.SimpleRunning;
 import cn.weforward.devops.user.Group;
 import cn.weforward.devops.user.Organization;
@@ -189,5 +190,7 @@ public interface ProjectDi extends BusinessDi {
 	Organization getOrganization(String id);
 
 	void onGroupsChange(AbstractProject project);
+
+	void taskCompleted(SimpleOpTask opTask);
 
 }
