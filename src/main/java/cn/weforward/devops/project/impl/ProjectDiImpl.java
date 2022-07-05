@@ -406,16 +406,18 @@ public abstract class ProjectDiImpl implements ProjectDi {
 		}
 		Map<String, String> ev = pb.environment();
 		ev.put("devops_action", opTask.getActionName());
-		ev.put("devops_version", opTask.getVersion());
+		if (!StringUtil.isEmpty(opTask.getVersion())) {
+			ev.put("devops_version", opTask.getVersion());
+		}
 		Running r = opTask.getRunning();
 		if (null != r) {
 			ev.put("devops_running", r.getId().getOrdinal());
 			Machine m = r.getMachine();
-			if (null != m) {
+			if (null != m && !StringUtil.isEmpty(m.getName())) {
 				ev.put("devops_machine", m.getName());
 			}
 			Project p = r.getProject();
-			if (null != p) {
+			if (null != p && !StringUtil.isEmpty(p.getName())) {
 				ev.put("devops_project", p.getName());
 			}
 		}
