@@ -8,9 +8,7 @@ import cn.weforward.common.util.StringUtil;
 import cn.weforward.common.util.TransResultPage;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.devops.user.OrganizationUser;
-import cn.weforward.devops.weforward.view.TracerParam;
-import cn.weforward.devops.weforward.view.TracerTreeDetailView;
-import cn.weforward.devops.weforward.view.TracerTreeView;
+import cn.weforward.devops.weforward.view.*;
 import cn.weforward.framework.ApiException;
 import cn.weforward.framework.WeforwardMethod;
 import cn.weforward.framework.WeforwardMethods;
@@ -24,6 +22,8 @@ import cn.weforward.protocol.client.util.IdBean;
 import cn.weforward.protocol.doc.annotation.DocAttribute;
 import cn.weforward.protocol.doc.annotation.DocMethod;
 import cn.weforward.protocol.doc.annotation.DocParameter;
+
+import java.util.Date;
 
 /**
  * 追踪方法集
@@ -64,6 +64,14 @@ public class TracerMethods {
 	public TracerTreeDetailView get(IdBean params) throws ApiException {
 		ValidateUtil.isEmpty(params.getId(), "id不能为空");
 		return TracerTreeDetailView.valueOf(m_MetricsService.getTracer(getMyOrganization(), params.getId()));
+	}
+
+	@WeforwardMethod
+	@DocMethod(description = "接口调用情况", index = 3)
+	public ApiInvokeInfoView searchApiInvokeInfo(ApiInvokeInfoParam params) throws ApiException {
+		ValidateUtil.isEmpty(params.getServiceName(), "服务名不能为空");
+		ValidateUtil.isEmpty(params.getServiceNo(), "服务(实例)编号不能为空");
+		return ApiInvokeInfoView.valueOf(m_MetricsService.getApiInvokeInfo(getMyOrganization(),params.getBegin(),params.getEnd(),params.getServiceName(),params.getServiceNo()));
 	}
 
 	private Organization getMyOrganization() {

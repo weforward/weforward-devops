@@ -81,4 +81,16 @@ public interface MetricsService {
 	 */
 	TracerSpanTree getTracer(Organization org, String id);
 
+	/**
+	 * 获取api调用情况
+	 * @param org 组织
+	 * @param begin
+	 * @param end
+	 * @param serviceName
+	 * @param serviceNo
+	 * @return
+	 */
+	ApiInvokeInfo getApiInvokeInfo(Organization org,Date begin, Date end, String serviceName,
+								   String serviceNo);
+
 }
