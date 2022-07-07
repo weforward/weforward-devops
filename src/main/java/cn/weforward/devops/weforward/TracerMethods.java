@@ -71,7 +71,16 @@ public class TracerMethods {
 	public ApiInvokeInfoView searchApiInvokeInfo(ApiInvokeInfoParam params) throws ApiException {
 		ValidateUtil.isEmpty(params.getServiceName(), "服务名不能为空");
 		ValidateUtil.isEmpty(params.getServiceNo(), "服务(实例)编号不能为空");
-		return ApiInvokeInfoView.valueOf(m_MetricsService.getApiInvokeInfo(getMyOrganization(),params.getBegin(),params.getEnd(),params.getServiceName(),params.getServiceNo()));
+		return ApiInvokeInfoView.valueOf(m_MetricsService.getApiInvokeInfo(getMyOrganization(),null,params.getEnd(),params.getServiceName(),params.getServiceNo(),null));
+	}
+
+	@WeforwardMethod
+	@DocMethod(description = "接口方法调用统计", index = 4)
+	public ApiInvokeStatView searchApiStat(ApiInvokeInfoParam params) throws ApiException {
+		ValidateUtil.isEmpty(params.getServiceName(), "服务名不能为空");
+		ValidateUtil.isEmpty(params.getServiceNo(), "服务(实例)编号不能为空");
+		ValidateUtil.isEmpty(params.getMethodName(), "方法名不能为空");
+		return ApiInvokeStatView.valueOf(m_MetricsService.getApiInvokeInfo(getMyOrganization(),params.getBegin(),params.getEnd(),params.getServiceName(),params.getServiceNo(), params.getMethodName()));
 	}
 
 	private Organization getMyOrganization() {

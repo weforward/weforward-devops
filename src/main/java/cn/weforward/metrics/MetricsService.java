@@ -88,9 +88,10 @@ public interface MetricsService {
 	 * @param end
 	 * @param serviceName
 	 * @param serviceNo
+	 * @param methodName
 	 * @return
 	 */
 	ApiInvokeInfo getApiInvokeInfo(Organization org,Date begin, Date end, String serviceName,
-								   String serviceNo);
+								   String serviceNo,String methodName);
 
 }

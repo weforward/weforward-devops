@@ -360,7 +360,7 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 	}
 
 	@Override
-	public ApiInvokeInfo getApiInvokeInfo(Organization org, Date begin, Date end, String serviceName, String serviceNo) {
+	public ApiInvokeInfo getApiInvokeInfo(Organization org, Date begin, Date end, String serviceName, String serviceNo,String methodName) {
 		return null;
 	}
 
