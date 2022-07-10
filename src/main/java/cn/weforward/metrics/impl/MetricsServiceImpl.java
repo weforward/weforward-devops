@@ -14,12 +14,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.function.Function;
 
-import cn.weforward.metrics.*;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +39,18 @@ import cn.weforward.common.util.FreezedList;
 import cn.weforward.common.util.ResultPageHelper;
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.common.util.TimeUtil;
+import cn.weforward.data.counter.Counter;
+import cn.weforward.data.counter.CounterFactory;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.devops.user.OrganizationProvider;
+import cn.weforward.metrics.ApiInvokeInfo;
+import cn.weforward.metrics.ManyMetrics;
+import cn.weforward.metrics.MetricsCollector;
+import cn.weforward.metrics.MetricsService;
+import cn.weforward.metrics.MetricsTracer;
+import cn.weforward.metrics.OneMetrics;
+import cn.weforward.metrics.TracerSpanTree;
+import cn.weforward.metrics.TracerSpanTree.SpanNode;
 import cn.weforward.protocol.ops.AccessExt;
 import cn.weforward.trace.CommonTrace;
 import cn.weforward.trace.Trace;
@@ -58,70 +73,36 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 	/** 日志记录 */
 	private final static Logger _Logger = LoggerFactory.getLogger(MetricsService.class);
 
+	final static DateFormat DTF = TimeUtil.getDateFormatInstance("yyyyMMddHHmm");
+
 	private List<MetricsCollector> m_Collectors = Collections.emptyList();
 
 	private List<MetricsTracer> m_Tracers = Collections.emptyList();
 
 	protected int m_CollectorMaxHistory;
-
 	protected int m_TracerMaxHistory;
-	/** 清理线程 */
-	protected Thread m_Clears;
 	/** http验证 */
 	protected HttpAccessAuth m_Auth;
-
 	protected OrganizationProvider m_Provider;
+	protected Counter m_ApiInvokeCounter;
+	protected Timer m_Timer;
 
-	public MetricsServiceImpl(int collectorMaxHistory, int tracerMaxHistory, HttpAccessAuth auth) {
+	public MetricsServiceImpl(int collectorMaxHistory, int tracerMaxHistory, HttpAccessAuth auth,
+			CounterFactory factory) {
 		m_Auth = auth;
 		m_CollectorMaxHistory = collectorMaxHistory;
 		m_TracerMaxHistory = tracerMaxHistory;
+		m_ApiInvokeCounter = factory.openCounter("metrics");
+		m_Timer = new Timer("metrics-timer", true);
 		if (m_CollectorMaxHistory > 0 || m_TracerMaxHistory > 0) {
-			m_Clears = new Thread(new Runnable() {
-
+			m_Timer.schedule(new TimerTask() {
 				@Override
 				public void run() {
-					while (null != m_Clears) {
-						synchronized (this) {
-							try {
-								this.wait(TimeUtil.DAY_MILLS);
-							} catch (InterruptedException e) {
-								return;
-							}
-						}
-						{
-							int maxHistory = m_CollectorMaxHistory;
-							List<MetricsCollector> cs = m_Collectors;
-							if (maxHistory > 0 && null != cs) {
-								for (MetricsCollector c : cs) {
-									try {
-										c.clear(maxHistory);
-									} catch (Throwable e) {
-										_Logger.warn("忽略清理异常", e);
-									}
-								}
-							}
-						}
-						{
-							int maxHistory = m_TracerMaxHistory;
-							List<MetricsTracer> ts = m_Tracers;
-							if (maxHistory > 0 && null != m_Tracers) {
-								for (MetricsTracer t : ts) {
-									try {
-										t.clear(maxHistory);
-									} catch (Throwable e) {
-										_Logger.warn("忽略清理异常", e);
-									}
-								}
-							}
-						}
-					}
-
+					clear();
 				}
-
-			}, "metrics-clear");
-			m_Clears.start();
+			}, TimeUtil.DAY_MILLS, TimeUtil.DAY_MILLS);
 		}
+		m_Timer.schedule(new ApiInvokeAnalyzer(), 60 * 1000, 60 * 1000);
 		Shutdown.register(this);
 	}
 
@@ -360,16 +341,233 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 	}
 
 	@Override
-	public ApiInvokeInfo getApiInvokeInfo(Organization org, Date begin, Date end, String serviceName, String serviceNo,String methodName) {
+	public ApiInvokeInfo getApiInvokeInfo(Organization org, Date begin, Date end, String serviceName, String serviceNo,
+			String methodName) {
+		ResultPage<String> rp = m_ApiInvokeCounter
+				.startsWith(StringUtil.toString(serviceNo) + "." + StringUtil.toString(serviceName) + ".");
 		return null;
 	}
 
 	@Override
 	public void destroy() {
-		Thread s = m_Clears;
-		if (null != s) {
-			m_Clears = null;
-			s.interrupt();
+		Timer timer = m_Timer;
+		timer.cancel();
+	}
+
+	public void clear() {
+		{
+			int maxHistory = m_CollectorMaxHistory;
+			List<MetricsCollector> cs = m_Collectors;
+			if (maxHistory > 0 && null != cs) {
+				for (MetricsCollector c : cs) {
+					try {
+						c.clear(maxHistory);
+					} catch (Throwable e) {
+						_Logger.warn("忽略清理异常", e);
+					}
+				}
+			}
 		}
+		{
+			int maxHistory = m_TracerMaxHistory;
+			List<MetricsTracer> ts = m_Tracers;
+			if (maxHistory > 0 && null != m_Tracers) {
+				for (MetricsTracer t : ts) {
+					try {
+						t.clear(maxHistory);
+					} catch (Throwable e) {
+						_Logger.warn("忽略清理异常", e);
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * 分析API调用情况
+	 * 
+	 * @author liangcha
+	 */
+	class ApiInvokeAnalyzer extends TimerTask implements Runnable {
+
+		@Override
+		public void run() {
+			byMinutes(System.currentTimeMillis(), null);
+		}
+
+		/**
+		 * 按分钟统计（上一分钟的），生成计数器项为： <br>
+		 * 实例编号.服务.方法.yyyyMMddHHmm<br>
+		 * 实例编号.服务..yyyyMMddHHmm<br>
+		 * 实例编号.服务.方法.yyyyMMddHHmm.t0_01<br>
+		 * 实例编号.服务.方法.yyyyMMddHHmm.t01_05<br>
+		 * 实例编号.服务.方法.yyyyMMddHHmm.t05_1<br>
+		 * 实例编号.服务.方法.yyyyMMddHHmm.t1_5<br>
+		 * 实例编号.服务.方法.yyyyMMddHHmm.t5_10<br>
+		 * 实例编号.服务.方法.yyyyMMddHHmm.t10<br>
+		 * 
+		 * @param timeMs 要统计的所在分钟时间点（自GMT1970零时的毫秒数）
+		 */
+		void byMinutes(long timeMs, Organization org) {
+			// 把时间修整为分钟
+			long minutes = timeMs / (60 * 1000L);
+			timeMs = minutes * 60 * 1000L;
+			Date begin = new Date(timeMs - (60 * 1000L));
+			DTF.setTimeZone(TimeUtil.TZ_GMT);
+			String dtf = DTF.format(begin);
+			Date end = new Date(timeMs);
+			StringBuilder builder = new StringBuilder(64);
+			Map<String, HitItem> counter = new HashMap<>();
+			for (MetricsTracer c : m_Tracers) {
+				ResultPage<TracerSpanTree> rp = c.search(org, begin, end, null, null, null);
+				if (null == rp) {
+					continue;
+				}
+				for (int i = 1; rp.gotoPage(i); i++) {
+					for (TracerSpanTree t : rp) {
+						SpanNode node = t.getRoot();
+						count(node, counter, dtf, builder);
+					}
+				}
+			}
+			// 更新到计数器
+			for (Map.Entry<String, HitItem> item : counter.entrySet()) {
+				long v = item.getValue().v;
+				m_ApiInvokeCounter.set(item.getKey(), v);
+			}
+		}
+
+//		/**
+//		 * 按小时统计
+//		 * 
+//		 * @param timeMs 要统计的所在小时时间点（自GMT1970零时的毫秒数）
+//		 * @param org
+//		 */
+//		void byHours(long timeMs, Organization org) {
+//			// 把时间修整为小时
+//			long hours = timeMs / (60* 60 * 1000L);
+//			long begin=hours*60;
+//			long end=begin+60;
+//			String suffix = ".h" + Hex.toHex32((int) minutes);
+//			StringBuilder builder = new StringBuilder(64);
+//			Map<String, HitItem> counter = new HashMap<>();
+//			
+//			
+//			for (MetricsTracer c : m_Tracers) {
+//				ResultPage<TracerSpanTree> rp = c.search(org, begin, end, null, null, null);
+//				if (null == rp) {
+//					continue;
+//				}
+//				for (int i = 1; rp.gotoPage(i); i++) {
+//					for (TracerSpanTree t : rp) {
+//						SpanNode node = t.getRoot();
+//						count(node, counter, suffix, builder);
+//					}
+//				}
+//			}
+//			// 更新到计数器
+//			for (Map.Entry<String, HitItem> item : counter.entrySet()) {
+//				long v=item.getValue().v;
+//				if(v>0) {
+//				m_ApiInvokeCounter.set(item.getKey(), item.getValue().v);
+//				}
+//			}
+//		}
+
+		void count(SpanNode node, Map<String, HitItem> counter, String dtf, StringBuilder builder) {
+			// 实例编号.服务.方法.suffix
+			if (!StringUtil.isEmpty(node.getMethod())) {
+				builder.setLength(0);
+				builder.append(StringUtil.toString(node.getServiceNo())).append('.')
+						.append(StringUtil.toString(node.getServiceName())).append('.')
+						.append(StringUtil.toString(node.getMethod())).append('.').append(dtf);
+//				m_ApiInvokeCounter.inc(builder.toString());
+				HitItem hit = counter.computeIfAbsent(builder.toString(), HitItem._creater);
+				++hit.v;
+			}
+			{
+				// 实例编号.服务..suffix
+				builder.setLength(0);
+				builder.append(StringUtil.toString(node.getServiceNo())).append('.')
+						.append(StringUtil.toString(node.getServiceName())).append('.').append(dtf);
+				HitItem hit = counter.computeIfAbsent(builder.toString(), HitItem._creater);
+				++hit.v;
+			}
+
+			// 实例编号.服务.方法.t0_01<br>
+			long duration = node.getDuration();
+			if (duration >= 0 && duration < 100) {
+				builder.setLength(0);
+				builder.append(StringUtil.toString(node.getServiceNo())).append('.')
+						.append(StringUtil.toString(node.getServiceName())).append('.')
+						.append(StringUtil.toString(node.getMethod())).append('.').append(dtf).append(".t0_01");
+				HitItem hit = counter.computeIfAbsent(builder.toString(), HitItem._creater);
+				++hit.v;
+			}
+			// 实例编号.服务.方法.t01_05<br>
+			else if (duration >= 100 && duration < 500) {
+				builder.setLength(0);
+				builder.append(StringUtil.toString(node.getServiceNo())).append('.')
+						.append(StringUtil.toString(node.getServiceName())).append('.')
+						.append(StringUtil.toString(node.getMethod())).append('.').append(dtf).append(".t01_05");
+				HitItem hit = counter.computeIfAbsent(builder.toString(), HitItem._creater);
+				++hit.v;
+			}
+			// 实例编号.服务.方法.t05_1<br>
+			else if (duration >= 500 && duration < 1000) {
+				builder.setLength(0);
+				builder.append(StringUtil.toString(node.getServiceNo())).append('.')
+						.append(StringUtil.toString(node.getServiceName())).append('.')
+						.append(StringUtil.toString(node.getMethod())).append('.').append(dtf).append(".t05_1");
+				HitItem hit = counter.computeIfAbsent(builder.toString(), HitItem._creater);
+				++hit.v;
+			}
+			// 实例编号.服务.方法.t1_5<br>
+			else if (duration >= 1000 && duration < 5000) {
+				builder.setLength(0);
+				builder.append(StringUtil.toString(node.getServiceNo())).append('.')
+						.append(StringUtil.toString(node.getServiceName())).append('.')
+						.append(StringUtil.toString(node.getMethod())).append('.').append(dtf).append(".t1_5");
+				HitItem hit = counter.computeIfAbsent(builder.toString(), HitItem._creater);
+				++hit.v;
+			}
+			// 实例编号.服务.方法.t5_10<br>
+			else if (duration >= 5000 && duration < 1000) {
+				builder.setLength(0);
+				builder.append(StringUtil.toString(node.getServiceNo())).append('.')
+						.append(StringUtil.toString(node.getServiceName())).append('.')
+						.append(StringUtil.toString(node.getMethod())).append(dtf).append(".t5_10");
+				HitItem hit = counter.computeIfAbsent(builder.toString(), HitItem._creater);
+				++hit.v;
+			}
+			// 实例编号.服务.方法.t10<br>
+			else if (duration >= 10000) {
+				builder.setLength(0);
+				builder.append(StringUtil.toString(node.getServiceNo())).append('.')
+						.append(StringUtil.toString(node.getServiceName())).append('.')
+						.append(StringUtil.toString(node.getMethod())).append(dtf).append(".t10");
+				HitItem hit = counter.computeIfAbsent(builder.toString(), HitItem._creater);
+				++hit.v;
+			}
+
+			// 遍历子节点
+			List<SpanNode> ls = node.getChildren();
+			if (null != ls && ls.size() > 0) {
+				for (SpanNode n : ls) {
+					count(n, counter, dtf, builder);
+				}
+			}
+		}
+	}
+
+	static class HitItem {
+		public long v;
+
+		public static Function<String, HitItem> _creater = new Function<String, HitItem>() {
+			@Override
+			public HitItem apply(String t) {
+				return new HitItem();
+			}
+		};
 	}
 }

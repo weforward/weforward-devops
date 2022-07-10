@@ -18,8 +18,13 @@ import javax.annotation.Resource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 
+import com.mongodb.client.MongoDatabase;
+
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.common.util.ThreadPool;
+import cn.weforward.data.mongodb.counter.MongodbCounterFactory;
+import cn.weforward.data.mongodb.util.MongodbUtil;
+import cn.weforward.data.util.Flusher;
 import cn.weforward.devops.user.AccessKeeper;
 import cn.weforward.metrics.MetricsCollector;
 import cn.weforward.metrics.MetricsTracer;
@@ -76,6 +81,12 @@ public class MetricsConfig {
 	/** 凭证管理者 */
 	@Resource
 	protected AccessKeeper m_AccessKeeper;
+	/** 服务器id */
+	@Value("${weforward.serverid}")
+	protected String m_ServerId;
+	@Resource
+	protected Flusher m_Flusher;
+	protected MongoDatabase m_MongoDb;
 
 	@Bean
 	List<MetricsCollector> collectors() {
@@ -92,6 +103,15 @@ public class MetricsConfig {
 		return list;
 	}
 
+	MongoDatabase getMongoDb() {
+		MongoDatabase db = m_MongoDb;
+		if (null == db) {
+			db = MongodbUtil.create(m_MongodbUrl).getDatabase(m_MongodbDbName);
+			m_MongoDb = db;
+		}
+		return db;
+	}
+
 	@Bean
 	List<MetricsTracer> tracers() {
 		List<MetricsTracer> list = new ArrayList<>();
@@ -99,7 +119,7 @@ public class MetricsConfig {
 			String[] arr = m_Tracer.split(";");
 			for (String v : arr) {
 				if ("Mongodb".equalsIgnoreCase(v)) {
-					list.add(new MongodbMetricsTracer(m_MongodbUrl, m_MongodbDbName));
+					list.add(new MongodbMetricsTracer(getMongoDb()));
 				}
 			}
 		}
@@ -110,7 +130,7 @@ public class MetricsConfig {
 	@Bean
 	MetricsServiceImpl metricsService(List<MetricsCollector> collectors, List<MetricsTracer> tracers) {
 		MetricsServiceImpl s = new MetricsServiceImpl(m_CollectorMaxHistory, m_TracerMaxHistory,
-				new HttpAccessAuth(m_AccessKeeper));
+				new HttpAccessAuth(m_AccessKeeper), new MongodbCounterFactory(m_ServerId, getMongoDb(), m_Flusher));
 		s.setCollectors(collectors);
 		s.setTracers(tracers);
 		return s;

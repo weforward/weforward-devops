@@ -67,7 +67,11 @@ public class MongodbMetricsTracer implements MetricsTracer {
 	private static final ReplaceOptions UPSERT_OPTIONS = new ReplaceOptions().upsert(true);
 
 	public MongodbMetricsTracer(String url, String dbname) {
-		m_Db = MongodbUtil.create(url).getDatabase(dbname);
+		this(MongodbUtil.create(url).getDatabase(dbname));
+	}
+
+	public MongodbMetricsTracer(MongoDatabase db) {
+		m_Db = db;
 	}
 
 	@Override
@@ -146,7 +150,9 @@ public class MongodbMetricsTracer implements MetricsTracer {
 	public ResultPage<TracerSpanTree> search(Organization org, Date begin, Date end, String serviceName,
 			String serviceNo, String method) {
 		List<Bson> list = new ArrayList<>();
-		list.add(Filters.eq(ORGANIZATION, org.getId()));
+		if (null != org) {
+			list.add(Filters.eq(ORGANIZATION, org.getId()));
+		}
 		list.add(Filters.gte(LASTMODIFIED, null == begin ? 0 : begin.getTime()));
 		list.add(Filters.lte(LASTMODIFIED, null == end ? System.currentTimeMillis() : end.getTime()));
 		if (!StringUtil.isEmpty(serviceName)) {
