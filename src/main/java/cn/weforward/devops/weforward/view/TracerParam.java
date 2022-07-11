@@ -2,7 +2,9 @@ package cn.weforward.devops.weforward.view;
 
 import java.util.Date;
 
+import cn.weforward.common.NameItem;
 import cn.weforward.framework.doc.DocPageParams;
+import cn.weforward.metrics.ApiInvokeInfo;
 import cn.weforward.protocol.doc.annotation.DocAttribute;
 
 public class TracerParam extends DocPageParams {
@@ -13,6 +15,7 @@ public class TracerParam extends DocPageParams {
 	protected String m_ServiceName;
 	protected String m_ServiceNo;
 	protected String m_Method;
+	protected int m_DurationType;
 
 	public TracerParam() {
 
@@ -48,6 +51,12 @@ public class TracerParam extends DocPageParams {
 		m_Method = v;
 	}
 
+	@DocAttribute(type = Integer.class,description = "持续时间类型")
+	public void setDurationType(int v) {
+		m_DurationType = v;
+	}
+
+
 	public Date getBegin() {
 		return m_Begin;
 	}
@@ -70,6 +79,42 @@ public class TracerParam extends DocPageParams {
 
 	public String getId() {
 		return m_Id;
+	}
+
+	public NameItem getDurationType(){
+		return NameItem.findById(m_DurationType,ApiInvokeInfo.ALL_DURATION);
+	}
+
+	public int getMinDuration(){
+		if(m_DurationType==ApiInvokeInfo.DURATION_100MS.id)
+			return 0;
+		if(m_DurationType==ApiInvokeInfo.DURATION_100MS_500MS.id)
+			return 100;
+		if(m_DurationType==ApiInvokeInfo.DURATION_500MS_1S.id)
+			return 500;
+		if(m_DurationType==ApiInvokeInfo.DURATION_1S_5S.id)
+			return 1000;
+		if(m_DurationType==ApiInvokeInfo.DURATION_5S_10S.id)
+			return 5000;
+		if(m_DurationType==ApiInvokeInfo.DURATION_10S.id)
+			return 10000;
+		return 0;
+	}
+
+	public int getMaxDuration(){
+		if(m_DurationType==ApiInvokeInfo.DURATION_100MS.id)
+			return 100;
+		if(m_DurationType==ApiInvokeInfo.DURATION_100MS_500MS.id)
+			return 500;
+		if(m_DurationType==ApiInvokeInfo.DURATION_500MS_1S.id)
+			return 1000;
+		if(m_DurationType==ApiInvokeInfo.DURATION_1S_5S.id)
+			return 5000;
+		if(m_DurationType==ApiInvokeInfo.DURATION_5S_10S.id)
+			return 10000;
+//		if(m_DurationType==ApiInvokeInfo.DURATION_10S.id)
+//			return 0;
+		return 0;
 	}
 
 }
