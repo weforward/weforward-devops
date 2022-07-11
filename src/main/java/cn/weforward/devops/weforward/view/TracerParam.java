@@ -51,7 +51,7 @@ public class TracerParam extends DocPageParams {
 		m_Method = v;
 	}
 
-	@DocAttribute(type = Integer.class,description = "持续时间类型")
+	@DocAttribute(type = Integer.class,description = "持续时间类型，参考“追踪分析常量值”")
 	public void setDurationType(int v) {
 		m_DurationType = v;
 	}

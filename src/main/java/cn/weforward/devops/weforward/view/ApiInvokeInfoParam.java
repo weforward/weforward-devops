@@ -28,7 +28,7 @@ public class ApiInvokeInfoParam {
 //        m_End = v;
 //    }
 
-    @DocAttribute(index = 3,type = Integer.class,description = "时间快捷类型：1-近1小时；2-近12小时；3-近一天", necessary = true)
+    @DocAttribute(index = 3,type = Integer.class,description = "时间快捷类型，参考“追踪分析常量值”", necessary = true)
     public void setTimeType(int v) {
         m_TimeType = v;
     }
