@@ -68,7 +68,7 @@ public class TracerMethods {
 
 	@WeforwardMethod
 	@DocMethod(description = "追踪分析常量值", index = 3)
-	public TracerConstantView searchApiInvokeInfo(){
+	public TracerConstantView getTracerConstant(){
 		return new TracerConstantView();
 	}
 
