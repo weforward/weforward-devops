@@ -16,15 +16,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.function.Function;
 
 import org.json.JSONObject;
@@ -611,17 +603,20 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 			{
 				List<InvokeItem> invokeItems = new LinkedList<>();
 				for (Map.Entry<String, HitItem> e : invokes.entrySet()) {
-					invokeItems.add(new InvokeItem(e.getKey(), (int) (Integer.MAX_VALUE & e.getValue().v)));
+					invokeItems.add(new InvokeItem(e.getKey(),(int) (Integer.MAX_VALUE & e.getValue().v )));
 				}
 				invokes = null;
+				invokeItems.add(new InvokeItem("--all--",(int)total ));
+				invokeItems.sort(Comparator.comparing(InvokeItem::getCount).reversed());
 				m_InvokeItems = invokeItems;
+
 			}
 			{
 				List<ResponseTimeItem> responseItems = new LinkedList<>();
 				for (Map.Entry<String, ResponseTimeItem> e : durations.entrySet()) {
 					ResponseTimeItem value = e.getValue();
 					if (total > 0) {
-						value.percent = value.count / total;
+						value.percent = (double) value.count / (double)total;
 					}
 					responseItems.add(value);
 				}
@@ -638,6 +633,7 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 						_Logger.warn(e.getKey(), e1);
 					}
 				}
+				items.sort(Comparator.comparing(TimeInvokeItem::getTime));
 				m_TimeInvokeItems = items;
 				times = null;
 			}

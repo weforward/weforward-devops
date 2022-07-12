@@ -16,12 +16,12 @@ import java.util.function.Function;
  */
 public class ApiInvokeInfo {
 
-    public static NameItem DURATION_100MS = NameItem.valueOf("<100ms",1);
-    public static NameItem DURATION_100MS_500MS = NameItem.valueOf("<500ms",2);
-    public static NameItem DURATION_500MS_1S = NameItem.valueOf("<1s",3);
-    public static NameItem DURATION_1S_5S = NameItem.valueOf("<5s",4);
-    public static NameItem DURATION_5S_10S = NameItem.valueOf("<10s",5);
-    public static NameItem DURATION_10S = NameItem.valueOf("≥10s",6);
+    public static NameItem DURATION_100MS = NameItem.valueOf("<100ms",99);
+    public static NameItem DURATION_100MS_500MS = NameItem.valueOf("100ms~500ms",100);
+    public static NameItem DURATION_500MS_1S = NameItem.valueOf("500ms~1s",500);
+    public static NameItem DURATION_1S_5S = NameItem.valueOf("1s~5s",1000);
+    public static NameItem DURATION_5S_10S = NameItem.valueOf("5s~10s",5000);
+    public static NameItem DURATION_10S = NameItem.valueOf("≥10s",10000);
     public static NameItems ALL_DURATION = NameItems.valueOf(DURATION_100MS,DURATION_100MS_500MS,DURATION_500MS_1S,DURATION_1S_5S,DURATION_5S_10S,DURATION_10S);
 
     public static NameItem SEARCH_TIME_1HOURS = NameItem.valueOf("近1小时",1);
@@ -143,9 +143,19 @@ public class ApiInvokeInfo {
 		/** 百分比，92.33% */
 		public double percent;
 
+		public ResponseTimeItem(){}
+
+		public ResponseTimeItem(NameItem type){
+			this.type = type;
+		}
+
 		/** 类型 */
 		public NameItem getType() {
 			return type;
+		}
+
+		public int getTypeId(){
+			return type.id;
 		}
 
 		/** 调用次数 */
