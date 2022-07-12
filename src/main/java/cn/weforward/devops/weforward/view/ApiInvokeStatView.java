@@ -114,8 +114,11 @@ public class ApiInvokeStatView {
 
         @DocAttribute(description = "百分比")
         public String getPercent() {
-            if(100==m_Item.getPercent()){
+            if(1==m_Item.getPercent()){
                 return "100%";
+            }
+            if(0==m_Item.getPercent()){
+                return "0%";
             }
             return String.format("%.2f", m_Item.getPercent()*100)+"%";
         }
