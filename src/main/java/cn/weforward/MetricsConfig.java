@@ -84,6 +84,8 @@ public class MetricsConfig {
 	/** 服务器id */
 	@Value("${weforward.serverid}")
 	protected String m_ServerId;
+	@Value("${metrics.apiInvokeAnalyze:false}")
+	protected boolean m_ApiInvokeAnalyze;
 	@Resource
 	protected Flusher m_Flusher;
 	protected MongoDatabase m_MongoDb;
@@ -133,6 +135,7 @@ public class MetricsConfig {
 				new HttpAccessAuth(m_AccessKeeper), new MongodbCounterFactory(m_ServerId, getMongoDb(), m_Flusher));
 		s.setCollectors(collectors);
 		s.setTracers(tracers);
+		s.setApiInvokeAnalyze(m_ApiInvokeAnalyze);
 		return s;
 	}
 
