@@ -1,12 +1,13 @@
 package cn.weforward.metrics;
 
 import java.util.Arrays;
+import cn.weforward.common.NameItem;
+import cn.weforward.common.NameItems;
+
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.function.Function;
-
-import cn.weforward.common.NameItem;
 
 /**
  * api调用情况汇总
@@ -14,6 +15,21 @@ import cn.weforward.common.NameItem;
  * @author HeavyCheng
  */
 public class ApiInvokeInfo {
+
+    public static NameItem DURATION_100MS = NameItem.valueOf("<100ms",1);
+    public static NameItem DURATION_100MS_500MS = NameItem.valueOf("<500ms",2);
+    public static NameItem DURATION_500MS_1S = NameItem.valueOf("<1s",3);
+    public static NameItem DURATION_1S_5S = NameItem.valueOf("<5s",4);
+    public static NameItem DURATION_5S_10S = NameItem.valueOf("<10s",5);
+    public static NameItem DURATION_10S = NameItem.valueOf("≥10s",6);
+    public static NameItems ALL_DURATION = NameItems.valueOf(DURATION_100MS,DURATION_100MS_500MS,DURATION_500MS_1S,DURATION_1S_5S,DURATION_5S_10S,DURATION_10S);
+
+    public static NameItem SEARCH_TIME_1HOURS = NameItem.valueOf("近1小时",1);
+    public static NameItem SEARCH_TIME_6HOURS = NameItem.valueOf("近6小时",2);
+    public static NameItem SEARCH_TIME_12HOURS = NameItem.valueOf("近12小时",3);
+    public static NameItem SEARCH_TIME_24HOURS = NameItem.valueOf("近24小时",4);
+    public static NameItems ALL_SEARCH_TIME = NameItems.valueOf(SEARCH_TIME_1HOURS,SEARCH_TIME_6HOURS,SEARCH_TIME_12HOURS,SEARCH_TIME_24HOURS);
+
 
 	/** api调用次数列表 */
 	protected List<InvokeItem> m_InvokeItems;

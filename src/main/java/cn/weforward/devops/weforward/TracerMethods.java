@@ -8,12 +8,7 @@ import cn.weforward.common.util.StringUtil;
 import cn.weforward.common.util.TransResultPage;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.devops.user.OrganizationUser;
-import cn.weforward.devops.weforward.view.ApiInvokeInfoParam;
-import cn.weforward.devops.weforward.view.ApiInvokeInfoView;
-import cn.weforward.devops.weforward.view.ApiInvokeStatView;
-import cn.weforward.devops.weforward.view.TracerParam;
-import cn.weforward.devops.weforward.view.TracerTreeDetailView;
-import cn.weforward.devops.weforward.view.TracerTreeView;
+import cn.weforward.devops.weforward.view.*;
 import cn.weforward.framework.ApiException;
 import cn.weforward.framework.WeforwardMethod;
 import cn.weforward.framework.WeforwardMethods;
@@ -46,7 +41,7 @@ public class TracerMethods {
 		String id = params.getId();
 		ResultPage<TracerSpanTree> rp;
 		if (!StringUtil.isEmpty(id)) {
-			TracerSpanTree tree = m_MetricsService.getTracer(getMyOrganization(), id);
+			TracerSpanTree tree = m_MetricsService.getTracer(getMyOrganization(),id);
 			if (null != tree) {
 				rp = ResultPageHelper.singleton(tree);
 			} else {
@@ -55,8 +50,8 @@ public class TracerMethods {
 		} else {
 			ValidateUtil.isEmpty(params.getBegin(), "开始时间不能为空");
 			ValidateUtil.isEmpty(params.getEnd(), "结束时间不能为空");
-			rp = m_MetricsService.searchTracer(getMyOrganization(), params.getBegin(), params.getEnd(),
-					params.getServiceName(), params.getServiceNo(), params.getMethod());
+			rp = m_MetricsService.searchTracer(getMyOrganization(),params.getBegin(), params.getEnd(), params.getServiceName(),
+					params.getServiceNo(), params.getMethod(),params.getMinDuration(),params.getMaxDuration());
 		}
 		return TransResultPage.valueOf(rp, (e) -> TracerTreeView.valueOf(e));
 	}
@@ -70,22 +65,26 @@ public class TracerMethods {
 	}
 
 	@WeforwardMethod
-	@DocMethod(description = "接口调用情况", index = 3)
-	public ApiInvokeInfoView searchApiInvokeInfo(ApiInvokeInfoParam params) throws ApiException {
-		ValidateUtil.isEmpty(params.getServiceName(), "服务名不能为空");
-		ValidateUtil.isEmpty(params.getServiceNo(), "服务(实例)编号不能为空");
-		return ApiInvokeInfoView.valueOf(m_MetricsService.getApiInvokeInfo(getMyOrganization(), null, params.getEnd(),
-				params.getServiceName(), params.getServiceNo(), null));
+	@DocMethod(description = "追踪分析常量值", index = 3)
+	public TracerConstantView getTracerConstant(){
+		return new TracerConstantView();
 	}
 
 	@WeforwardMethod
-	@DocMethod(description = "接口方法调用统计", index = 4)
+	@DocMethod(description = "接口调用情况", index = 4)
+	public ApiInvokeInfoView searchApiInvokeInfo(ApiInvokeInfoParam params) throws ApiException {
+		ValidateUtil.isEmpty(params.getServiceName(), "服务名不能为空");
+		ValidateUtil.isEmpty(params.getServiceNo(), "服务(实例)编号不能为空");
+		return ApiInvokeInfoView.valueOf(m_MetricsService.getApiInvokeInfo(getMyOrganization(),params.getBegin(),params.getEnd(),params.getServiceName(),params.getServiceNo(),null));
+	}
+
+	@WeforwardMethod
+	@DocMethod(description = "接口方法调用统计", index = 5)
 	public ApiInvokeStatView searchApiStat(ApiInvokeInfoParam params) throws ApiException {
 		ValidateUtil.isEmpty(params.getServiceName(), "服务名不能为空");
 		ValidateUtil.isEmpty(params.getServiceNo(), "服务(实例)编号不能为空");
 		ValidateUtil.isEmpty(params.getMethodName(), "方法名不能为空");
-		return ApiInvokeStatView.valueOf(m_MetricsService.getApiInvokeInfo(getMyOrganization(), params.getBegin(),
-				params.getEnd(), params.getServiceName(), params.getServiceNo(), params.getMethodName()));
+		return ApiInvokeStatView.valueOf(m_MetricsService.getApiInvokeInfo(getMyOrganization(),params.getBegin(),params.getEnd(),params.getServiceName(),params.getServiceNo(), params.getMethodName()));
 	}
 
 	private Organization getMyOrganization() {

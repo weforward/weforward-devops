@@ -39,7 +39,7 @@ public interface MetricsTracer {
 
 		@Override
 		public ResultPage<TracerSpanTree> search(Organization org, Date begin, Date end, String serviceName,
-				String serviceNo, String method) {
+				String serviceNo, String method,int minDuration,int maxDuration) {
 			return ResultPageHelper.empty();
 		}
 
@@ -76,10 +76,12 @@ public interface MetricsTracer {
 	 * @param serviceName 服务名
 	 * @param serviceNo   服务编号
 	 * @param method      方法名
+	 * @param minDuration 持续时间范围，开始，单位毫秒 0
+	 * @param maxDuration 持续时间范围，结束，单位毫秒 100ms
 	 * @return
 	 */
 	ResultPage<TracerSpanTree> search(Organization org, Date begin, Date end, String serviceName, String serviceNo,
-			String method);
+			String method,int minDuration,int maxDuration);
 
 	/**
 	 * 清理数据

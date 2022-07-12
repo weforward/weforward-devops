@@ -337,9 +337,9 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 
 	@Override
 	public ResultPage<TracerSpanTree> searchTracer(Organization org, Date begin, Date end, String serviceName,
-			String serviceNo, String method) {
+			String serviceNo, String method,int minDuration,int maxDuration) {
 		for (MetricsTracer c : m_Tracers) {
-			ResultPage<TracerSpanTree> m = c.search(org, begin, end, serviceName, serviceNo, method);
+			ResultPage<TracerSpanTree> m = c.search(org, begin, end, serviceName, serviceNo, method,minDuration,maxDuration);
 			if (null != m) {
 				return m;
 			}
@@ -513,7 +513,7 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 			StringBuilder builder = new StringBuilder(64);
 			Map<String, HitItem> counter = new HashMap<>();
 			for (MetricsTracer c : m_Tracers) {
-				ResultPage<TracerSpanTree> rp = c.search(org, begin, end, null, null, null);
+				ResultPage<TracerSpanTree> rp = c.search(org, begin, end, null, null, null,0,0);
 				if (null == rp) {
 					continue;
 				}

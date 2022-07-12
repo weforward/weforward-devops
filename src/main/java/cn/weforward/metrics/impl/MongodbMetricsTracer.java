@@ -148,7 +148,7 @@ public class MongodbMetricsTracer implements MetricsTracer {
 
 	@Override
 	public ResultPage<TracerSpanTree> search(Organization org, Date begin, Date end, String serviceName,
-			String serviceNo, String method) {
+			String serviceNo, String method,int minDuration,int maxDuration) {
 		List<Bson> list = new ArrayList<>();
 		if (null != org) {
 			list.add(Filters.eq(ORGANIZATION, org.getId()));
@@ -163,6 +163,18 @@ public class MongodbMetricsTracer implements MetricsTracer {
 		}
 		if (!StringUtil.isEmpty(method)) {
 			list.add(Filters.eq("spans.method", method));
+		}
+		// 增加持续时间搜索
+		if(minDuration!=maxDuration){
+			if(0==minDuration){ // 小于100ms
+				list.add(Filters.lt("spans.duration", maxDuration));
+			}else if(0==minDuration){ // 大于等于10s
+				list.add(Filters.gte("spans.duration", minDuration));
+			}else{
+				//大于等于&小于
+				list.add(Filters.gte("spans.duration", minDuration));
+				list.add(Filters.lt("spans.duration", maxDuration));
+			}
 		}
 		MongodbResultPage<TracerSpanTree> rp = new MongodbResultPage<TracerSpanTree>(getCollection(), Filters.and(list),
 				Filters.eq(LASTMODIFIED, -1)) {
