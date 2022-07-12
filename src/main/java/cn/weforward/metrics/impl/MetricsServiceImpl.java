@@ -337,9 +337,10 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 
 	@Override
 	public ResultPage<TracerSpanTree> searchTracer(Organization org, Date begin, Date end, String serviceName,
-			String serviceNo, String method,int minDuration,int maxDuration) {
+			String serviceNo, String method, int minDuration, int maxDuration) {
 		for (MetricsTracer c : m_Tracers) {
-			ResultPage<TracerSpanTree> m = c.search(org, begin, end, serviceName, serviceNo, method,minDuration,maxDuration);
+			ResultPage<TracerSpanTree> m = c.search(org, begin, end, serviceName, serviceNo, method, minDuration,
+					maxDuration);
 			if (null != m) {
 				return m;
 			}
@@ -389,7 +390,7 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 						continue;
 					}
 				}
-				_Logger.warn("未知的统计项：" + n);
+//				_Logger.warn("未知的统计项：" + n);
 			}
 		}
 		stat.make();
@@ -513,7 +514,7 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 			StringBuilder builder = new StringBuilder(64);
 			Map<String, HitItem> counter = new HashMap<>();
 			for (MetricsTracer c : m_Tracers) {
-				ResultPage<TracerSpanTree> rp = c.search(org, begin, end, null, null, null,0,0);
+				ResultPage<TracerSpanTree> rp = c.search(org, begin, end, null, null, null, 0, 0);
 				if (null == rp) {
 					continue;
 				}
@@ -619,7 +620,9 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 				List<ResponseTimeItem> responseItems = new LinkedList<>();
 				for (Map.Entry<String, ResponseTimeItem> e : durations.entrySet()) {
 					ResponseTimeItem value = e.getValue();
-					value.percent = value.count / total;
+					if (total > 0) {
+						value.percent = value.count / total;
+					}
 					responseItems.add(value);
 				}
 				m_ResponseTimeItems = responseItems;
