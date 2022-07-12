@@ -14,11 +14,11 @@ import java.util.List;
  */
 public class ApiInvokeInfo {
 
-    public static NameItem DURATION_100MS = NameItem.valueOf("<100ms",1);
-    public static NameItem DURATION_100MS_500MS = NameItem.valueOf("<500ms",2);
-    public static NameItem DURATION_500MS_1S = NameItem.valueOf("<1s",3);
-    public static NameItem DURATION_1S_5S = NameItem.valueOf("<5s",4);
-    public static NameItem DURATION_5S_10S = NameItem.valueOf("<10s",5);
+    public static NameItem DURATION_100MS = NameItem.valueOf("≤100ms",1);
+    public static NameItem DURATION_100MS_500MS = NameItem.valueOf("≤500ms",2);
+    public static NameItem DURATION_500MS_1S = NameItem.valueOf("≤1s",3);
+    public static NameItem DURATION_1S_5S = NameItem.valueOf("≤5s",4);
+    public static NameItem DURATION_5S_10S = NameItem.valueOf("≤10s",5);
     public static NameItem DURATION_10S = NameItem.valueOf(">10s",6);
     public static NameItems ALL_DURATION = NameItems.valueOf(DURATION_100MS,DURATION_100MS_500MS,DURATION_500MS_1S,DURATION_1S_5S,DURATION_5S_10S,DURATION_10S);
 
