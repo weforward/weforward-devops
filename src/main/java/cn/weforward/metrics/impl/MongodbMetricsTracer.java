@@ -166,14 +166,14 @@ public class MongodbMetricsTracer implements MetricsTracer {
 		}
 		// 增加持续时间搜索
 		if(minDuration!=maxDuration){
-			if(0==minDuration){ // 小于等于100ms
-				list.add(Filters.lte("spans.duration", maxDuration));
-			}else if(0==minDuration){ // 大于10s
-				list.add(Filters.gt("spans.duration", minDuration));
+			if(0==minDuration){ // 小于100ms
+				list.add(Filters.lt("spans.duration", maxDuration));
+			}else if(0==minDuration){ // 大于等于10s
+				list.add(Filters.gte("spans.duration", minDuration));
 			}else{
-				//大于&小于等于
-				list.add(Filters.gt("spans.duration", minDuration));
-				list.add(Filters.lte("spans.duration", maxDuration));
+				//大于等于&小于
+				list.add(Filters.gte("spans.duration", minDuration));
+				list.add(Filters.lt("spans.duration", maxDuration));
 			}
 		}
 		MongodbResultPage<TracerSpanTree> rp = new MongodbResultPage<TracerSpanTree>(getCollection(), Filters.and(list),
