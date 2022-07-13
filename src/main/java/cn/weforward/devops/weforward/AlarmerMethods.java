@@ -11,6 +11,8 @@
 package cn.weforward.devops.weforward;
 
 import java.util.Date;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Resource;
 
@@ -42,6 +44,10 @@ public class AlarmerMethods {
 	protected AlarmService m_AlarmService;
 	@Value("${alarmer.handler.url}")
 	protected String m_HandlerUrl;
+	/** 报警调用脚本 */
+	@Value("${alarmer.cmd}")
+	protected String m_Cmd;
+	protected ProcessBuilder m_ProcessBuilder;
 
 	protected LimitHits m_Hits = new LimitHits(30 * 60 * 60);
 
@@ -83,6 +89,43 @@ public class AlarmerMethods {
 			m_AlarmService.create(new Date(), sms, url);
 		} catch (Throwable e) {
 			_Logger.error("创建报警异常", e);
+		}
+		runCmd(sms, id);
+	}
+
+	public void runCmd(String msg, String id) {
+		if (null == m_Cmd || m_Cmd.length() == 0) {
+			return;
+		}
+		// 执行外部脚本
+		try {
+			ProcessBuilder pb = m_ProcessBuilder;
+			if (null == pb) {
+				pb = new ProcessBuilder();
+				pb.command(m_Cmd);
+				pb.redirectErrorStream(true);
+				pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+				m_ProcessBuilder = pb;
+			}
+			Map<String, String> ev = pb.environment();
+			if (!StringUtil.isEmpty(id)) {
+				ev.put("alarmer_running", id);
+			}
+			if (!StringUtil.isEmpty(msg)) {
+				ev.put("alarmer_msg", msg);
+			}
+			Process process;
+			process = pb.start();
+			if (process.waitFor(10, TimeUnit.SECONDS) && !process.isAlive()) {
+				_Logger.info("已运行外部命令，退出值：" + process.exitValue() + "，命令行：" + m_Cmd);
+			} else {
+				_Logger.info("外部命令执行超过10秒，命令行：" + m_Cmd);
+				process.destroy();
+			}
+			return;
+		} catch (Exception e) {
+			m_ProcessBuilder = null;
+			_Logger.error(m_Cmd, e);
 		}
 	}
 }
