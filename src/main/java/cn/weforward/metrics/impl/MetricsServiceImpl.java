@@ -616,7 +616,7 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 				for (Map.Entry<String, ResponseTimeItem> e : durations.entrySet()) {
 					ResponseTimeItem value = e.getValue();
 					if (total > 0) {
-						value.percent = (double) value.count / (double)total;
+						value.percent = (double) ((((long) value.count * 10000)) / total) / 10000;
 					}
 					responseItems.add(value);
 				}
