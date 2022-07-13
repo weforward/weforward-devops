@@ -1,5 +1,7 @@
 package cn.weforward.devops.weforward.view;
 
+import cn.weforward.common.util.StringUtil;
+import cn.weforward.common.util.TimeUtil;
 import cn.weforward.protocol.doc.annotation.DocAttribute;
 
 import java.util.Calendar;
@@ -7,26 +9,15 @@ import java.util.Date;
 
 public class ApiInvokeInfoParam {
 
-//    protected Date m_Begin;
-//    protected Date m_End;
     protected int m_TimeType;
     protected String m_ServiceName;
     protected String m_ServiceNo;
     protected String m_MethodName;
+    protected String m_Date;
 
     public ApiInvokeInfoParam(){
 
     }
-
-//    @DocAttribute(index = 5,description = "开始时间")
-//    public void setBegin(Date v) {
-//        m_Begin = v;
-//    }
-//
-//    @DocAttribute(index = 6,description = "结束时间")
-//    public void setEnd(Date v) {
-//        m_End = v;
-//    }
 
     @DocAttribute(index = 3,type = Integer.class,description = "时间快捷类型，参考“追踪分析常量值”", necessary = true)
     public void setTimeType(int v) {
@@ -48,14 +39,29 @@ public class ApiInvokeInfoParam {
         m_MethodName = v;
     }
 
+    @DocAttribute(index = 5,type = String.class,description = "格式：“2022-07-01”。优先级高于时间快捷类型",example = "2022-07-01")
+    public void setDate(String v) {
+        m_Date = v;
+    }
+
     public Date getBegin() {
+        if(!StringUtil.isEmpty(m_Date)){
+            Date d = TimeUtil.parseDate(m_Date+" 00:00:00");
+            if(null!=d) {
+                return d;
+            }
+        }
         Calendar cal = Calendar.getInstance();
-        if(3==m_TimeType){
+        if(4==m_TimeType){
             cal.add(Calendar.MINUTE,-60*24);
             return cal.getTime();
         }
-        if(2==m_TimeType){
+        if(3==m_TimeType){
             cal.add(Calendar.MINUTE,-60*12);
+            return cal.getTime();
+        }
+        if(2==m_TimeType){
+            cal.add(Calendar.MINUTE,-60*6);
             return cal.getTime();
         }
         cal.add(Calendar.MINUTE,-60);
@@ -63,6 +69,12 @@ public class ApiInvokeInfoParam {
     }
 
     public Date getEnd() {
+        if(!StringUtil.isEmpty(m_Date)){
+            Date d = TimeUtil.parseDate(m_Date+" 23:59:59");
+            if(null!=d) {
+                return d;
+            }
+        }
         return new Date();
     }
 
