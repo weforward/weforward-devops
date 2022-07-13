@@ -51,25 +51,28 @@ public class AlarmerMethods {
 
 	protected LimitHits m_Hits = new LimitHits(30 * 60 * 60);
 
+	@DocMethod(description = "服务宕机/超时通知")
 	@WeforwardMethod
 	public void onServiceTimeout(ServiceVo params) {
 		push(params.getName() + "(" + params.getNo() + ")服务宕机，在网关（" + params.getGateway() + "）上",
 				params.getRunningId());
 	}
 
+	@DocMethod(description = "服务不可用通知")
 	@WeforwardMethod
 	public void onServiceUnavailable(ServiceVo params) {
 		push(params.getName() + "(" + params.getNo() + ")服务不可用，在网关（" + params.getGateway() + "）上",
 				params.getRunningId());
 	}
 
+	@DocMethod(description = "服务过载通知")
 	@WeforwardMethod
 	public void onServiceOverload(ServiceVo params) {
 		push(params.getName() + "(" + params.getNo() + ")服务过载，在网关（" + params.getGateway() + "）上",
 				params.getRunningId());
 	}
 
-	@DocMethod(description = "网关超时通知")
+	@DocMethod(description = "网关宕机/超时通知")
 	@WeforwardMethod
 	public void onGatewayTimeout(GatewayVo params) {
 		push(params.getHost() + "(" + params.getId() + ")网关宕机，在网关（" + params.getGateway() + "）上", null);
