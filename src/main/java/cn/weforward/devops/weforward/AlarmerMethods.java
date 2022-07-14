@@ -45,7 +45,7 @@ public class AlarmerMethods {
 	@Value("${alarmer.handler.url}")
 	protected String m_HandlerUrl;
 	/** 报警调用脚本 */
-	@Value("${alarmer.cmd}")
+	@Value("${alarmer.cmd:}")
 	protected String m_Cmd;
 	protected ProcessBuilder m_ProcessBuilder;
 

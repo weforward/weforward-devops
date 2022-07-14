@@ -361,6 +361,7 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 		String last = prefix + DTF.format(end);
 		rp = m_ApiInvokeCounter.searchRange(first, last);
 		ApiInvokeStat stat = new ApiInvokeStat();
+		long total = 0;
 		for (int i = 1; rp.gotoPage(i); i++) {
 			for (String n : rp) {
 				if (n.length() > first.length()) {
@@ -381,11 +382,13 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 						stat.duration(tag, v);
 						continue;
 					}
+				} else if (n.length() == first.length()) {
+					// 实例编号.服务#yyyyMMddHHmm
+					total += m_ApiInvokeCounter.get(n);
 				}
-//				_Logger.warn("未知的统计项：" + n);
 			}
 		}
-		stat.make();
+		stat.make(total);
 		return stat;
 	}
 
@@ -600,13 +603,20 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 		protected long total;
 
 		public void make() {
+			make(-1);
+		}
+
+		public void make(long total) {
+			if (total > this.total) {
+				this.total = total;
+			}
 			{
 				List<InvokeItem> invokeItems = new LinkedList<>();
 				for (Map.Entry<String, HitItem> e : invokes.entrySet()) {
-					invokeItems.add(new InvokeItem(e.getKey(),(int) (Integer.MAX_VALUE & e.getValue().v )));
+					invokeItems.add(new InvokeItem(e.getKey(), (int) (Integer.MAX_VALUE & e.getValue().v)));
 				}
 				invokes = null;
-				invokeItems.add(new InvokeItem("--all--",(int)total ));
+				invokeItems.add(new InvokeItem("--all--", (int) total));
 				invokeItems.sort(Comparator.comparing(InvokeItem::getCount).reversed());
 				m_InvokeItems = invokeItems;
 
