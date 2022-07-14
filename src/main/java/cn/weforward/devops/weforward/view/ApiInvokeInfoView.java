@@ -1,6 +1,7 @@
 package cn.weforward.devops.weforward.view;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import cn.weforward.metrics.ApiInvokeInfo;
@@ -19,13 +20,13 @@ public class ApiInvokeInfoView {
 
     protected ApiInvokeStatView m_Stat;
 
-    protected ApiInvokeInfoView(ApiInvokeInfo info){
+    protected ApiInvokeInfoView(ApiInvokeInfo info, Date t1, Date t2){
         m_Info = info;
-        m_Stat = ApiInvokeStatView.valueOf(info);
+        m_Stat = ApiInvokeStatView.valueOf(info,t1,t2);
     }
 
-    public static ApiInvokeInfoView valueOf(ApiInvokeInfo info) {
-        return null == info ? null : new ApiInvokeInfoView(info);
+    public static ApiInvokeInfoView valueOf(ApiInvokeInfo info, Date t1, Date t2) {
+        return null == info ? null : new ApiInvokeInfoView(info,t1,t2);
     }
 
     @DocAttribute(index = 1,type = List.class,component = InvokeItemView.class,description = "获取api调用次数列表", necessary = true)

@@ -5,6 +5,7 @@ import javax.annotation.Resource;
 import cn.weforward.common.ResultPage;
 import cn.weforward.common.util.ResultPageHelper;
 import cn.weforward.common.util.StringUtil;
+import cn.weforward.common.util.TimeUtil;
 import cn.weforward.common.util.TransResultPage;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.devops.user.OrganizationUser;
@@ -22,6 +23,9 @@ import cn.weforward.protocol.client.util.IdBean;
 import cn.weforward.protocol.doc.annotation.DocAttribute;
 import cn.weforward.protocol.doc.annotation.DocMethod;
 import cn.weforward.protocol.doc.annotation.DocParameter;
+import cn.weforward.protocol.support.datatype.FriendlyObject;
+
+import java.util.Date;
 
 /**
  * 追踪方法集
@@ -75,16 +79,28 @@ public class TracerMethods {
 	public ApiInvokeInfoView searchApiInvokeInfo(ApiInvokeInfoParam params) throws ApiException {
 		ValidateUtil.isEmpty(params.getServiceName(), "服务名不能为空");
 		ValidateUtil.isEmpty(params.getServiceNo(), "服务(实例)编号不能为空");
-		return ApiInvokeInfoView.valueOf(m_MetricsService.getApiInvokeInfo(getMyOrganization(),params.getBegin(),params.getEnd(),params.getServiceName(),params.getServiceNo(),null));
+		return ApiInvokeInfoView.valueOf(m_MetricsService.getApiInvokeInfo(getMyOrganization(),params.getBegin(),params.getEnd(),params.getServiceName(),params.getServiceNo(),null),params.getBegin(),params.getEnd());
 	}
 
 	@WeforwardMethod
 	@DocMethod(description = "接口方法调用统计", index = 5)
-	public ApiInvokeStatView searchApiStat(ApiInvokeInfoParam params) throws ApiException {
-		ValidateUtil.isEmpty(params.getServiceName(), "服务名不能为空");
-		ValidateUtil.isEmpty(params.getServiceNo(), "服务(实例)编号不能为空");
-		ValidateUtil.isEmpty(params.getMethodName(), "方法名不能为空");
-		return ApiInvokeStatView.valueOf(m_MetricsService.getApiInvokeInfo(getMyOrganization(),params.getBegin(),params.getEnd(),params.getServiceName(),params.getServiceNo(), params.getMethodName()));
+	@DocParameter({
+			@DocAttribute(index = 1,name = "serviceName",type = String.class,description = "服务名", necessary = true),
+			@DocAttribute(index = 2,name = "serviceNo",type = String.class,description = "服务编号", necessary = true),
+			@DocAttribute(index = 3,name = "methodName",type = String.class,description = "方法名", necessary = true),
+			@DocAttribute(index = 4,name = "startTime",type = String.class,description = "查询开始时间，格式：2022-07-01 00:00:00", necessary = true),
+			@DocAttribute(index = 5,name = "endTime",type = String.class,description = "查询结束时间，格式：2022-07-01 01:00:00", necessary = true),
+
+	})
+	public ApiInvokeStatView searchApiStat(FriendlyObject params) throws ApiException {
+		ValidateUtil.isEmpty(params.getString("serviceName"), "服务名不能为空");
+		ValidateUtil.isEmpty(params.getString("serviceNo"), "服务(实例)编号不能为空");
+		ValidateUtil.isEmpty(params.getString("methodName"), "方法名不能为空");
+		ValidateUtil.isEmpty(params.getString("startTime"), "查询的开始时间");
+		ValidateUtil.isEmpty(params.getString("endTime"), "查询的结束时间");
+		Date t1 = TimeUtil.parseDate(params.getString("startTime"));
+		Date t2 = TimeUtil.parseDate(params.getString("endTime"));
+		return ApiInvokeStatView.valueOf(m_MetricsService.getApiInvokeInfo(getMyOrganization(),t1,t2,params.getString("serviceName"),params.getString("serviceNo"), params.getString("methodName")),t1,t2);
 	}
 
 	private Organization getMyOrganization() {

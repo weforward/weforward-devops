@@ -18,13 +18,19 @@ import java.util.List;
 public class ApiInvokeStatView {
 
     protected ApiInvokeInfo m_Info;
+    /**查询的开始时间*/
+    protected Date m_StartTime;
+    /**查询的结束时间*/
+    protected Date m_EndTime;
 
-    protected ApiInvokeStatView(ApiInvokeInfo info){
+    protected ApiInvokeStatView(ApiInvokeInfo info,Date t1,Date t2){
         m_Info = info;
+        m_StartTime = t1;
+        m_EndTime = t2;
     }
 
-    public static ApiInvokeStatView valueOf(ApiInvokeInfo info) {
-        return null == info ? null : new ApiInvokeStatView(info);
+    public static ApiInvokeStatView valueOf(ApiInvokeInfo info,Date t1,Date t2) {
+        return null == info ? null : new ApiInvokeStatView(info,t1,t2);
     }
 
     @DocAttribute(index = 1,type = List.class,component = TimeInvokeItemView.class,description = "时间调用次数分布统计项", necessary = true)
@@ -50,6 +56,17 @@ public class ApiInvokeStatView {
         }
         return list;
     }
+
+    @DocAttribute(index = 3,type = Date.class,description = "查询的开始时间", necessary = true)
+    public Date getStartTime(){
+        return m_StartTime;
+    }
+
+    @DocAttribute(index = 4,type = Date.class,description = "查询的结束时间", necessary = true)
+    public Date getEndTime(){
+        return m_EndTime;
+    }
+
 
     private ApiInvokeInfo.ResponseTimeItem getResponseTimeItem(int id){
         for(ApiInvokeInfo.ResponseTimeItem item: m_Info.getResponseTimeItems()){
