@@ -95,7 +95,13 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 			m_Timer.schedule(new TimerTask() {
 				@Override
 				public void run() {
-					clear();
+					try {
+						clear();
+					} catch (Throwable e) {
+						if (!(e instanceof OutOfMemoryError)) {
+							_Logger.error(e.toString(), e);
+						}
+					}
 				}
 			}, TimeUtil.DAY_MILLS, TimeUtil.DAY_MILLS);
 		}
@@ -482,7 +488,13 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 
 		@Override
 		public void run() {
-			byMinutes(System.currentTimeMillis(), null);
+			try {
+				byMinutes(System.currentTimeMillis(), null);
+			} catch (Throwable e) {
+				if (!(e instanceof OutOfMemoryError)) {
+					_Logger.error(e.toString(), e);
+				}
+			}
 		}
 
 		/**
