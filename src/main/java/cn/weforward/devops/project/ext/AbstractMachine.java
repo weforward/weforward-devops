@@ -317,12 +317,12 @@ public abstract class AbstractMachine extends AbstractPersistent<ProjectDi> impl
 			throw new UnsupportedOperationException("请先配置" + RunningProp.WEFORWARD_SERVICE_ACCESS_KEY);
 		}
 
-		HttpGet post = new HttpGet(url);
+		HttpGet get = new HttpGet(url);
 		HttpResponse response = null;
 		String json;
 		try {
 			HttpInvoker invoker = getInvoker(accessId, accessKey);
-			response = invoker.execute(post);
+			response = invoker.execute(get);
 			StatusLine status = response.getStatusLine();
 			if (status.getStatusCode() != HttpStatus.SC_OK) {
 				if (status.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {

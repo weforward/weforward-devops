@@ -64,6 +64,9 @@ public class DistServiceImpl implements RestfulService, DistService {
 	/** 日志 */
 	final static Logger _Logger = LoggerFactory.getLogger(DistServiceImpl.class);
 
+	/** 快照版本后缀 */
+	public static final String SNAPSHOT_VERSION = "-snapshot";
+
 	final static String DEVOPS_USER_AGENT = "devops";
 
 	/** 发布包路径 */
@@ -121,6 +124,13 @@ public class DistServiceImpl implements RestfulService, DistService {
 		m_OpenDownload = open;
 	}
 
+	private int matchService(String uri, String name) {
+		if (uri.startsWith(name)) {
+			return name.length();
+		}
+		return -1;
+	}
+
 	@Override
 	public void precheck(RestfulRequest request, RestfulResponse response) throws IOException {
 		response.setHeader("WF-Biz", "dist");
@@ -146,7 +156,9 @@ public class DistServiceImpl implements RestfulService, DistService {
 			return;
 		}
 		String path = request.getUri();
-		if (path.startsWith("/dist/")) {
+		int idx;
+//		if (path.startsWith("/dist/")) {
+		if ((idx = matchService(path, "/dist/")) > 0) {
 			HttpUserAuth auth = m_UserAuth;
 			if (null != auth) {
 				User user = auth.auth(request, response);
@@ -158,14 +170,16 @@ public class DistServiceImpl implements RestfulService, DistService {
 				if (user instanceof OrganizationUser) {
 					// 检查组织用户的权限
 					String org = ((OrganizationUser) user).getOrganization().getId();
-					if (!path.startsWith("/dist/" + org + "/")) {
+//					if (!path.startsWith("/dist/" + org + "/")) {
+					if (!path.startsWith(org + "/", idx + 1)) {
 						response.setStatus(RestfulResponse.STATUS_FORBIDDEN);
 						response.openOutput().close();
 						return;
 					}
 				}
 			}
-		} else if (path.startsWith("/upload/")) {
+//		} else if (path.startsWith("/upload/")) {
+		} else if ((idx = matchService(path, "/upload/")) > 0) {
 			if (m_OpenUpload) {
 				return;
 			}
@@ -183,12 +197,14 @@ public class DistServiceImpl implements RestfulService, DistService {
 			}
 			// 检查组织用户的权限
 			String org = member.getOrganizationId();
-			if (!path.startsWith("/upload/" + org + "/")) {
+//			if (!path.startsWith("/upload/" + org + "/")) {
+			if (!path.startsWith(org + "/", idx + 1)) {
 				response.setStatus(RestfulResponse.STATUS_FORBIDDEN);
 				response.openOutput().close();
 				return;
 			}
-		} else if (path.startsWith("/download/")) {
+//		} else if (path.startsWith("/download/") || path.startsWith("/releases/")) {
+		} else if ((idx = matchService(path, "/download/")) > 0 || (idx = matchService(path, "/releases/")) > 0) {
 			if (m_OpenDownload) {
 				return;
 			}
@@ -201,7 +217,8 @@ public class DistServiceImpl implements RestfulService, DistService {
 					return;
 				}
 				String org = access.getGroupId();
-				if (!path.startsWith("/download/" + org + "/")) {
+//				if (!path.startsWith("/download/" + org + "/")) {
+				if (!path.startsWith(org + "/", idx + 1)) {
 					response.setStatus(RestfulResponse.STATUS_FORBIDDEN);
 					response.openOutput().close();
 					return;
@@ -233,12 +250,17 @@ public class DistServiceImpl implements RestfulService, DistService {
 			response.openOutput().close();
 			return;
 		}
+		int idx;
 		String path = request.getUri();
 		if (path.startsWith("/_tool/")) {
 			tool(7, path, request, response);
-		} else if (path.startsWith("/tool/")) {
+			return;
+		}
+		if (path.startsWith("/tool/")) {
 			tool(6, path, request, response);
-		} else if (path.startsWith("/ca/")) {
+			return;
+		}
+		if (path.startsWith("/ca/")) {
 			String name = path.substring(4);
 			if (StringUtil.eq(name, "sshpublickey")) {
 				outFile(CaUtil.getSshPublicKey(), response);
@@ -246,20 +268,31 @@ public class DistServiceImpl implements RestfulService, DistService {
 				response.setStatus(RestfulResponse.STATUS_NOT_FOUND);
 				response.openOutput().close();
 			}
-		} else if (path.startsWith("/dist/")) {
-			dist(path.substring("/dist/".length()), request, response);
-		} else if (path.startsWith("/upload/")) {
-			dist(path.substring("/upload/".length()), request, response);
-		} else if (path.startsWith("/download/")) {
-			download(path, request, response);
-		} else {
-			response.setStatus(RestfulResponse.STATUS_NOT_FOUND);
-			response.openOutput().close();
+			return;
+		}
+		if ((idx = matchService(path, "/dist/")) > 0) {
+			dist(path.substring(idx), request, response, true);
+			return;
+		}
+		if ((idx = matchService(path, "/upload/")) > 0) {
+			dist(path.substring(idx), request, response, false);
+			return;
+		}
+		if ((idx = matchService(path, "/download/")) > 0) {
+			download(path.substring(idx), request, response, false);
+			return;
+		}
+		if ((idx = matchService(path, "/releases/")) > 0) {
+			download(path.substring(idx), request, response, true);
+			return;
 		}
 
+		response.setStatus(RestfulResponse.STATUS_NOT_FOUND);
+		response.openOutput().close();
 	}
 
-	private void dist(String path, RestfulRequest request, RestfulResponse response) throws IOException {
+	private void dist(String path, RestfulRequest request, RestfulResponse response, boolean release)
+			throws IOException {
 		String arr[] = path.split("/");
 		PathView view = new PathView(arr);
 		String org = checkPath(view.org);
@@ -287,7 +320,9 @@ public class DistServiceImpl implements RestfulService, DistService {
 			try (OutputStream out = response.openOutput()) {
 				out.write(array.toString().getBytes());
 			}
-		} else if (StringUtil.isEmpty(name)) { // 如:"/java/crm/1.0";
+			return;
+		}
+		if (StringUtil.isEmpty(name)) { // 如:"/java/crm/1.0";
 			JSONArray array = new JSONArray();
 			List<File> list = listFile(projectPath + tag + File.separator);
 			for (int i = 0; i < list.size(); i++) {
@@ -303,50 +338,60 @@ public class DistServiceImpl implements RestfulService, DistService {
 				out.write(array.toString().getBytes());
 			}
 			return;
-		} else {// 如:"/java/crm/1.0/crm.jar";
-			String method = request.getVerb();
-			String file = projectPath + tag + File.separator + name;
-			if ("get".equalsIgnoreCase(method)) {
-				File f = getFile(file);
-				outFile(f, response);
-				return;
-			} else if ("POST".equalsIgnoreCase(method)) {
-				if (null != m_UploadLoack.putIfAbsent(file, true)) {
-					response.setStatus(RestfulResponse.STATUS_NOT_ACCEPTABLE);
-					try (OutputStream out = response.openOutput()) {
-						out.write("other user uploading".toString().getBytes());
-					}
+		}
+		// 如:"/java/crm/1.0/crm.jar";
+		String method = request.getVerb();
+		String file = projectPath + tag + File.separator + name;
+		if ("get".equalsIgnoreCase(method)) {
+			File f = getFile(file);
+			outFile(f, response);
+			return;
+		}
+		if ("POST".equalsIgnoreCase(method)) {
+			if (null != m_UploadLoack.putIfAbsent(file, true)) {
+				response.setStatus(RestfulResponse.STATUS_NOT_ACCEPTABLE);
+				try (OutputStream out = response.openOutput()) {
+					out.write("other user uploading".toString().getBytes());
 				}
-				try {
-					InputStream in = request.getContent();
-					File f = getFile(file);
-					WebFileUpload fileUpload = new WebFileUpload(Arrays.asList(SimpleKvPair.valueOf("file", f)));
-					// 处理上传流
-					fileUpload.input(in);
-					WebForm form = fileUpload.getForm("file");
-					if (null == form) {
-						response.setStatus(RestfulResponse.STATUS_BAD_REQUEST);
-						response.openOutput().close();
-						return;
-					}
-					// setFile(file, form.getStream());
-					response.setStatus(RestfulResponse.STATUS_OK);
-					response.openOutput().close();
-				} finally {
-					m_UploadLoack.remove(file);
-				}
-				return;
-
-			} else {
-				response.setStatus(RestfulResponse.STATUS_BAD_REQUEST);
-				response.openOutput().close();
 				return;
 			}
+			try {
+				File f = getFile(file);
+				if (release && !tag.endsWith(SNAPSHOT_VERSION) && f.exists()) {
+					// 正式发布的版本（非snapshot后缀的版本）不允许覆盖，避免版本混乱
+					_Logger.error("不能覆盖正式版本文件：" + f.getAbsolutePath());
+					response.setStatus(RestfulResponse.STATUS_NOT_ACCEPTABLE);
+					try (OutputStream out = response.openOutput()) {
+						out.write(("不能覆盖正式版本：" + file).getBytes("UTF-8"));
+					}
+					return;
+				}
+				InputStream in = request.getContent();
+				WebFileUpload fileUpload = new WebFileUpload(Arrays.asList(SimpleKvPair.valueOf("file", f)));
+				// 处理上传流
+				fileUpload.input(in);
+				WebForm form = fileUpload.getForm("file");
+				if (null == form) {
+					response.setStatus(RestfulResponse.STATUS_BAD_REQUEST);
+					response.openOutput().close();
+					return;
+				}
+				// setFile(file, form.getStream());
+				response.setStatus(RestfulResponse.STATUS_OK);
+				response.openOutput().close();
+			} finally {
+				m_UploadLoack.remove(file);
+			}
+			return;
 		}
+		response.setStatus(RestfulResponse.STATUS_BAD_REQUEST);
+		response.openOutput().close();
+		return;
 	}
 
-	private void download(String path, RestfulRequest request, RestfulResponse response) throws IOException {
-		path = path.substring("/download/".length());
+	private void download(String path, RestfulRequest request, RestfulResponse response, boolean release)
+			throws IOException {
+//		path = path.substring("/download/".length());
 		String arr[] = path.split("/");
 		PathView view = new PathView(arr);
 		String org = checkPath(view.org);
@@ -360,8 +405,13 @@ public class DistServiceImpl implements RestfulService, DistService {
 			List<File> list = listFile(projectPath);
 			for (int i = 0; i < list.size(); i++) {
 				File f = list.get(i);
+				String fn = f.getName();
+				if (release && fn.endsWith(SNAPSHOT_VERSION)) {
+					// 过滤快照版本
+					continue;
+				}
 				JSONObject o = new JSONObject();
-				o.put("name", f.getName());
+				o.put("name", fn);
 				o.put("time", TimeUtil.formatDateTime(new Date(getLastModified(f))));
 				array.put(o);
 			}
@@ -623,6 +673,11 @@ public class DistServiceImpl implements RestfulService, DistService {
 
 	}
 
+	/**
+	 * 路径格式：${org}/${group}/${project}/${tag}/${name}
+	 * 
+	 * @author liangcha
+	 */
 	static class PathView {
 		/** 组织 */
 		public String org;

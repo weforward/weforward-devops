@@ -453,10 +453,14 @@ public class HomeMethods implements ResourceHandler {
 				List<VersionInfo> versions;
 				try {
 					versions = p.getUpgradeVersions();
+					// TODO 限制50个版本
+					if (versions.size() > 50) {
+						versions = versions.subList(0, 50);
+					}
 				} catch (UnsupportedOperationException e) {
 					throw new ApiException(ApiException.CODE_ILLEGAL_ARGUMENT, e.getMessage());
 				}
-				List<String> array = new ArrayList<>();
+				List<String> array = new ArrayList<>(versions.size());
 				for (VersionInfo v : versions) {
 					array.add(v.toString());
 				}

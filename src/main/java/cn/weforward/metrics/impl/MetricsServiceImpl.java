@@ -152,11 +152,13 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 		}
 		String path = request.getUri();
 		if (path.length() > 1) {
-			if ("metrics".equals(path.substring(1, path.length() - 2))) {
+//			if ("metrics".equals(path.substring(1, path.length() - 2))) {
+			if (path.startsWith("metrics", 1)) {
 				metrics(access, request, response);
 				return;
 			}
-			if ("trace".equals(path.substring(1, path.length() - 2))) {
+//			if ("trace".equals(path.substring(1, path.length() - 2))) {
+			if (path.startsWith("trace", 1)) {
 				trace(access, request, response);
 				return;
 			}
@@ -227,7 +229,7 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 		long timestamp = json.optLong("timestamp");
 		long duration = json.optLong("duration");
 		JSONObject tags = json.optJSONObject("tags");
-		List<Tag> tagList = new ArrayList<>();
+		List<Tag> tagList = new ArrayList<>(tags.length());
 		for (String key : tags.keySet()) {
 			tagList.add(new ImmutableTag(key, tags.optString(key)));
 		}
