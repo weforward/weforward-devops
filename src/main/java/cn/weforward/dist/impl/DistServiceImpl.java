@@ -171,7 +171,7 @@ public class DistServiceImpl implements RestfulService, DistService {
 					// 检查组织用户的权限
 					String org = ((OrganizationUser) user).getOrganization().getId();
 //					if (!path.startsWith("/dist/" + org + "/")) {
-					if (!path.startsWith(org + "/", idx + 1)) {
+					if (!path.startsWith(org + "/", idx)) {
 						response.setStatus(RestfulResponse.STATUS_FORBIDDEN);
 						response.openOutput().close();
 						return;
@@ -198,7 +198,7 @@ public class DistServiceImpl implements RestfulService, DistService {
 			// 检查组织用户的权限
 			String org = member.getOrganizationId();
 //			if (!path.startsWith("/upload/" + org + "/")) {
-			if (!path.startsWith(org + "/", idx + 1)) {
+			if (!path.startsWith(org + "/", idx)) {
 				response.setStatus(RestfulResponse.STATUS_FORBIDDEN);
 				response.openOutput().close();
 				return;
@@ -218,7 +218,7 @@ public class DistServiceImpl implements RestfulService, DistService {
 				}
 				String org = access.getGroupId();
 //				if (!path.startsWith("/download/" + org + "/")) {
-				if (!path.startsWith(org + "/", idx + 1)) {
+				if (!path.startsWith(org + "/", idx)) {
 					response.setStatus(RestfulResponse.STATUS_FORBIDDEN);
 					response.openOutput().close();
 					return;
