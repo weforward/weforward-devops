@@ -360,7 +360,7 @@ public class DistServiceImpl implements RestfulService, DistService {
 				if (release && !tag.endsWith(SNAPSHOT_VERSION) && f.exists()) {
 					// 正式发布的版本（非snapshot后缀的版本）不允许覆盖，避免版本混乱
 					_Logger.error("不能覆盖正式版本文件：" + f.getAbsolutePath());
-					response.setStatus(RestfulResponse.STATUS_NOT_ACCEPTABLE);
+					response.setStatus(RestfulResponse.STATUS_CONFLICT);
 					try (OutputStream out = response.openOutput()) {
 						out.write(("不能覆盖正式版本：" + file).getBytes("UTF-8"));
 					}
