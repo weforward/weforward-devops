@@ -38,6 +38,7 @@ import cn.weforward.common.restful.RestfulRequest;
 import cn.weforward.common.restful.RestfulResponse;
 import cn.weforward.common.restful.RestfulService;
 import cn.weforward.common.util.FileUtil;
+import cn.weforward.common.util.FreezedList;
 import cn.weforward.common.util.SimpleKvPair;
 import cn.weforward.common.util.StringUtil;
 import cn.weforward.common.util.TimeUtil;
@@ -66,28 +67,22 @@ public class DistServiceImpl implements RestfulService, DistService {
 
 	/** 快照版本后缀 */
 	public static final String SNAPSHOT_VERSION = "-snapshot";
-
 	final static String DEVOPS_USER_AGENT = "devops";
 
 	/** 发布包路径 */
 	protected String m_DistPath;
-
 	protected HttpUserAuth m_UserAuth;
-
 	protected HttpAccessAuth m_AccessAuth;
-
 	protected HttpDevopsKeyAuth m_DevopsKeyAuth;
+	protected ConcurrentMap<String, Boolean> m_UploadLoack;
 
 	/** 临时文件计数 */
 	private AtomicLong m_TempCount = new AtomicLong();
-
 	private String m_ToolPath;
-
 	protected boolean m_OpenUpload;
-
 	protected boolean m_OpenDownload;
-
-	protected ConcurrentMap<String, Boolean> m_UploadLoack;
+	/** 只允许snapshot版本覆盖的项目，如：[default/java/,default/html/] */
+	protected List<String> m_VersionVerify;
 
 	public DistServiceImpl(String distPath) {
 		String path = FileUtil.getAbsolutePath(distPath, null);
@@ -97,7 +92,7 @@ public class DistServiceImpl implements RestfulService, DistService {
 			distfile.mkdirs();
 		}
 		m_UploadLoack = new ConcurrentHashMap<>();
-
+		m_VersionVerify = Collections.emptyList();
 	}
 
 	public void setUserAuth(HttpUserAuth auth) {
@@ -122,6 +117,13 @@ public class DistServiceImpl implements RestfulService, DistService {
 
 	public void setOpenDownload(boolean open) {
 		m_OpenDownload = open;
+	}
+
+	public void setVersionVerify(List<String> paths) {
+		m_VersionVerify = (null == paths) ? Collections.emptyList() : FreezedList.freezed(paths);
+		if (m_VersionVerify.size() > 0) {
+			_Logger.info("只允许snapshot版本覆盖的项目：" + m_VersionVerify);
+		}
 	}
 
 	private int matchService(String uri, String name) {
@@ -291,6 +293,25 @@ public class DistServiceImpl implements RestfulService, DistService {
 		response.openOutput().close();
 	}
 
+	/**
+	 * 是否需要做版本校验防止覆盖
+	 * 
+	 * @param path 路经
+	 */
+	private boolean needVerifyVersion(String path) {
+		for (String pattern : m_VersionVerify) {
+			if (pattern.length() == 1 && pattern.charAt(0) == '*') {
+				// 所有都要校验
+				return true;
+			}
+			if (path.startsWith(pattern)) {
+				// 先简单的前缀匹配
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private void dist(String path, RestfulRequest request, RestfulResponse response, boolean release)
 			throws IOException {
 		String arr[] = path.split("/");
@@ -357,7 +378,8 @@ public class DistServiceImpl implements RestfulService, DistService {
 			}
 			try {
 				File f = getFile(file);
-				if (release && !tag.endsWith(SNAPSHOT_VERSION) && f.exists()) {
+				if (release && !tag.endsWith(SNAPSHOT_VERSION) && f.exists()
+						&& needVerifyVersion(org + '/' + group + '/' + project + '/')) {
 					// 正式发布的版本（非snapshot后缀的版本）不允许覆盖，避免版本混乱
 					_Logger.error("不能覆盖正式版本文件：" + f.getAbsolutePath());
 					response.setStatus(RestfulResponse.STATUS_CONFLICT);
@@ -713,5 +735,4 @@ public class DistServiceImpl implements RestfulService, DistService {
 			name = arr[4];
 		}
 	}
-
 }

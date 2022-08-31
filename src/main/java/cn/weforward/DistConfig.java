@@ -10,6 +10,8 @@
  */
 package cn.weforward;
 
+import java.util.Arrays;
+
 import javax.annotation.Resource;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 
 import cn.weforward.common.restful.RestfulService;
+import cn.weforward.common.util.StringUtil;
 import cn.weforward.common.util.ThreadPool;
 import cn.weforward.devops.user.AccessKeeper;
 import cn.weforward.dist.DistService;
@@ -59,11 +62,14 @@ public class DistConfig {
 
 	@Autowired(required = false)
 	protected HttpDevopsKeyAuth m_DevopsKeyAuth;
-	
+
 	@Value("${dist.openupload:false}")
 	protected boolean m_OpenUpload;
 	@Value("${dist.opendownload:false}")
 	protected boolean m_OpenDownload;
+	/** 只允许snapshot版本覆盖的项目，如：default/java/;default/html/ */
+	@Value("${dist.m_versionverify:}")
+	protected String m_VersionVerify;
 
 	@Bean
 	DistService distService() {
@@ -74,6 +80,9 @@ public class DistConfig {
 		s.setToolPath(m_ToolPath);
 		s.setOpenUpload(m_OpenUpload);
 		s.setOpenDownload(m_OpenDownload);
+		if (!StringUtil.isEmpty(m_VersionVerify)) {
+			s.setVersionVerify(Arrays.asList(m_VersionVerify.split(";")));
+		}
 		return s;
 	}
 
