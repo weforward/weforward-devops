@@ -620,9 +620,9 @@ public class MetricsServiceImpl implements RestfulService, MetricsService, Destr
 			make(-1);
 		}
 
-		public void make(long total) {
-			if (total > this.total) {
-				this.total = total;
+		public void make(long newTotal) {
+			if (newTotal > this.total) {
+				this.total = newTotal;
 			}
 			{
 				List<InvokeItem> invokeItems = new LinkedList<>();
