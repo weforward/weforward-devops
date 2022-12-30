@@ -22,6 +22,7 @@ import cn.weforward.protocol.aio.http.RestfulServer;
 import cn.weforward.protocol.aio.netty.NettyHttpServer;
 import cn.weforward.rlog.impl.RemoteLogServiceImpl;
 import cn.weforward.util.FileClear;
+import cn.weforward.util.FileClearOnTime;
 import cn.weforward.util.HttpAccessAuth;
 
 /**
@@ -76,9 +77,9 @@ public class RlogConfig {
 
 	@Bean
 	FileClear rlogClear() {
-		if (m_MaxHistory<=0 ) {
+		if (m_MaxHistory <= 0) {
 			return null;
 		}
-		return new FileClear(m_LogPath, "rlog-clear", m_MaxHistory);
+		return new FileClearOnTime(m_LogPath, "rlog-clear", m_MaxHistory);
 	}
 }

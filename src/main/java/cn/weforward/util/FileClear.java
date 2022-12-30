@@ -24,7 +24,7 @@ import cn.weforward.common.util.TimeUtil;
  * @author daibo
  *
  */
-public class FileClear implements Runnable {
+public abstract class FileClear implements Runnable {
 	/** 日志 */
 	protected final Logger _Logger = LoggerFactory.getLogger(FileClear.class);
 	/** 清理线程 */
@@ -34,12 +34,9 @@ public class FileClear implements Runnable {
 
 	final File m_Path;
 
-	final long m_MaxHistoryMs;
-
-	public FileClear(String path, String name, long maxHistory) {
+	public FileClear(String path, String name) {
 		m_Path = new File(path);
 		m_Name = name;
-		m_MaxHistoryMs = maxHistory * TimeUtil.DAY_MILLS;
 		start();
 	}
 
@@ -91,24 +88,5 @@ public class FileClear implements Runnable {
 
 	}
 
-	private void clearIfNeed(File file, AtomicInteger count) {
-		if (file.isDirectory()) {
-			for (File f : file.listFiles()) {
-				clearIfNeed(f, count);
-			}
-			if (null == file.listFiles() || file.listFiles().length == 0) {
-				file.delete();// 目录也清除了
-			}
-		} else {
-			long offset = System.currentTimeMillis() - file.lastModified();
-			if (offset > m_MaxHistoryMs) {
-				String result = file.delete() ? "成功" : "失败";
-				if (_Logger.isTraceEnabled()) {
-					_Logger.trace("清理" + file.getName() + result);
-				}
-				count.incrementAndGet();
-			}
-		}
-
-	}
+	protected abstract void clearIfNeed(File file, AtomicInteger count);
 }
