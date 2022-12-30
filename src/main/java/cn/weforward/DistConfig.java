@@ -27,7 +27,7 @@ import cn.weforward.dist.impl.DistServiceImpl;
 import cn.weforward.protocol.aio.http.RestfulServer;
 import cn.weforward.protocol.aio.netty.NettyHttpServer;
 import cn.weforward.util.FileClear;
-import cn.weforward.util.FileClearOnNum;
+import cn.weforward.util.FileClearOnTime;
 import cn.weforward.util.HttpAccessAuth;
 import cn.weforward.util.HttpDevopsKeyAuth;
 import cn.weforward.util.HttpUserAuth;
@@ -114,7 +114,7 @@ public class DistConfig {
 		if (m_MaxHistory <= 0) {
 			return null;
 		}
-		return new FileClearOnNum(m_DistPath, "dist-clear", m_MaxHistory);
+		return new FileClearOnTime(m_DistPath, "dist-clear", m_MaxHistory);
 	}
 
 }

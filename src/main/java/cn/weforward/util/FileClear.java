@@ -60,7 +60,7 @@ public abstract class FileClear implements Runnable {
 	public void run() {
 		synchronized (this) {
 			try {
-				this.wait(3 * 60 * 1000L);
+				this.wait(1000L);
 			} catch (InterruptedException e) {
 				return;
 			}
