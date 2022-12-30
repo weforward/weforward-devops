@@ -110,7 +110,7 @@ public class DistConfig {
 
 	@Bean
 	FileClear distClear() {
-		if (0 <= m_MaxHistory) {
+		if (m_MaxHistory<=0 ) {
 			return null;
 		}
 		return new FileClear(m_DistPath, "dist-clear", m_MaxHistory);

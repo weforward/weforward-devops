@@ -11,6 +11,7 @@
 package cn.weforward.util;
 
 import java.io.File;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +61,25 @@ public class FileClear implements Runnable {
 
 	@Override
 	public void run() {
+		synchronized (this) {
+			try {
+				this.wait(3 * 60 * 1000L);
+			} catch (InterruptedException e) {
+				return;
+			}
+		}
 		while (null != m_Clears) {
+			File path = m_Path;
+			if (!path.exists()) {
+				_Logger.info("{}目录不存在，忽略清理", path.getAbsolutePath());
+				continue;
+			}
+			_Logger.info("开始清理{}目录", path.getAbsolutePath());
+			AtomicInteger count = new AtomicInteger();
+			for (File f : path.listFiles()) {
+				clearIfNeed(f, count);
+			}
+			_Logger.info("清理{}目录结束，共清理{}个文件", path.getAbsolutePath(), count.get());
 			synchronized (this) {
 				try {
 					this.wait(TimeUtil.DAY_MILLS);
@@ -68,20 +87,14 @@ public class FileClear implements Runnable {
 					return;
 				}
 			}
-			if (!m_Path.exists()) {
-				continue;
-			}
-			for (File f : m_Path.listFiles()) {
-				clearIfNeed(f);
-			}
 		}
 
 	}
 
-	private void clearIfNeed(File file) {
+	private void clearIfNeed(File file, AtomicInteger count) {
 		if (file.isDirectory()) {
 			for (File f : file.listFiles()) {
-				clearIfNeed(f);
+				clearIfNeed(f, count);
 			}
 		} else {
 			long offset = System.currentTimeMillis() - file.lastModified();
@@ -90,6 +103,7 @@ public class FileClear implements Runnable {
 				if (_Logger.isTraceEnabled()) {
 					_Logger.trace("清理" + file.getName() + result);
 				}
+				count.incrementAndGet();
 			}
 		}
 

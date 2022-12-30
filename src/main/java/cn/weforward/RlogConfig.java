@@ -76,7 +76,7 @@ public class RlogConfig {
 
 	@Bean
 	FileClear rlogClear() {
-		if (0 <= m_MaxHistory) {
+		if (m_MaxHistory<=0 ) {
 			return null;
 		}
 		return new FileClear(m_LogPath, "rlog-clear", m_MaxHistory);
