@@ -96,6 +96,9 @@ public class FileClear implements Runnable {
 			for (File f : file.listFiles()) {
 				clearIfNeed(f, count);
 			}
+			if (null == file.listFiles() || file.listFiles().length == 0) {
+				file.delete();// 目录也清除了
+			}
 		} else {
 			long offset = System.currentTimeMillis() - file.lastModified();
 			if (offset > m_MaxHistoryMs) {
