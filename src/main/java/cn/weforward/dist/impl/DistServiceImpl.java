@@ -136,97 +136,6 @@ public class DistServiceImpl implements RestfulService, DistService {
 	@Override
 	public void precheck(RestfulRequest request, RestfulResponse response) throws IOException {
 		response.setHeader("WF-Biz", "dist");
-		String verb = request.getVerb();
-		if ("OPTIONS".equals(verb)) {
-			/*
-			 * 可能是跨域的预检请求（preflight request）
-			 * 
-			 * @see https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Access_control_CORS
-			 */
-			if (!StringUtil.isEmpty(request.getHeaders().get("Access-Control-Request-Method"))) {
-				response.setHeader("Access-Control-Allow-Origin", "*");
-				response.setHeader("Access-Control-Allow-Methods", "*");
-				response.setHeader("Access-Control-Allow-Headers",
-						"Authorization,Content-Type,Content-Encoding,User-Agent,X-Requested-With,Accept,Accept-Encoding");
-				// 减少预检请求的次数
-				response.setHeader("Access-Control-Max-Age", "3600");
-				response.setStatus(RestfulResponse.STATUS_OK);
-			} else {
-				response.setStatus(RestfulResponse.STATUS_BAD_REQUEST);
-			}
-			response.openOutput().close();
-			return;
-		}
-		String path = request.getUri();
-		int idx;
-//		if (path.startsWith("/dist/")) {
-		if ((idx = matchService(path, "/dist/")) > 0) {
-			HttpUserAuth auth = m_UserAuth;
-			if (null != auth) {
-				User user = auth.auth(request, response);
-				if (null == user) {
-					response.setStatus(RestfulResponse.STATUS_UNAUTHORIZED);
-					response.openOutput().close();
-					return;
-				}
-				if (user instanceof OrganizationUser) {
-					// 检查组织用户的权限
-					String org = ((OrganizationUser) user).getOrganization().getId();
-//					if (!path.startsWith("/dist/" + org + "/")) {
-					if (!path.startsWith(org + "/", idx)) {
-						response.setStatus(RestfulResponse.STATUS_FORBIDDEN);
-						response.openOutput().close();
-						return;
-					}
-				}
-			}
-//		} else if (path.startsWith("/upload/")) {
-		} else if ((idx = matchService(path, "/upload/")) > 0) {
-			if (m_OpenUpload) {
-				return;
-			}
-			HttpDevopsKeyAuth auth = m_DevopsKeyAuth;
-			if (null == auth) {
-				response.setStatus(RestfulResponse.STATUS_NOT_FOUND);
-				response.openOutput().close();
-				return;
-			}
-			DevopsMember member = auth.auth(request, response);
-			if (null == member) {
-				response.setStatus(RestfulResponse.STATUS_UNAUTHORIZED);
-				response.openOutput().close();
-				return;
-			}
-			// 检查组织用户的权限
-			String org = member.getOrganizationId();
-//			if (!path.startsWith("/upload/" + org + "/")) {
-			if (!path.startsWith(org + "/", idx)) {
-				response.setStatus(RestfulResponse.STATUS_FORBIDDEN);
-				response.openOutput().close();
-				return;
-			}
-//		} else if (path.startsWith("/download/") || path.startsWith("/releases/")) {
-		} else if ((idx = matchService(path, "/download/")) > 0 || (idx = matchService(path, "/releases/")) > 0) {
-			if (m_OpenDownload) {
-				return;
-			}
-			HttpAccessAuth auth = m_AccessAuth;
-			if (null != auth) {
-				AccessExt access = auth.auth(request, response);
-				if (null == access) {
-					response.setStatus(RestfulResponse.STATUS_UNAUTHORIZED);
-					response.openOutput().close();
-					return;
-				}
-				String org = access.getGroupId();
-//				if (!path.startsWith("/download/" + org + "/")) {
-				if (!path.startsWith(org + "/", idx)) {
-					response.setStatus(RestfulResponse.STATUS_FORBIDDEN);
-					response.openOutput().close();
-					return;
-				}
-			}
-		}
 	}
 
 	@Override
@@ -237,8 +146,7 @@ public class DistServiceImpl implements RestfulService, DistService {
 				"Authorization,Content-Type,Content-Encoding,User-Agent,X-Requested-With,Accept,Accept-Encoding");
 		// 减少预检请求的次数
 		response.setHeader("Access-Control-Max-Age", "3600");
-		String verb = request.getVerb();
-		if ("OPTIONS".equals(verb)) {
+		if ("OPTIONS".equals(request.getVerb())) {
 			/*
 			 * 可能是跨域的预检请求（preflight request）
 			 * 
@@ -249,6 +157,12 @@ public class DistServiceImpl implements RestfulService, DistService {
 			} else {
 				response.setStatus(RestfulResponse.STATUS_BAD_REQUEST);
 			}
+			response.openOutput().close();
+			return;
+		}
+		int status = checkStatus(request, response);
+		if (status != RestfulResponse.STATUS_OK) {
+			response.setStatus(status);
 			response.openOutput().close();
 			return;
 		}
@@ -735,4 +649,67 @@ public class DistServiceImpl implements RestfulService, DistService {
 			name = arr[4];
 		}
 	}
+
+	private int checkStatus(RestfulRequest request, RestfulResponse response) throws IOException {
+		String path = request.getUri();
+		int idx;
+//		if (path.startsWith("/dist/")) {
+		if ((idx = matchService(path, "/dist/")) > 0) {
+			HttpUserAuth auth = m_UserAuth;
+			if (null != auth) {
+				User user = auth.auth(request, response);
+				if (null == user) {
+					return RestfulResponse.STATUS_UNAUTHORIZED;
+				}
+				if (user instanceof OrganizationUser) {
+					// 检查组织用户的权限
+					String org = ((OrganizationUser) user).getOrganization().getId();
+//					if (!path.startsWith("/dist/" + org + "/")) {
+					if (!path.startsWith(org + "/", idx)) {
+						return RestfulResponse.STATUS_FORBIDDEN;
+					}
+				}
+			}
+//		} else if (path.startsWith("/upload/")) {
+		} else if ((idx = matchService(path, "/upload/")) > 0) {
+			if (m_OpenUpload) {
+				return RestfulResponse.STATUS_OK;
+			}
+			HttpDevopsKeyAuth auth = m_DevopsKeyAuth;
+			if (null == auth) {
+				return RestfulResponse.STATUS_NOT_FOUND;
+			}
+			DevopsMember member = auth.auth(request, response);
+			if (null == member) {
+				return RestfulResponse.STATUS_UNAUTHORIZED;
+			}
+			// 检查组织用户的权限
+			String org = member.getOrganizationId();
+//			if (!path.startsWith("/upload/" + org + "/")) {
+			if (!path.startsWith(org + "/", idx)) {
+				return RestfulResponse.STATUS_FORBIDDEN;
+			}
+//		} else if (path.startsWith("/download/") || path.startsWith("/releases/")) {
+		} else if ((idx = matchService(path, "/download/")) > 0 || (idx = matchService(path, "/releases/")) > 0) {
+			if (m_OpenDownload) {
+				return RestfulResponse.STATUS_OK;
+			}
+			HttpAccessAuth auth = m_AccessAuth;
+			if (null != auth) {
+				AccessExt access = auth.auth(request, response);
+				if (null == access) {
+					return RestfulResponse.STATUS_UNAUTHORIZED;
+
+				}
+				String org = access.getGroupId();
+//				if (!path.startsWith("/download/" + org + "/")) {
+				if (!path.startsWith(org + "/", idx)) {
+					return RestfulResponse.STATUS_FORBIDDEN;
+
+				}
+			}
+		}
+		return RestfulResponse.STATUS_OK;
+	}
+
 }
