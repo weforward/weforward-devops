@@ -122,6 +122,11 @@ then
 	DEFAULT_JAVA_OPTIONS=$DEFAULT_JAVA_OPTIONS"-Dmongodb.dbname=$MONGODB_DB_NAME "
 fi
 
+if   [ $WF_SITE_URL ] ;
+then 
+	DEFAULT_JAVA_OPTIONS=$DEFAULT_JAVA_OPTIONS"-Dweforward.site.apiUrl=$WF_SITE_URL "
+fi
+
 DEFAULT_JAVA_OPTIONS=$DEFAULT_JAVA_OPTIONS"-Drlog.url=$RLOG_URL -Dlog.path=$LOG_PATH -Dlogback.configurationFile=./logback.xml -Dproject_name=$NAME  -Dhttp.maxConnections=100 -Xms$Xms -Xmx$Xmx -XX:MaxDirectMemorySize=$MAX_DIRECT_MEMORY_SIZE -Xss256k -XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=75 -XX:G1ReservePercent=5"
 
 if   [ -n "$WF_JAVA_OPTIONS" ] ;
