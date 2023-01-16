@@ -1,0 +1,103 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops-rlog
+spec:
+  type: NodePort
+  ports:
+  - port: 1200
+    nodePort: 31200
+  selector:
+    app: devops
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops-dist
+spec:
+  type: NodePort
+  ports:
+  - port: 1300
+    nodePort: 31300
+  selector:
+    app: devops
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops-site
+spec:
+  type: NodePort
+  ports:
+  - port: 1400
+    nodePort: 31400
+  selector:
+    app: devops
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops-metrics
+spec:
+  type: NodePort
+  ports:
+  - port: 1500
+    nodePort: 31500
+  selector:
+    app: devops
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops
+spec:
+  ports:
+  - port: 15000
+  selector:
+    app: devops
+  clusterIP: None
+  
+--- 
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops
+spec:
+  selector:
+    matchLabels:
+      app: devops  
+  template:
+    metadata:
+      labels:
+        app: devops
+    spec:
+      containers:
+      - image: weforward/devops:1.1.4
+        name: devops
+        ports:
+        - containerPort: 1200
+          name: rlog
+        - containerPort: 1300
+          name: dist
+        - containerPort: 1400
+          name: site
+        - containerPort: 1500
+          name: metrics
+        - containerPort: 15000
+          name: endpoint
+        env:
+        - name: WF_HOST
+          value: devops
+        - name: WF_PORT
+          value: '15000'
+        - name: WF_GATEWAY_URL
+          value: http://gateway:5661/
+        - name: WF_SITE_URL
+          value: http://127.0.0.1:31661/
+        - name: WEFORWARD_PASSWORD
+          value: '888888' 
+        - name: MONGODB_CONNECTION
+          value: mongodb://mongodb:27017 
+        - name: MONGODB_DB_NAME
+          value: wf_gateway
