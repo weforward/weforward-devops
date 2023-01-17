@@ -62,7 +62,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: devops
+  name: devops-deployment
 spec:
   selector:
     matchLabels:
@@ -84,7 +84,7 @@ spec:
           name: site
         - containerPort: 1500
           name: metrics
-        - containerPort: 15000
+        - containerPort: 20000
           name: endpoint
         env:
         - name: WEFORWARD_PASSWORD
@@ -95,7 +95,7 @@ spec:
         - name: WF_HOST
           value: devops
         - name: WF_PORT
-          value: '15000'
+          value: '20000'
         - name: WF_GATEWAY_URL
           value: http://gateway:5661/
         - name: WF_SITE_URL
@@ -104,3 +104,5 @@ spec:
           value: mongodb://mongodb:27017 
         - name: MONGODB_DB_NAME
           value: wf_gateway
+        - name: WF_JAVA_OPTIONS
+          value: "-Dcn.weforward.protocol.client.invoker=netty "
