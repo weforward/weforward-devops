@@ -87,6 +87,11 @@ spec:
         - containerPort: 15000
           name: endpoint
         env:
+        - name: WEFORWARD_PASSWORD
+          valueFrom:
+           secretKeyRef:
+             name: wf-secret
+             key: password
         - name: WF_HOST
           value: devops
         - name: WF_PORT
@@ -95,8 +100,6 @@ spec:
           value: http://gateway:5661/
         - name: WF_SITE_URL
           value: http://127.0.0.1:31661/
-        - name: WEFORWARD_PASSWORD
-          value: '888888' 
         - name: MONGODB_CONNECTION
           value: mongodb://mongodb:27017 
         - name: MONGODB_DB_NAME

@@ -24,7 +24,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gateway
+  name: gateway-deployment
 spec:
   selector:
     matchLabels:
@@ -42,7 +42,10 @@ spec:
           name: gateway
         env:
         - name: WEFORWARD_PASSWORD
-          value: '888888' 
+          valueFrom:
+             secretKeyRef:
+              name: wf-secret
+              key: password
         - name: MONGODB_CONNECTION
           value: mongodb://mongodb:27017 
         - name: MONGODB_DB_NAME
