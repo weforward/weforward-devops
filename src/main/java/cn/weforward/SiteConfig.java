@@ -27,12 +27,15 @@ import cn.weforward.site.impl.VueSiteServiceImpl;
  *
  */
 public class SiteConfig {
-	/** 服务地址 */
-	@Value("${weforward.apiUrl}")
-	protected String m_ApiUrl;
 	/** 服务名 */
 	@Value("${weforward.name}")
 	protected String m_Name;
+	/** 服务网关地址 */
+	@Value("${weforward.gatewayUrl:}")
+	protected String m_GatewayUrl;
+	/** 服务地址 */
+	@Value("${weforward.apiUrl:}")
+	protected String m_ApiUrl;
 	/** 服务地址 */
 	@Value("${weforward.site.apiUrl:}")
 	protected String m_SiteApiUrl;
@@ -48,8 +51,15 @@ public class SiteConfig {
 
 	@Bean
 	VueSiteServiceImpl siteService() {
+		String url = m_SiteApiUrl;
+		if (StringUtil.isEmpty(url)) {
+			url = m_ApiUrl;
+		}
+		if (StringUtil.isEmpty(url)) {
+			url = m_GatewayUrl;
+		}
 		VueSiteServiceImpl impl = new VueSiteServiceImpl(m_SitePath);
-		impl.setApiUrl(StringUtil.isEmpty(m_SiteApiUrl) ? m_ApiUrl : m_SiteApiUrl);
+		impl.setApiUrl(url);
 		impl.setServiceName(StringUtil.isEmpty(m_SiteName) ? m_Name : m_SiteName);
 		return impl;
 	}

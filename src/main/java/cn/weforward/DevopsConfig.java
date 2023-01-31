@@ -10,6 +10,7 @@
  */
 package cn.weforward;
 
+import java.net.URI;
 import java.util.Arrays;
 
 import javax.annotation.Resource;
@@ -53,6 +54,7 @@ import cn.weforward.devops.user.impl.MultipleUserProvider;
 import cn.weforward.protocol.gateway.Keeper;
 import cn.weforward.protocol.gateway.http.HttpKeeper;
 import cn.weforward.util.HttpDevopsKeyAuth;
+import cn.weforward.util.LocalKeeper;
 
 /**
  * devops配置
@@ -91,6 +93,15 @@ public class DevopsConfig {
 	/** 服务访问key */
 	@Value("${weforward.service.accessKey:}")
 	protected String m_ServiceAccessKey;
+	/** 服务名 */
+	@Value("${weforward.name}")
+	protected String m_DevopsName;
+	/** 服务主机 */
+	@Value("${weforward.host:127.0.0.1}")
+	protected String m_DevopsHost;
+	/** 服务端口 */
+	@Value("${weforward.port:15000}")
+	protected int m_DevopsPort;
 
 	@Value("${weforward.organization.id:default}")
 	protected String m_Organizationid;
@@ -170,7 +181,26 @@ public class DevopsConfig {
 
 	@Bean
 	Keeper keeper() {
+		if (isLocal(m_ApiUrl, m_DevopsHost, m_DevopsPort)) {
+			return new LocalKeeper(m_ServiceAccessId, m_ServiceAccessKey, m_DevopsHost, m_DevopsPort, m_DevopsName,
+					m_ServerId);
+		}
 		return new HttpKeeper(m_ApiUrl, m_ServiceAccessId, m_ServiceAccessKey);
+	}
+
+	private static boolean isLocal(String apiUrl, String devopsHost, int devopsPort) {
+		if (StringUtil.isEmpty(apiUrl)) {
+			return true;
+		}
+		URI uri = URI.create(apiUrl);
+		if (uri.getPort() == devopsPort) {
+			String myHost = uri.getHost();
+			if (StringUtil.eq("localhost", myHost) || StringUtil.eq("127.0.0.1", myHost)
+					|| StringUtil.eq(myHost, devopsHost)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Bean

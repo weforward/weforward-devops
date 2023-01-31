@@ -1,1 +1,1 @@
-window._WEFORWARD_VERSION= {"version":"2.15.0","buildTime":"2021-5-30 14:59:50","name":"devops"}
+window._WEFORWARD_VERSION= {"version":"1.0.12","buildTime":"2023-1-31 14:28:58","name":"devops"}
