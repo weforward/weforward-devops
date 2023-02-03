@@ -317,7 +317,10 @@ public class HomeMethods implements ResourceHandler {
 				p.setGroups(groups);
 			}
 			if (!StringUtil.isEmpty(param.getOwner())) {
-				p.setOwner(m_UserService.getUser(param.getOwner()));
+				User user = m_UserService.getUser(param.getOwner());
+				if (null != user) {
+					p.setOwner(user);
+				}
 			}
 		} else if ("delete".equals(op)) {
 			p = m_ProjectService.getProject(getMyOrganization(), param.getId());
