@@ -316,10 +316,13 @@ public class HomeMethods implements ResourceHandler {
 			if (null != groups) {
 				p.setGroups(groups);
 			}
-			if (!StringUtil.isEmpty(param.getOwner())) {
-				User user = m_UserService.getUser(param.getOwner());
+			String owner = param.getOwner();
+			if (!StringUtil.isEmpty(owner)) {
+				User user = m_UserService.getUser(owner);
 				if (null != user) {
 					p.setOwner(user);
+				} else {
+					throw new ApiException(ApiException.CODE_ILLEGAL_ARGUMENT, "找不到" + owner + "对应的用户");
 				}
 			}
 		} else if ("delete".equals(op)) {
