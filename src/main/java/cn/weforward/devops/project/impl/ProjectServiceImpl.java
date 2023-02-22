@@ -236,6 +236,7 @@ public class ProjectServiceImpl extends ProjectDiImpl implements ProjectService 
 		if (!p.isRight(Running.RIGHT_UPGRADE)) {
 			return;
 		}
+		p.delete();
 		_Logger.info(OperatorUtils.getOperator() + "删除" + p.getId());
 		m_PsSimpleRunning.remove(p.getId());
 	}

@@ -232,6 +232,14 @@ public class SimpleRunning extends AbstractPersistent<ProjectDi>
 	}
 
 	@Override
+	public void delete() {
+		Machine m = getMachine();
+		if (m instanceof DockerMachine) {
+			((DockerMachine) m).remove(getProject());
+		}
+	}
+
+	@Override
 	public NameItem getState() {
 		checkState();
 		return STATES.get(m_State);

@@ -1049,6 +1049,55 @@ public class DockerMachine extends AbstractMachine implements Reloadable<DockerM
 
 	}
 
+
+	public void remove(Project project) {
+		String cname = project.getName();
+		DockerClient client;
+		try {
+			client = getClient();
+		} catch (IOException e) {
+			_Logger.error("删除异常", e);
+			return;
+		}
+		try {
+			remove(client, cname, project);
+			remove(client, cname + "-old", project);
+		} catch (DockerException e) {
+			_Logger.error("删除异常", e);
+			return;
+		}
+	}
+
+	private void remove(DockerClient client, String cname, Project project) throws DockerException {
+		Map<String, String[]> filters = Collections.singletonMap("name", new String[] { cname });
+		List<DockerContainer> list = filter(client.ps(100, true, false, filters), cname);
+		if (list.isEmpty()) {
+			return;
+		}
+		for (DockerContainer c : list) {
+			int t = Envs.getKillTime(this, project);
+			client.stop(c.getId(), t - 60);
+			DockerInspect d = null;
+			for (int i = 0; i < t; i++) {
+				d = client.inspect(c.getId(), false);
+				if (!d.getState().isRunning()) {
+					break;
+				}
+				synchronized (this) {
+					try {
+						this.wait(1000);
+					} catch (InterruptedException e) {
+						break;
+					}
+				}
+			}
+			if (null == d || d.getState().isRunning()) {
+				continue;
+			}
+			client.remove(c.getId(), true, true, true);
+		}
+	}
+
 	/** 版本排序 */
 	private final static Comparator<DockerImage> _BY_REVEISION = new Comparator<DockerImage>() {
 

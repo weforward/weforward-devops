@@ -255,5 +255,9 @@ public interface Running extends Persistent {
 	 * @param out
 	 */
 	void downMemoryMap(String filename, OutputStream out);
+	/**
+	 * 删除实例
+	 */
+	void delete();
 
 }
