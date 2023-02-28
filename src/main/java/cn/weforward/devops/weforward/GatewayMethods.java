@@ -98,6 +98,17 @@ public class GatewayMethods {
 		return AccessView.valueOf(info, m_OrganizationProvider);
 	}
 
+	@DocMethod(title = "启用/禁用Access")
+	@DocParameter({ @DocAttribute(name = "id", description = "AccessId", type = String.class, necessary = true),
+			@DocAttribute(name = "valid", description = "是否允许", type = Boolean.class, necessary = true) })
+	@WeforwardMethod
+	public AccessView vaildAccess(FriendlyObject params) throws ApiException {
+		String id = params.getString("id");
+		boolean valid = params.getBoolean("valid", true);
+		AccessExt info = m_Keeper.updateAccess(id, null, valid);
+		return AccessView.valueOf(info, m_OrganizationProvider);
+	}
+
 	@DocMethod(title = "列举Access", description = "按类型、组、关键字列举Access")
 	@DocParameter({ @DocAttribute(name = "kind", type = String.class, necessary = true),
 			@DocAttribute(name = "group", type = String.class), @DocAttribute(name = "keyword", type = String.class) })

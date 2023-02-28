@@ -55,6 +55,7 @@ import cn.weforward.devops.project.ext.AbstractProject;
 import cn.weforward.devops.user.AccessKeeper;
 import cn.weforward.devops.user.Group;
 import cn.weforward.devops.user.GroupProvider;
+import cn.weforward.devops.user.GroupRight;
 import cn.weforward.devops.user.Organization;
 import cn.weforward.devops.user.OrganizationProvider;
 import cn.weforward.devops.user.UserProvider;
@@ -419,6 +420,24 @@ public abstract class ProjectDiImpl implements ProjectDi {
 			Project p = r.getProject();
 			if (null != p && !StringUtil.isEmpty(p.getName())) {
 				ev.put("devops_project", p.getName());
+				List<GroupRight> gs = p.getGroups();
+				if (null != gs && !gs.isEmpty()) {
+					StringBuilder builder = new StringBuilder();
+					for (GroupRight g : gs) {
+						if (null != g.getGroup()) {
+							if (builder.length() > 0) {
+								builder.append(';');
+							}
+							builder.append(g.getGroup().getName());
+						}
+					}
+					ev.put("devops_groups", builder.toString());
+					builder = null;
+					Organization org = p.getOrganization();
+					if (null != org) {
+						ev.put("devops_org", org.getName());
+					}
+				}
 			}
 		}
 		Process process;
